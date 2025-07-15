@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { useDragGesture } from '../hooks';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useTaskStore } from '../store/taskStore';
 import { Task } from '../types/Task';
 import { SwipeableTaskCard } from './SwipeableTaskCard';
@@ -20,34 +20,57 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
 }) => {
   const { reorderTasks } = useTaskStore();
 
-  const handleDragStart = useCallback((startIndex: number) => {
-    console.log('🎯 Drag started at index:', startIndex);
+  const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const zIndex = useSharedValue(0);
+  const isDragging = useSharedValue(false);
+
+  const handleDragStart = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);
 
   const handleDragEnd = useCallback((fromIndex: number, toIndex: number) => {
-    console.log('🎯 Drag ended from', fromIndex, 'to', toIndex);
     if (fromIndex !== toIndex) {
       reorderTasks(fromIndex, toIndex);
     }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [reorderTasks]);
 
-  const handleDragCancel = useCallback(() => {
-    console.log('🎯 Drag cancelled');
-  }, []);
+  const longPressGesture = Gesture.LongPress()
+    .minDuration(500)
+    .onStart(() => {
+      runOnJS(handleDragStart)();
+      isDragging.value = true;
+      scale.value = withSpring(1.05);
+      zIndex.value = 1000;
+    });
 
-  const {
-    translateY,
-    scale,
-    zIndex,
-    isDragging,
-    panGesture,
-  } = useDragGesture(index, {
-    onDragStart: handleDragStart,
-    onDragEnd: handleDragEnd,
-    onDragCancel: handleDragCancel,
-    longPressDelay: 500,
-    itemHeight: 80,
-  });
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      if (isDragging.value) {
+        translateY.value = event.translationY;
+      }
+    })
+    .onEnd((event) => {
+      if (isDragging.value) {
+        const displacement = event.translationY;
+        const itemHeight = 80; // Approximate height of a task card
+        const newIndex = Math.max(0, Math.min(
+          Math.round(index + displacement / itemHeight),
+          10 // Max reasonable number of tasks
+        ));
+        
+        runOnJS(handleDragEnd)(index, newIndex);
+        
+        // Reset values
+        isDragging.value = false;
+        translateY.value = withSpring(0);
+        scale.value = withSpring(1);
+        zIndex.value = 0;
+      }
+    });
+
+  const composedGesture = Gesture.Simultaneous(longPressGesture, panGesture);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -55,24 +78,18 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
       { scale: scale.value },
     ],
     zIndex: zIndex.value,
-    elevation: isDragging.value ? 10 : 0,
-  }));
-
-  const containerStyle = useAnimatedStyle(() => ({
+    elevation: isDragging.value ? 10 : 2,
     opacity: isDragging.value ? 0.9 : 1,
   }));
 
   if (!isDragEnabled) {
-    // If drag is disabled, just render the swipeable card
     return <SwipeableTaskCard task={task} index={index} />;
   }
 
   return (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.container, containerStyle]}>
-        <Animated.View style={[styles.draggableCard, animatedStyle]}>
-          <SwipeableTaskCard task={task} index={index} />
-        </Animated.View>
+    <GestureDetector gesture={composedGesture}>
+      <Animated.View style={[styles.container, animatedStyle]}>
+        <SwipeableTaskCard task={task} index={index} />
       </Animated.View>
     </GestureDetector>
   );
@@ -80,18 +97,6 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    zIndex: 1,
-  },
-  draggableCard: {
     backgroundColor: 'transparent',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
 });

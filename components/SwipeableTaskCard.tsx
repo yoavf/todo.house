@@ -1,14 +1,11 @@
-import React, { useCallback, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import React, { useCallback } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { useSwipeGesture, SwipeAction } from '../hooks';
 import { useTaskStore } from '../store/taskStore';
-import { Task, SnoozeDuration } from '../types/Task';
+import { Task } from '../types/Task';
 import { TaskCard } from './TaskCard';
-import { SnoozeActionSheet } from './SnoozeActionSheet';
 
 interface SwipeableTaskCardProps {
   task: Task;
@@ -16,119 +13,111 @@ interface SwipeableTaskCardProps {
 }
 
 export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({ task, index }) => {
-  const { remove, toggle } = useTaskStore();
-  const snoozeSheetRef = useRef<BottomSheetModal>(null);
+  const { remove, toggle, snoozeTask } = useTaskStore();
+  
+  const translateX = useSharedValue(0);
+  const isRevealed = useSharedValue(false);
+
+  const handleComplete = useCallback(() => {
+    toggle(task.id);
+    translateX.value = withSpring(0);
+    isRevealed.value = false;
+  }, [toggle, task.id, translateX, isRevealed]);
+
+  const handleSnooze = useCallback(() => {
+    snoozeTask(task.id, '1hour');
+    translateX.value = withSpring(0);
+    isRevealed.value = false;
+    Alert.alert('Task Snoozed', 'Task has been snoozed for 1 hour');
+  }, [snoozeTask, task.id, translateX, isRevealed]);
 
   const handleDelete = useCallback(() => {
     remove(task.id);
   }, [remove, task.id]);
 
-  const handleSnooze = useCallback(() => {
-    snoozeSheetRef.current?.present();
-  }, []);
+  const closeActions = useCallback(() => {
+    translateX.value = withSpring(0);
+    isRevealed.value = false;
+  }, [translateX, isRevealed]);
 
-  const handleToggle = useCallback(() => {
-    toggle(task.id);
-  }, [toggle, task.id]);
-
-  // Define swipe actions
-  const leftActions: SwipeAction[] = [
-    {
-      id: 'complete',
-      label: task.completed ? 'Undo' : 'Complete',
-      color: task.completed ? '#6c757d' : '#28a745',
-      icon: task.completed ? 'arrow-undo' : 'checkmark',
-      onPress: handleToggle,
-    },
-  ];
-
-  const rightActions: SwipeAction[] = [
-    {
-      id: 'snooze',
-      label: 'Snooze',
-      color: '#ffc107',
-      icon: 'time',
-      onPress: handleSnooze,
-    },
-    {
-      id: 'delete',
-      label: 'Delete',
-      color: '#dc3545',
-      icon: 'trash',
-      onPress: handleDelete,
-    },
-  ];
-
-  const {
-    translateX,
-    leftActionsWidth,
-    rightActionsWidth,
-    closeSwipe,
-    panGesture,
-  } = useSwipeGesture({
-    leftActions,
-    rightActions,
-    enabled: true,
-  });
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      const translation = event.translationX;
+      
+      if (translation > 0) {
+        // Swipe right - show complete action
+        translateX.value = Math.min(translation, 100);
+      } else {
+        // Swipe left - show snooze/delete actions
+        translateX.value = Math.max(translation, -160);
+      }
+    })
+    .onEnd((event) => {
+      const translation = event.translationX;
+      const velocity = event.velocityX;
+      
+      if (Math.abs(translation) > 60 || Math.abs(velocity) > 1000) {
+        if (translation > 0) {
+          // Swipe right - complete
+          translateX.value = withSpring(100);
+          isRevealed.value = true;
+        } else {
+          // Swipe left - show actions
+          translateX.value = withSpring(-160);
+          isRevealed.value = true;
+        }
+      } else {
+        // Snap back
+        runOnJS(closeActions)();
+      }
+    });
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
 
-  const leftActionsStyle = useAnimatedStyle(() => ({
-    width: leftActionsWidth.value,
+  const leftActionStyle = useAnimatedStyle(() => ({
+    opacity: translateX.value > 0 ? 1 : 0,
   }));
 
-  const rightActionsStyle = useAnimatedStyle(() => ({
-    width: rightActionsWidth.value,
+  const rightActionStyle = useAnimatedStyle(() => ({
+    opacity: translateX.value < 0 ? 1 : 0,
   }));
-
-  const renderActions = (actions: SwipeAction[], isLeft: boolean) => {
-    return actions.map((action, actionIndex) => (
-      <TouchableOpacity
-        key={action.id}
-        style={[
-          styles.actionButton,
-          { backgroundColor: action.color },
-          isLeft && actionIndex === 0 && styles.firstLeftAction,
-          !isLeft && actionIndex === actions.length - 1 && styles.lastRightAction,
-        ]}
-        onPress={() => {
-          action.onPress();
-          closeSwipe();
-        }}
-      >
-        <Ionicons name={action.icon as any} size={20} color="white" />
-        <Text style={styles.actionText}>{action.label}</Text>
-      </TouchableOpacity>
-    ));
-  };
 
   return (
     <View style={styles.container}>
-      {/* Left Actions */}
-      <Animated.View style={[styles.leftActions, leftActionsStyle]}>
-        {renderActions(leftActions, true)}
+      {/* Left Action (Complete) */}
+      <Animated.View style={[styles.leftAction, leftActionStyle]}>
+        <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
+          <Ionicons 
+            name={task.completed ? 'arrow-undo' : 'checkmark'} 
+            size={24} 
+            color="white" 
+          />
+          <Text style={styles.actionText}>
+            {task.completed ? 'Undo' : 'Complete'}
+          </Text>
+        </TouchableOpacity>
       </Animated.View>
 
-      {/* Right Actions */}
-      <Animated.View style={[styles.rightActions, rightActionsStyle]}>
-        {renderActions(rightActions, false)}
+      {/* Right Actions (Snooze, Delete) */}
+      <Animated.View style={[styles.rightActions, rightActionStyle]}>
+        <TouchableOpacity style={styles.snoozeButton} onPress={handleSnooze}>
+          <Ionicons name="time" size={20} color="white" />
+          <Text style={styles.actionText}>Snooze</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <Ionicons name="trash" size={20} color="white" />
+          <Text style={styles.actionText}>Delete</Text>
+        </TouchableOpacity>
       </Animated.View>
 
       {/* Main Task Card */}
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={animatedStyle}>
+        <Animated.View style={[styles.taskCard, animatedStyle]}>
           <TaskCard task={task} />
         </Animated.View>
       </GestureDetector>
-
-      {/* Snooze Action Sheet */}
-      <SnoozeActionSheet
-        bottomSheetRef={snoozeSheetRef}
-        taskId={task.id}
-        onClose={() => snoozeSheetRef.current?.dismiss()}
-      />
     </View>
   );
 };
@@ -138,34 +127,51 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginBottom: 12,
   },
-  leftActions: {
+  taskCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    zIndex: 1,
+  },
+  leftAction: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    flexDirection: 'row',
+    width: 100,
+    justifyContent: 'center',
     alignItems: 'center',
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
   },
   rightActions: {
     position: 'absolute',
     right: 0,
     top: 0,
     bottom: 0,
+    width: 160,
     flexDirection: 'row',
-    alignItems: 'center',
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
   },
-  actionButton: {
+  completeButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    minWidth: 80,
-  },
-  firstLeftAction: {
+    backgroundColor: '#28a745',
     borderTopLeftRadius: 12,
     borderBottomLeftRadius: 12,
   },
-  lastRightAction: {
+  snoozeButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffc107',
+  },
+  deleteButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#dc3545',
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
   },
