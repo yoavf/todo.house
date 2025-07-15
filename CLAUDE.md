@@ -43,10 +43,13 @@ app/                    # Expo Router pages
 
 components/            # Reusable UI components
 ├── FAB.tsx           # Floating action button
-├── TaskCard.tsx      # Individual task display
+├── TaskCard.tsx      # Base task display component
+├── SwipeableTaskCard.tsx # Task card with swipe actions
+├── DraggableTaskCard.tsx # Task card with drag reordering
 ├── TaskList.tsx      # Task list container
 ├── InlineTextEdit.tsx # Inline text editing
 ├── LocationPicker.tsx # Location selection
+├── SnoozeActionSheet.tsx # Snooze duration picker
 ├── SuccessAnimation.tsx # Success feedback
 └── index.ts          # Component exports
 
@@ -87,10 +90,19 @@ utils/
 
 ### Task Management
 
-- Simple Task interface with id, title, location, completion status
-- Date-based sorting (incomplete first, then by creation date)
-- Inline editing capabilities
+- Enhanced Task interface with id, title, location, completion status, due dates, snooze functionality, and manual ordering
+- Smart sorting (incomplete first, then by due date, then by manual order)
+- Inline editing capabilities with haptic feedback
 - Location-based organization
+- Swipe actions for quick task actions (complete, snooze, delete)
+- Drag and drop reordering following React Native Gesture Handler best practices
+
+### Gesture Components
+
+- **TaskCard**: Base component for task display and editing
+- **SwipeableTaskCard**: Adds swipe gestures using `Gesture.Pan()` directly in component
+- **DraggableTaskCard**: Adds drag reordering using `Gesture.LongPress()` + `Gesture.Pan()` with `Gesture.Simultaneous()`
+- **Clean Architecture**: Gestures implemented directly in components following React Native Gesture Handler best practices, not abstracted into custom hooks
 
 ## Environment Variables
 
@@ -121,3 +133,7 @@ The app includes debug utilities:
 - **Task UI**: Card-based task display with inline editing
 - **Success Animation**: User feedback for task creation
 - **FAB**: Main action button for task creation options
+
+## Coding Guidelines
+
+- When refactoring code, do not add a comment that says "new xxx". The end state of the code is what matters, no one reading the code would know what was there before, and I certainly don't care. Only add comments when they're important for understanding the code, or - where appropriate - to create semantic separation between differen sections of the code. So: no useless comments!

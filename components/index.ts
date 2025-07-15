@@ -1,7 +1,10 @@
+export { DraggableTaskCard } from './DraggableTaskCard';
 export { FAB } from './FAB';
 export { InlineTextEdit } from './InlineTextEdit';
 export { LocationPicker } from './LocationPicker';
+export { SnoozeActionSheet } from './SnoozeActionSheet';
 export { SuccessAnimation } from './SuccessAnimation';
+export { SwipeableTaskCard } from './SwipeableTaskCard';
 export { TaskCard } from './TaskCard';
 export { TaskList } from './TaskList';
 

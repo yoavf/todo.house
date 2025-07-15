@@ -95,7 +95,7 @@ export function TaskCard({ task }: TaskCardProps) {
           <InlineTextEdit
             value={task.title}
             onUpdate={handleTitleUpdate}
-            style={[styles.title, task.completed ? styles.completedTitle : null].filter(Boolean)}
+            style={task.completed ? [styles.title, styles.completedTitle] : styles.title}
             placeholder="Task title"
           />
 

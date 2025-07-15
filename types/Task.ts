@@ -4,4 +4,10 @@ export interface Task {
   location?: string;
   createdAt: Date;
   completed: boolean;
+  // Enhanced task list fields
+  dueDate?: Date;
+  snoozeUntil?: Date;
+  order: number; // For custom ordering
 }
+
+export type SnoozeDuration = '1hour' | '3hours' | 'tomorrow' | 'nextweek';

@@ -8,16 +8,10 @@ import { logEnvironmentInfo, testAIIntegration, testEnvironment } from '../utils
 
 export default function HomeScreen() {
   const tasks = useTaskStore((state) => state.tasks);
+  const getActiveTasks = useTaskStore((state) => state.getActiveTasks);
+  const sortedTasks = getActiveTasks();
 
-  // Sort tasks: incomplete first, then completed, each group by newest first
-  const sortedTasks = [...tasks].sort((a, b) => {
-    if (a.completed !== b.completed) {
-      return a.completed ? 1 : -1; // incomplete first
-    }
-    return b.createdAt.getTime() - a.createdAt.getTime(); // newest first within each group
-  });
-
-  const pendingCount = tasks.filter(task => !task.completed).length;
+  const pendingCount = sortedTasks.filter(task => !task.completed).length;
 
   const handleTestAI = async () => {
     console.log('🧪 User requested AI test');
