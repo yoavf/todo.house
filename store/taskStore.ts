@@ -23,7 +23,6 @@ interface TaskStore {
 
 const STORAGE_KEY = '@todo_house_tasks';
 
-// Utility functions for snooze duration calculations
 const calculateSnoozeDate = (duration: SnoozeDuration): Date => {
   const now = new Date();
   
