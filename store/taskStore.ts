@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { Task, SnoozeDuration } from '../types/Task';
+import { parseDateField, parseRequiredDateField } from '../utils/dateUtils';
 
 interface TaskStore {
   tasks: Task[];
@@ -106,10 +107,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       if (stored) {
         const tasks = JSON.parse(stored).map((task: any) => ({
           ...task,
-          createdAt: new Date(task.createdAt),
-          dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-          snoozeUntil: task.snoozeUntil ? new Date(task.snoozeUntil) : undefined,
-          order: task.order !== undefined ? task.order : (task.createdAt ? new Date(task.createdAt).getTime() : Date.now()),
+          createdAt: parseRequiredDateField(task.createdAt),
+          dueDate: parseDateField(task.dueDate),
+          snoozeUntil: parseDateField(task.snoozeUntil),
+          order: task.order !== undefined ? task.order : (task.createdAt ? parseRequiredDateField(task.createdAt).getTime() : Date.now()),
         }));
         set({ tasks, hydrated: true });
       } else {
