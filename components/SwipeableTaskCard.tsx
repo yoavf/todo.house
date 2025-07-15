@@ -1,11 +1,13 @@
-import React, { useCallback } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useRef } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useTaskStore } from '../store/taskStore';
 import { Task } from '../types/Task';
 import { TaskCard } from './TaskCard';
+import { SnoozeActionSheet } from './SnoozeActionSheet';
 
 interface SwipeableTaskCardProps {
   task: Task;
@@ -13,7 +15,8 @@ interface SwipeableTaskCardProps {
 }
 
 export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({ task, index }) => {
-  const { remove, toggle, snoozeTask } = useTaskStore();
+  const { remove, toggle } = useTaskStore();
+  const snoozeSheetRef = useRef<BottomSheetModal>(null);
   
   const translateX = useSharedValue(0);
   const isRevealed = useSharedValue(false);
@@ -25,11 +28,10 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({ task, inde
   }, [toggle, task.id, translateX, isRevealed]);
 
   const handleSnooze = useCallback(() => {
-    snoozeTask(task.id, '1hour');
+    snoozeSheetRef.current?.present();
     translateX.value = withSpring(0);
     isRevealed.value = false;
-    Alert.alert('Task Snoozed', 'Task has been snoozed for 1 hour');
-  }, [snoozeTask, task.id, translateX, isRevealed]);
+  }, [translateX, isRevealed]);
 
   const handleDelete = useCallback(() => {
     remove(task.id);
@@ -118,6 +120,13 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({ task, inde
           <TaskCard task={task} />
         </Animated.View>
       </GestureDetector>
+
+      {/* Snooze Action Sheet */}
+      <SnoozeActionSheet
+        bottomSheetRef={snoozeSheetRef}
+        taskId={task.id}
+        onClose={() => snoozeSheetRef.current?.dismiss()}
+      />
     </View>
   );
 };
