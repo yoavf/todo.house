@@ -121,3 +121,7 @@ The app includes debug utilities:
 - **Task UI**: Card-based task display with inline editing
 - **Success Animation**: User feedback for task creation
 - **FAB**: Main action button for task creation options
+
+## Coding Guidelines
+
+- When refactoring code, do not add a comment that says "new xxx". The end state of the code is what matters, no one reading the code would know what was there before, and I certainly don't care. Only add comments when they're important for understanding the code, or - where appropriate - to create semantic separation between differen sections of the code. So: no useless comments!
