@@ -154,8 +154,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       sortedActive.splice(toIndex, 0, movedTask);
 
       // Update order values
+      const baseTimestamp = Date.now();
       sortedActive.forEach((task, index) => {
-        task.order = Date.now() - index;
+        task.order = baseTimestamp - index;
       });
 
       return {
