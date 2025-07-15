@@ -1,7 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Task } from '../types/Task';
-import { TaskCard } from './TaskCard';
+import { SimpleDraggableTaskCard } from './SimpleDraggableTaskCard';
 
 interface TaskListProps {
   tasks: Task[];
@@ -21,9 +21,16 @@ export function TaskList({ tasks }: TaskListProps) {
     <FlatList
       data={tasks}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <TaskCard task={item} />}
+      renderItem={({ item, index }) => (
+        <SimpleDraggableTaskCard 
+          task={item} 
+          index={index} 
+          isDragEnabled={true}
+        />
+      )}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.listContainer}
+      scrollEnabled={true}
     />
   );
 }

@@ -1,21 +1,52 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { Task } from '../types/Task';
+import { Task, SnoozeDuration } from '../types/Task';
 
 interface TaskStore {
   tasks: Task[];
   hydrated: boolean;
   recentlyAddedId: string | null;
-  add: (task: Omit<Task, 'id' | 'createdAt'>) => string;
+  add: (task: Omit<Task, 'id' | 'createdAt' | 'order'>) => string;
   update: (id: string, partial: Partial<Task>) => void;
   remove: (id: string) => void;
   toggle: (id: string) => void;
   clearRecentlyAdded: () => void;
   hydrate: () => Promise<void>;
   persist: () => Promise<void>;
+  // Enhanced task list methods
+  reorderTasks: (fromIndex: number, toIndex: number) => void;
+  snoozeTask: (id: string, duration: SnoozeDuration) => void;
+  unsnoozeTask: (id: string) => void;
+  setDueDate: (id: string, dueDate?: Date) => void;
+  getActiveTasks: () => Task[];
+  getSnoozedTasks: () => Task[];
 }
 
 const STORAGE_KEY = '@todo_house_tasks';
+
+// Utility functions for snooze duration calculations
+const calculateSnoozeDate = (duration: SnoozeDuration): Date => {
+  const now = new Date();
+  
+  switch (duration) {
+    case '1hour':
+      return new Date(now.getTime() + 60 * 60 * 1000);
+    case '3hours':
+      return new Date(now.getTime() + 3 * 60 * 60 * 1000);
+    case 'tomorrow':
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0); // 9 AM tomorrow
+      return tomorrow;
+    case 'nextweek':
+      const nextWeek = new Date(now);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      nextWeek.setHours(9, 0, 0, 0); // 9 AM next week
+      return nextWeek;
+    default:
+      return now;
+  }
+};
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: [],
@@ -27,6 +58,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       ...taskData,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       createdAt: new Date(),
+      order: Date.now(), // New tasks appear at top
     };
 
     set((state) => ({
@@ -77,6 +109,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         const tasks = JSON.parse(stored).map((task: any) => ({
           ...task,
           createdAt: new Date(task.createdAt),
+          dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+          snoozeUntil: task.snoozeUntil ? new Date(task.snoozeUntil) : undefined,
+          order: task.order || task.createdAt ? new Date(task.createdAt).getTime() : Date.now(),
         }));
         set({ tasks, hydrated: true });
       } else {
@@ -95,5 +130,111 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     } catch (error) {
       console.error('Failed to persist tasks:', error);
     }
+  },
+
+  // Enhanced task list methods
+  reorderTasks: (fromIndex: number, toIndex: number) => {
+    set((state) => {
+      const activeTasks = state.tasks.filter(task => !task.snoozeUntil || task.snoozeUntil <= new Date());
+      const snoozedTasks = state.tasks.filter(task => task.snoozeUntil && task.snoozeUntil > new Date());
+      
+      // Sort active tasks by order
+      const sortedActive = [...activeTasks].sort((a, b) => {
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
+        }
+        if (a.dueDate && b.dueDate) {
+          return a.dueDate.getTime() - b.dueDate.getTime();
+        }
+        if (a.dueDate && !b.dueDate) return -1;
+        if (!a.dueDate && b.dueDate) return 1;
+        return b.order - a.order;
+      });
+
+      // Perform reorder
+      const [movedTask] = sortedActive.splice(fromIndex, 1);
+      sortedActive.splice(toIndex, 0, movedTask);
+
+      // Update order values
+      sortedActive.forEach((task, index) => {
+        task.order = Date.now() - index;
+      });
+
+      return {
+        tasks: [...sortedActive, ...snoozedTasks],
+      };
+    });
+    
+    get().persist();
+  },
+
+  snoozeTask: (id: string, duration: SnoozeDuration) => {
+    const snoozeUntil = calculateSnoozeDate(duration);
+    
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        task.id === id ? { ...task, snoozeUntil } : task
+      ),
+    }));
+
+    get().persist();
+  },
+
+  unsnoozeTask: (id: string) => {
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        task.id === id ? { ...task, snoozeUntil: undefined } : task
+      ),
+    }));
+
+    get().persist();
+  },
+
+  setDueDate: (id: string, dueDate?: Date) => {
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        task.id === id ? { ...task, dueDate } : task
+      ),
+    }));
+
+    get().persist();
+  },
+
+  getActiveTasks: () => {
+    const { tasks } = get();
+    const now = new Date();
+    
+    return tasks
+      .filter(task => !task.snoozeUntil || task.snoozeUntil <= now)
+      .sort((a, b) => {
+        // Sort by completion status first
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
+        }
+        
+        // Within each completion group, sort by due date first
+        if (a.dueDate && b.dueDate) {
+          return a.dueDate.getTime() - b.dueDate.getTime();
+        }
+        if (a.dueDate && !b.dueDate) return -1;
+        if (!a.dueDate && b.dueDate) return 1;
+        
+        // Then by order (newest first)
+        return b.order - a.order;
+      });
+  },
+
+  getSnoozedTasks: () => {
+    const { tasks } = get();
+    const now = new Date();
+    
+    return tasks
+      .filter(task => task.snoozeUntil && task.snoozeUntil > now)
+      .sort((a, b) => {
+        if (a.snoozeUntil && b.snoozeUntil) {
+          return a.snoozeUntil.getTime() - b.snoozeUntil.getTime();
+        }
+        return 0;
+      });
   },
 }));

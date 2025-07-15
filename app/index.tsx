@@ -7,17 +7,13 @@ import { addDemoTasks } from '../utils/demoData';
 import { logEnvironmentInfo, testAIIntegration, testEnvironment } from '../utils/testAI';
 
 export default function HomeScreen() {
+  const getActiveTasks = useTaskStore((state) => state.getActiveTasks);
   const tasks = useTaskStore((state) => state.tasks);
 
-  // Sort tasks: incomplete first, then completed, each group by newest first
-  const sortedTasks = [...tasks].sort((a, b) => {
-    if (a.completed !== b.completed) {
-      return a.completed ? 1 : -1; // incomplete first
-    }
-    return b.createdAt.getTime() - a.createdAt.getTime(); // newest first within each group
-  });
+  // Use the new getActiveTasks method for proper sorting with due dates and order
+  const sortedTasks = getActiveTasks();
 
-  const pendingCount = tasks.filter(task => !task.completed).length;
+  const pendingCount = sortedTasks.filter(task => !task.completed).length;
 
   const handleTestAI = async () => {
     console.log('🧪 User requested AI test');
