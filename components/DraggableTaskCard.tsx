@@ -7,6 +7,9 @@ import { useTaskStore } from '../store/taskStore';
 import { Task } from '../types/Task';
 import { SwipeableTaskCard } from './SwipeableTaskCard';
 
+// Constants
+const TASK_CARD_HEIGHT = 80; // Approximate height of a task card
+
 interface DraggableTaskCardProps {
   task: Task;
   index: number;
@@ -18,7 +21,7 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   index, 
   isDragEnabled = true 
 }) => {
-  const { reorderTasks } = useTaskStore();
+  const { reorderTasks, getActiveTasks } = useTaskStore();
 
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
@@ -54,10 +57,11 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
     .onEnd((event) => {
       if (isDragging.value) {
         const displacement = event.translationY;
-        const itemHeight = 80; // Approximate height of a task card
+        const activeTasks = getActiveTasks();
+        const maxIndex = Math.max(0, activeTasks.length - 1);
         const newIndex = Math.max(0, Math.min(
-          Math.round(index + displacement / itemHeight),
-          10 // Max reasonable number of tasks
+          Math.round(index + displacement / TASK_CARD_HEIGHT),
+          maxIndex
         ));
         
         runOnJS(handleDragEnd)(index, newIndex);
