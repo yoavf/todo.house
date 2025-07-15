@@ -8,7 +8,8 @@ import { logEnvironmentInfo, testAIIntegration, testEnvironment } from '../utils
 
 export default function HomeScreen() {
   const tasks = useTaskStore((state) => state.tasks);
-  const sortedTasks = useTaskStore((state) => state.getActiveTasks());
+  const getActiveTasks = useTaskStore((state) => state.getActiveTasks);
+  const sortedTasks = getActiveTasks();
 
   const pendingCount = sortedTasks.filter(task => !task.completed).length;
 
