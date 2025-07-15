@@ -13,7 +13,6 @@ interface TaskStore {
   clearRecentlyAdded: () => void;
   hydrate: () => Promise<void>;
   persist: () => Promise<void>;
-  // Enhanced task list methods
   reorderTasks: (fromIndex: number, toIndex: number) => void;
   snoozeTask: (id: string, duration: SnoozeDuration) => void;
   unsnoozeTask: (id: string) => void;
