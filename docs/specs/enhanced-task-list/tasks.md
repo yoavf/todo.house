@@ -9,15 +9,15 @@
 
 - [x] 2. Create core gesture handling utilities
   - [x] 2.1 Implement drag gesture detection and state management
-    - ✅ Create useDragGesture hook with long press detection
-    - ✅ Implement drag state management with Reanimated shared values
+    - ✅ Implement drag gestures directly in DraggableTaskCard using Gesture API
+    - ✅ Use Gesture.LongPress() and Gesture.Pan() with Gesture.Simultaneous()
     - ✅ Add haptic feedback integration for drag start/end events
     - ⚠️ Write tests for gesture state transitions
     - _Requirements: 1.1, 1.4, 6.1, 6.4, 8.5_
 
   - [x] 2.2 Implement swipe gesture recognition system
-    - ✅ Create useSwipeGesture hook for left/right swipe detection
-    - ✅ Add swipe threshold configuration and auto-action logic
+    - ✅ Implement swipe gestures directly in SwipeableTaskCard using Gesture API
+    - ✅ Use Gesture.Pan() with proper threshold and velocity handling
     - ✅ Implement gesture conflict resolution between drag and swipe
     - ⚠️ Write tests for swipe gesture recognition and thresholds
     - _Requirements: 2.1, 2.2, 2.3, 6.2_
@@ -92,7 +92,7 @@
 - [x] 7. Enhance TaskList component with new features
   - [x] 7.1 Integrate draggable and swipeable task cards
     - ✅ Replace existing TaskCard usage with DraggableTaskCard wrapper
-    - ✅ Add drag state management to TaskList component
+    - ✅ Clean component hierarchy: TaskCard → SwipeableTaskCard → DraggableTaskCard
     - ✅ Implement gesture conflict prevention during filtering/search
     - ⚠️ Write integration tests for enhanced task list interactions
     - _Requirements: 1.1, 1.2, 7.4, 8.2_
@@ -154,12 +154,16 @@
 ## Implementation Notes
 
 ### Completed Implementation
-- **Simple Gesture Approach**: Implemented stable, crash-free gesture system using simplified hooks
+
+- **Clean Architecture**: Implemented gesture handling directly in components following React Native Gesture Handler best practices
+- **Component Hierarchy**: Clean hierarchy: TaskCard → SwipeableTaskCard → DraggableTaskCard
+- **Gesture API**: Uses modern Gesture API with Gesture.Pan(), Gesture.LongPress(), and Gesture.Simultaneous()
 - **Core Functionality**: All primary gesture features (swipe, drag, snooze) are working
 - **Integration**: Successfully integrated with existing task creation flow and FAB
 - **Stability**: Resolved all worklet thread issues and app crashes
 
 ### Remaining Work
+
 - **Testing**: Most testing tasks are marked as ⚠️ (not yet implemented)
 - **Due Date Functionality**: Complete due date picker and visual indicators
 - **Accessibility**: Screen reader support and keyboard navigation
