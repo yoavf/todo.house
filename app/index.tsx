@@ -10,7 +10,6 @@ export default function HomeScreen() {
   const getActiveTasks = useTaskStore((state) => state.getActiveTasks);
   const tasks = useTaskStore((state) => state.tasks);
 
-  // Use the new getActiveTasks method for proper sorting with due dates and order
   const sortedTasks = getActiveTasks();
 
   const pendingCount = sortedTasks.filter(task => !task.completed).length;
