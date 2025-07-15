@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View, Image, Modal } from 'react-native';
 import { useTaskStore } from '../store/taskStore';
 import { Task } from '../types/Task';
 import { InlineTextEdit } from './InlineTextEdit';
@@ -12,6 +12,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const { toggle, remove, update, recentlyAddedId, clearRecentlyAdded } = useTaskStore();
   const isRecentlyAdded = recentlyAddedId === task.id;
 
@@ -113,6 +114,23 @@ export function TaskCard({ task }: TaskCardProps) {
             )}
           </TouchableOpacity>
 
+          {/* Image thumbnail if available */}
+          {task.imageUri && (
+            <TouchableOpacity 
+              onPress={() => setShowImageModal(true)}
+              style={styles.imageContainer}
+            >
+              <Image 
+                source={{ uri: task.imageUri }} 
+                style={styles.imageThumbnail}
+                resizeMode="cover"
+              />
+              <View style={styles.imageOverlay}>
+                <Ionicons name="expand-outline" size={16} color="white" />
+              </View>
+            </TouchableOpacity>
+          )}
+
           {/* Date */}
           <Text style={[styles.date, task.completed && styles.completedText]}>
             {formatDate(task.createdAt)}
@@ -139,6 +157,37 @@ export function TaskCard({ task }: TaskCardProps) {
         onSelect={handleLocationUpdate}
         onClose={() => setShowLocationPicker(false)}
       />
+
+      {/* Image Modal */}
+      {task.imageUri && (
+        <Modal
+          visible={showImageModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowImageModal(false)}
+        >
+          <View style={styles.imageModalContainer}>
+            <TouchableOpacity 
+              style={styles.imageModalBackdrop}
+              onPress={() => setShowImageModal(false)}
+            >
+              <View style={styles.imageModalContent}>
+                <Image 
+                  source={{ uri: task.imageUri }} 
+                  style={styles.imageModalImage}
+                  resizeMode="contain"
+                />
+                <TouchableOpacity 
+                  style={styles.imageModalClose}
+                  onPress={() => setShowImageModal(false)}
+                >
+                  <Ionicons name="close" size={24} color="white" />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
     </>
   );
 }
@@ -233,5 +282,57 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  imageContainer: {
+    position: 'relative',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  imageThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+  },
+  imageModalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalContent: {
+    width: '90%',
+    height: '80%',
+    position: 'relative',
+  },
+  imageModalImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageModalClose: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

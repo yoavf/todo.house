@@ -111,6 +111,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           dueDate: parseDateField(task.dueDate),
           snoozeUntil: parseDateField(task.snoozeUntil),
           order: task.order !== undefined ? task.order : (task.createdAt ? parseRequiredDateField(task.createdAt).getTime() : Date.now()),
+          imageUri: task.imageUri || undefined,
         }));
         set({ tasks, hydrated: true });
       } else {

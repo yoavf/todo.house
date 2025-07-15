@@ -55,7 +55,7 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
       if (option) {
         Alert.alert('Task Snoozed', `Task has been snoozed ${option.label.toLowerCase()}`);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to snooze task');
     }
   }, [snoozeTask, taskId, onClose]);

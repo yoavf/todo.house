@@ -27,10 +27,6 @@ export function InlineTextEdit({ value, onUpdate, style, placeholder }: InlineTe
     onUpdate(editValue);
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditValue(value);
-  };
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
