@@ -106,8 +106,8 @@ export const useSwipeGesture = (
       
       if (swipeDirection.value) {
         const maxWidth = swipeDirection.value === 'left' 
-          ? -leftActionsWidth.value 
-          : rightActionsWidth.value;
+          ? -rightActionsWidth.value 
+          : leftActionsWidth.value;
         
         // Apply some resistance when going beyond the actions width
         let constrainedTranslation = translationX;
@@ -120,7 +120,7 @@ export const useSwipeGesture = (
         translateX.value = constrainedTranslation;
         
         // Check for action threshold
-        const actions = swipeDirection.value === 'left' ? leftActions : rightActions;
+        const actions = swipeDirection.value === 'left' ? rightActions : leftActions;
         const threshold = Math.abs(maxWidth) * actionThreshold;
         
         if (absTranslationX > threshold && !hasTriggeredAction.value && actions.length > 0) {
@@ -136,10 +136,10 @@ export const useSwipeGesture = (
       const absTranslationX = Math.abs(translationX);
       const velocity = event.velocityX;
       
-      const actions = swipeDirection.value === 'left' ? leftActions : rightActions;
+      const actions = swipeDirection.value === 'left' ? rightActions : leftActions;
       const maxWidth = swipeDirection.value === 'left' 
-        ? -leftActionsWidth.value 
-        : rightActionsWidth.value;
+        ? -rightActionsWidth.value 
+        : leftActionsWidth.value;
       
       const revealThresholdDistance = Math.abs(maxWidth) * revealThreshold;
       const actionThresholdDistance = Math.abs(maxWidth) * actionThreshold;
