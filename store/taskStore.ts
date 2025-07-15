@@ -109,7 +109,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           createdAt: new Date(task.createdAt),
           dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
           snoozeUntil: task.snoozeUntil ? new Date(task.snoozeUntil) : undefined,
-          order: task.order || task.createdAt ? new Date(task.createdAt).getTime() : Date.now(),
+          order: task.order !== undefined ? task.order : (task.createdAt ? new Date(task.createdAt).getTime() : Date.now()),
         }));
         set({ tasks, hydrated: true });
       } else {
