@@ -26,12 +26,10 @@ export const SimpleDraggableTaskCard: React.FC<SimpleDraggableTaskCardProps> = (
   const isDragging = useSharedValue(false);
 
   const handleDragStart = useCallback(() => {
-    console.log('🎯 Drag started at index:', index);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [index]);
 
   const handleDragEnd = useCallback((fromIndex: number, toIndex: number) => {
-    console.log('🎯 Drag ended from', fromIndex, 'to', toIndex);
     if (fromIndex !== toIndex) {
       reorderTasks(fromIndex, toIndex);
     }
