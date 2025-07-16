@@ -1,12 +1,12 @@
+import * as Haptics from 'expo-haptics';
 import React, { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useTaskStore } from '../store/taskStore';
 import { Task } from '../types/Task';
-import { SwipeableTaskCard } from './SwipeableTaskCard';
 import { useDragDrop } from './DragDropContext';
+import { SwipeableTaskCard } from './SwipeableTaskCard';
 
 // Constants
 const TASK_CARD_HEIGHT = 80; // Approximate height of a task card
@@ -17,10 +17,10 @@ interface DraggableTaskCardProps {
   isDragEnabled?: boolean;
 }
 
-export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({ 
-  task, 
-  index, 
-  isDragEnabled = true 
+export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
+  task,
+  index,
+  isDragEnabled = true
 }) => {
   const { reorderTasks, getActiveTasks } = useTaskStore();
   const { isDragging: globalIsDragging, draggedIndex, dropTargetIndex } = useDragDrop();
@@ -36,11 +36,18 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
   const handleDragEnd = useCallback((fromIndex: number, toIndex: number, displacement: number) => {
     const activeTasks = getActiveTasks();
     const maxIndex = Math.max(0, activeTasks.length - 1);
-    const calculatedToIndex = Math.max(0, Math.min(
-      Math.round(fromIndex + displacement / TASK_CARD_HEIGHT),
-      maxIndex
-    ));
-    
+
+    // Use same threshold logic as visual feedback
+    let calculatedToIndex = fromIndex;
+
+    if (displacement > 0.75 * TASK_CARD_HEIGHT) {
+      calculatedToIndex = fromIndex + Math.floor(displacement / TASK_CARD_HEIGHT);
+    } else if (displacement < -0.75 * TASK_CARD_HEIGHT) {
+      calculatedToIndex = fromIndex + Math.ceil(displacement / TASK_CARD_HEIGHT);
+    }
+
+    calculatedToIndex = Math.max(0, Math.min(calculatedToIndex, maxIndex));
+
     if (fromIndex !== calculatedToIndex) {
       reorderTasks(fromIndex, calculatedToIndex);
     }
@@ -61,19 +68,29 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
     .onUpdate((event) => {
       if (globalIsDragging.value && draggedIndex.value === index) {
         translateY.value = event.translationY;
-        
-        // Calculate potential drop target index
+
+        // Calculate potential drop target index with threshold for activation
         const displacement = event.translationY;
-        const potentialIndex = Math.round(index + displacement / TASK_CARD_HEIGHT);
-        dropTargetIndex.value = Math.max(0, potentialIndex);
+        let potentialIndex = -1; // Default to no drop zone active
+
+        // Only activate drop zone when more than 75% over adjacent task
+        if (displacement > 0.75 * TASK_CARD_HEIGHT) {
+          // Dragging down - activate drop zone at next position
+          potentialIndex = index + Math.floor(displacement / TASK_CARD_HEIGHT);
+        } else if (displacement < -0.75 * TASK_CARD_HEIGHT) {
+          // Dragging up - activate drop zone at previous position
+          potentialIndex = index + Math.ceil(displacement / TASK_CARD_HEIGHT);
+        }
+
+        dropTargetIndex.value = potentialIndex;
       }
     })
     .onEnd((event) => {
       if (globalIsDragging.value && draggedIndex.value === index) {
         const displacement = event.translationY;
-        
+
         runOnJS(handleDragEnd)(index, index, displacement);
-        
+
         // Reset values
         globalIsDragging.value = false;
         draggedIndex.value = -1;
@@ -88,7 +105,7 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
 
   const animatedStyle = useAnimatedStyle(() => {
     const isBeingDragged = globalIsDragging.value && draggedIndex.value === index;
-    
+
     return {
       transform: [
         { translateY: translateY.value },
