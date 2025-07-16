@@ -9,15 +9,6 @@ const TaskSchema = z.object({
   confidence: z.number().min(0).max(1).describe('Confidence level (0-1) that this is a valid household task'),
 });
 
-interface TaskAnalysisResult {
-  success: boolean;
-  task?: {
-    title: string;
-    location?: string;
-  };
-  error?: string;
-}
-
 // Create OpenAI provider instance
 function createOpenAIProvider() {
   const apiKey = process.env.OPENAI_API_KEY;

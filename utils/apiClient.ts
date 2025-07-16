@@ -1,80 +1,78 @@
-export interface TaskAnalysisResult {
-  success: boolean;
-  task?: {
-    title: string;
-    location?: string;
-  };
-  error?: string;
-}
+import type { TaskAnalysisResult } from "../types/TaskAnalysisResult";
 
-export async function analyzeImageForTask(base64Image: string): Promise<TaskAnalysisResult> {
-  console.log('🔍 Client: Starting API image analysis...');
-  console.log('📊 Client: Image data length:', base64Image.length);
+export async function analyzeImageForTask(
+	base64Image: string,
+): Promise<TaskAnalysisResult> {
+	console.log("🔍 Client: Starting API image analysis...");
+	console.log("📊 Client: Image data length:", base64Image.length);
 
-  if (!base64Image || base64Image.length === 0) {
-    console.error('❌ Client: Empty or invalid base64 image');
-    return {
-      success: false,
-      error: 'Invalid image data provided.',
-    };
-  }
+	if (!base64Image || base64Image.length === 0) {
+		console.error("❌ Client: Empty or invalid base64 image");
+		return {
+			success: false,
+			error: "Invalid image data provided.",
+		};
+	}
 
-  try {
-    console.log('📝 Client: Preparing API request...');
-    
-    const response = await fetch('/api/analyze-image', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        base64Image,
-      }),
-    });
+	try {
+		console.log("📝 Client: Preparing API request...");
 
-    console.log('📡 Client: API response status:', response.status);
+		const response = await fetch("/api/analyze-image", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				base64Image,
+			}),
+		});
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Client: API error response:', errorData);
-      
-      return {
-        success: false,
-        error: errorData.error || `Server error: ${response.status}`,
-      };
-    }
+		console.log("📡 Client: API response status:", response.status);
 
-    const result = await response.json();
-    console.log('✅ Client: API response received:', result);
+		if (!response.ok) {
+			const errorData = await response.json();
+			console.error("❌ Client: API error response:", errorData);
 
-    return result;
+			return {
+				success: false,
+				error: errorData.error || `Server error: ${response.status}`,
+			};
+		}
 
-  } catch (error) {
-    console.error('❌ Client: API request error:', error);
+		const result = await response.json();
+		console.log("✅ Client: API response received:", result);
 
-    if (error instanceof Error) {
-      console.error('Client Error name:', error.name);
-      console.error('Client Error message:', error.message);
+		return result;
+	} catch (error) {
+		console.error("❌ Client: API request error:", error);
 
-      // Check for specific error types
-      if (error.message.includes('fetch') || error.message.includes('network')) {
-        return {
-          success: false,
-          error: 'Network error. Please check your internet connection and try again.',
-        };
-      }
+		if (error instanceof Error) {
+			console.error("Client Error name:", error.name);
+			console.error("Client Error message:", error.message);
 
-      if (error.message.includes('timeout')) {
-        return {
-          success: false,
-          error: 'Request timeout. Please try again.',
-        };
-      }
-    }
+			// Check for specific error types
+			if (
+				error.message.includes("fetch") ||
+				error.message.includes("network")
+			) {
+				return {
+					success: false,
+					error:
+						"Network error. Please check your internet connection and try again.",
+				};
+			}
 
-    return {
-      success: false,
-      error: 'Failed to analyze image. Please try again.',
-    };
-  }
+			if (error.message.includes("timeout")) {
+				return {
+					success: false,
+					error: "Request timeout. Please try again.",
+				};
+			}
+		}
+
+		return {
+			success: false,
+			error: "Failed to analyze image. Please try again.",
+		};
+	}
 }
