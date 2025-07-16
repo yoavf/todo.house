@@ -8,6 +8,7 @@ export interface Task {
   dueDate?: Date;
   snoozeUntil?: Date;
   order: number; // For custom ordering
+  imageUri?: string; // For tasks created from camera
 }
 
 export type SnoozeDuration = '1hour' | '3hours' | 'tomorrow' | 'nextweek';

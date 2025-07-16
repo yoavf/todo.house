@@ -88,11 +88,12 @@ export default function CameraScreen() {
       if (analysis.success && analysis.task) {
         console.log('✅ Task extracted successfully:', analysis.task);
 
-        // Add the task to store
+        // Add the task to store with image
         const taskId = add({
           title: analysis.task.title,
           location: analysis.task.location,
           completed: false,
+          imageUri: photo.uri,
         });
 
         console.log('💾 Task added to store with ID:', taskId);
