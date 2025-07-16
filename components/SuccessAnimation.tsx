@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 
 interface SuccessAnimationProps {
@@ -10,39 +10,49 @@ interface SuccessAnimationProps {
 export function SuccessAnimation({ visible, onComplete }: SuccessAnimationProps) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const onCompleteRef = useRef(onComplete);
+
+  // Update the ref when onComplete changes
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  const startAnimation = useCallback(() => {
+    // Reset values
+    scaleAnim.setValue(0);
+    opacityAnim.setValue(0);
+
+    // Start animation sequence
+    Animated.sequence([
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 100,
+          friction: 6,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.delay(1000),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onCompleteRef.current?.();
+    });
+  }, [scaleAnim, opacityAnim]);
 
   useEffect(() => {
     if (visible) {
-      // Reset values
-      scaleAnim.setValue(0);
-      opacityAnim.setValue(0);
-
-      // Start animation sequence
-      Animated.sequence([
-        Animated.parallel([
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            tension: 100,
-            friction: 6,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacityAnim, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(1000),
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        onComplete?.();
-      });
+      startAnimation();
     }
-  }, [visible, scaleAnim, opacityAnim, onComplete]);
+  }, [visible, startAnimation]);
 
   if (!visible) return null;
 
