@@ -39,7 +39,9 @@ npm run lint
 app/                    # Expo Router pages
 ├── _layout.tsx        # Root layout with navigation and providers
 ├── index.tsx          # Home screen with task list
-└── camera.tsx         # Camera screen for AI task creation
+├── camera.tsx         # Camera screen for AI task creation
+└── api/               # API routes
+    └── analyze-image+api.ts  # AI image analysis endpoint
 
 components/            # Reusable UI components
 ├── FAB.tsx           # Floating action button
@@ -60,7 +62,8 @@ types/
 └── Task.ts          # Task interface definition
 
 utils/
-├── aiAnalysis.ts    # OpenAI integration for image analysis
+├── aiAnalysis.ts    # Legacy OpenAI integration (deprecated)
+├── apiClient.ts     # API client for image analysis
 ├── demoData.ts      # Demo task data
 └── testAI.ts        # AI testing utilities
 ```
@@ -83,10 +86,11 @@ utils/
 
 ### AI Integration
 
-- OpenAI GPT-4 Vision for image analysis
+- OpenAI GPT-4 Vision for image analysis via API route
 - Structured output using Zod schemas
 - Confidence scoring for task suggestions
 - Error handling for network/API issues
+- Server-side processing for security
 
 ### Task Management
 
@@ -108,7 +112,7 @@ utils/
 
 The app requires OpenAI API configuration:
 
-- `EXPO_PUBLIC_OPENAI_API_KEY` - OpenAI API key for image analysis
+- `OPENAI_API_KEY` - OpenAI API key for image analysis (server-side only)
 
 ## Testing
 
@@ -130,6 +134,7 @@ The app includes debug utilities:
 
 - **TaskStore**: Central state management with persistence
 - **Camera Integration**: Full-screen camera with AI analysis
+- **API Routes**: Server-side AI processing endpoints
 - **Task UI**: Card-based task display with inline editing
 - **Success Animation**: User feedback for task creation
 - **FAB**: Main action button for task creation options
@@ -141,3 +146,8 @@ The app includes debug utilities:
 ## Package and Dependency Guidelines
 
 - Always opt to use well-known stable up-to-date packages rather than reinventing the wheel
+
+## Workflow Guidelines
+
+- Always start work on a new issue in a new branch from `main`
+- Keep pull requests concise with a maximum of 10 atomic commits (if more than that, suggest creating more than one PR)

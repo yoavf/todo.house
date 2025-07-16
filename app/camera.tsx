@@ -6,7 +6,7 @@ import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SuccessAnimation } from '../components/SuccessAnimation';
 import { useTaskStore } from '../store/taskStore';
-import { analyzeImageForTask } from '../utils/aiAnalysis';
+import { analyzeImageForTask } from '../utils/apiClient';
 
 export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
