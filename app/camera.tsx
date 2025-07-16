@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -51,6 +52,57 @@ export default function CameraScreen() {
     router.back();
   };
 
+  const analyzeImage = async (imageUri: string, base64: string) => {
+    try {
+      console.log('🚀 Starting AI analysis...');
+      // Analyze image with AI
+      const analysis = await analyzeImageForTask(base64);
+      console.log('📋 Analysis complete:', analysis);
+
+      if (analysis.success && analysis.task) {
+        console.log('✅ Task extracted successfully:', analysis.task);
+
+        // Add the task to store with image
+        const taskId = add({
+          title: analysis.task.title,
+          location: analysis.task.location,
+          completed: false,
+          imageUri: imageUri,
+        });
+
+        console.log('💾 Task added to store with ID:', taskId);
+
+        // Show success animation instead of alert
+        setShowSuccess(true);
+      } else {
+        console.log('⚠️ Analysis failed:', analysis.error);
+
+        // Show error with option to add manually
+        Alert.alert(
+          'Analysis Failed',
+          analysis.error || 'Could not analyze the image. Would you like to add a task manually?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Add Manually', onPress: () => router.back() }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('❌ Image analysis error:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      Alert.alert(
+        'Error',
+        'Failed to analyze image. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const captureAndAnalyze = async () => {
     if (!cameraRef.current || isAnalyzing) return;
 
@@ -80,39 +132,7 @@ export default function CameraScreen() {
         return;
       }
 
-      console.log('🚀 Starting AI analysis...');
-      // Analyze image with AI
-      const analysis = await analyzeImageForTask(photo.base64);
-      console.log('📋 Analysis complete:', analysis);
-
-      if (analysis.success && analysis.task) {
-        console.log('✅ Task extracted successfully:', analysis.task);
-
-        // Add the task to store with image
-        const taskId = add({
-          title: analysis.task.title,
-          location: analysis.task.location,
-          completed: false,
-          imageUri: photo.uri,
-        });
-
-        console.log('💾 Task added to store with ID:', taskId);
-
-        // Show success animation instead of alert
-        setShowSuccess(true);
-      } else {
-        console.log('⚠️ Analysis failed:', analysis.error);
-
-        // Show error with option to add manually
-        Alert.alert(
-          'Analysis Failed',
-          analysis.error || 'Could not analyze the image. Would you like to add a task manually?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Add Manually', onPress: () => router.back() }
-          ]
-        );
-      }
+      await analyzeImage(photo.uri, photo.base64);
     } catch (error) {
       console.error('❌ Camera capture error:', error);
       console.error('Error details:', {
@@ -123,11 +143,77 @@ export default function CameraScreen() {
 
       Alert.alert(
         'Error',
-        'Failed to capture or analyze image. Please try again.',
+        'Failed to capture image. Please try again.',
         [{ text: 'OK' }]
       );
     } finally {
       console.log('🏁 Capture and analysis flow complete');
+      setIsAnalyzing(false);
+    }
+  };
+
+  const pickImageFromGallery = async () => {
+    if (isAnalyzing) return;
+
+    try {
+      console.log('🖼️ Starting image picker...');
+      setIsAnalyzing(true);
+
+      // Request media library permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'We need access to your photo library to select images.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        console.log('🖼️ Image selected successfully');
+        console.log('📊 Image details:', {
+          uri: asset.uri,
+          width: asset.width,
+          height: asset.height,
+          base64Length: asset.base64?.length || 0,
+        });
+
+        if (!asset.base64) {
+          console.error('❌ No base64 data in selected image');
+          Alert.alert('Error', 'Failed to process selected image');
+          return;
+        }
+
+        await analyzeImage(asset.uri, asset.base64);
+      } else {
+        console.log('📷 Image selection cancelled');
+      }
+    } catch (error) {
+      console.error('❌ Image picker error:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      Alert.alert(
+        'Error',
+        'Failed to select image. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      console.log('🏁 Image picker flow complete');
       setIsAnalyzing(false);
     }
   };
@@ -158,14 +244,21 @@ export default function CameraScreen() {
         {/* Instructions */}
         <View style={styles.instructions}>
           <Text style={styles.instructionText}>
-            Point your camera at a household item or area that needs attention
+            Point your camera at a household item or area that needs attention, or select an image from your gallery
           </Text>
         </View>
 
         {/* Bottom Controls */}
         <View style={styles.controls}>
           <View style={styles.controlsInner}>
-            <View style={styles.controlSpacer} />
+            {/* Gallery Button */}
+            <TouchableOpacity
+              style={[styles.galleryButton, isAnalyzing && styles.galleryButtonDisabled]}
+              onPress={pickImageFromGallery}
+              disabled={isAnalyzing}
+            >
+              <Ionicons name="images-outline" size={24} color="white" />
+            </TouchableOpacity>
 
             {/* Capture Button */}
             <TouchableOpacity
@@ -180,6 +273,7 @@ export default function CameraScreen() {
               )}
             </TouchableOpacity>
 
+            {/* Spacer for symmetry */}
             <View style={styles.controlSpacer} />
           </View>
 
@@ -294,6 +388,19 @@ const styles = StyleSheet.create({
   },
   controlSpacer: {
     width: 80,
+  },
+  galleryButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  galleryButtonDisabled: {
+    opacity: 0.5,
   },
   captureButton: {
     width: 80,
