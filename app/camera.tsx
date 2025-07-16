@@ -83,7 +83,7 @@ export default function CameraScreen() {
           analysis.error || 'Could not analyze the image. Would you like to add a task manually?',
           [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Add Manually', onPress: () => router.back() }
+            { text: 'Add Manually', onPress: () => router.replace('/') }
           ]
         );
       }

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 interface SuccessAnimationProps {
   visible: boolean;
@@ -8,67 +8,48 @@ interface SuccessAnimationProps {
 }
 
 export function SuccessAnimation({ visible, onComplete }: SuccessAnimationProps) {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const onCompleteRef = useRef(onComplete);
-
-  // Update the ref when onComplete changes
-  useEffect(() => {
-    onCompleteRef.current = onComplete;
-  }, [onComplete]);
-
-  const startAnimation = useCallback(() => {
-    // Reset values
-    scaleAnim.setValue(0);
-    opacityAnim.setValue(0);
-
-    // Start animation sequence
-    Animated.sequence([
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 100,
-          friction: 6,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.delay(1000),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onCompleteRef.current?.();
-    });
-  }, [scaleAnim, opacityAnim]);
+  const [showIcon, setShowIcon] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (visible) {
-      startAnimation();
-    }
-  }, [visible, startAnimation]);
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
-  if (!visible) return null;
+      // Show the icon immediately
+      setShowIcon(true);
+
+      // Hide after 1.5 seconds and call onComplete
+      timeoutRef.current = setTimeout(() => {
+        setShowIcon(false);
+        if (onComplete) {
+          onComplete();
+        }
+      }, 1500);
+    } else {
+      setShowIcon(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [visible, onComplete]);
+
+  if (!visible || !showIcon) return null;
 
   return (
     <View style={styles.container}>
-      <Animated.View
-        style={[
-          styles.iconContainer,
-          {
-            transform: [{ scale: scaleAnim }],
-            opacity: opacityAnim,
-          },
-        ]}
-      >
+      <View style={styles.iconContainer}>
         <Ionicons name="checkmark-circle" size={80} color="#28a745" />
-      </Animated.View>
+      </View>
     </View>
   );
 }
