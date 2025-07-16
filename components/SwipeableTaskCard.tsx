@@ -45,6 +45,8 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 					<TouchableOpacity
 						style={styles.completeButton}
 						onPress={handleComplete}
+						accessibilityLabel={task.completed ? "Undo task completion" : "Mark task as complete"}
+						accessibilityRole="button"
 					>
 						<Ionicons
 							name={task.completed ? "arrow-undo" : "checkmark"}
