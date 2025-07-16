@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { SuccessAnimation } from "../components/SuccessAnimation";
 import { useTaskStore } from "../store/taskStore";
 import { analyzeImageForTask } from "../utils/apiClient";
+import { resizeImageForAI, DEFAULT_IMAGE_QUALITY } from "../utils/imageProcessing";
 
 export default function CameraScreen() {
 	const [facing, setFacing] = useState<CameraType>("back");
@@ -68,22 +69,33 @@ export default function CameraScreen() {
 		router.replace("/");
 	};
 
-	const analyzeImage = async (imageUri: string, base64: string) => {
+	const analyzeImage = async (originalImageUri: string) => {
 		try {
-			console.log("🚀 Starting AI analysis...");
-			// Analyze image with AI
-			const analysis = await analyzeImageForTask(base64);
+			console.log("🚀 Starting image processing and AI analysis...");
+			
+			// Process image: resize and center crop to 448x448
+			console.log("🖼️ Processing image for AI analysis...");
+			const processedImage = await resizeImageForAI(originalImageUri);
+			console.log("✅ Image processed successfully:", {
+				width: processedImage.width,
+				height: processedImage.height,
+				base64Length: processedImage.base64.length,
+			});
+
+			// Analyze processed image with AI
+			console.log("🤖 Starting AI analysis...");
+			const analysis = await analyzeImageForTask(processedImage.base64);
 			console.log("📋 Analysis complete:", analysis);
 
 			if (analysis.success && analysis.task) {
 				console.log("✅ Task extracted successfully:", analysis.task);
 
-				// Add the task to store with image
+				// Add the task to store with original image URI (for display purposes)
 				const taskId = add({
 					title: analysis.task.title,
 					location: analysis.task.location,
 					completed: false,
-					imageUri: imageUri,
+					imageUri: originalImageUri, // Use original image for display
 				});
 
 				console.log("💾 Task added to store with ID:", taskId);
@@ -128,8 +140,8 @@ export default function CameraScreen() {
 			// Capture image
 			console.log("📷 Taking picture...");
 			const photo = await cameraRef.current.takePictureAsync({
-				quality: 0.7,
-				base64: true,
+				quality: DEFAULT_IMAGE_QUALITY, // Slightly higher quality since we'll process it
+				base64: false, // We don't need base64 from camera anymore
 				skipProcessing: false,
 			});
 
@@ -138,16 +150,9 @@ export default function CameraScreen() {
 				uri: photo.uri,
 				width: photo.width,
 				height: photo.height,
-				base64Length: photo.base64?.length || 0,
 			});
 
-			if (!photo.base64) {
-				console.error("❌ No base64 data in captured photo");
-				Alert.alert("Error", "Failed to capture image");
-				return;
-			}
-
-			await analyzeImage(photo.uri, photo.base64);
+			await analyzeImage(photo.uri);
 		} catch (error) {
 			console.error("❌ Camera capture error:", error);
 			console.error("Error details:", {
@@ -187,10 +192,9 @@ export default function CameraScreen() {
 			// Launch image picker
 			const result = await ImagePicker.launchImageLibraryAsync({
 				mediaTypes: ImagePicker.MediaTypeOptions.Images,
-				allowsEditing: true,
-				aspect: [4, 3],
-				quality: 0.7,
-				base64: true,
+				allowsEditing: false, // We'll do our own processing
+				quality: DEFAULT_IMAGE_QUALITY, // Slightly higher quality since we'll process it
+				base64: false, // We don't need base64 from picker anymore
 			});
 
 			if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -200,16 +204,9 @@ export default function CameraScreen() {
 					uri: asset.uri,
 					width: asset.width,
 					height: asset.height,
-					base64Length: asset.base64?.length || 0,
 				});
 
-				if (!asset.base64) {
-					console.error("❌ No base64 data in selected image");
-					Alert.alert("Error", "Failed to process selected image");
-					return;
-				}
-
-				await analyzeImage(asset.uri, asset.base64);
+				await analyzeImage(asset.uri);
 			} else {
 				console.log("📷 Image selection cancelled");
 			}
