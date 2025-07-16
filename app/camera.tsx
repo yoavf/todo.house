@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { SuccessAnimation } from "../components/SuccessAnimation";
 import { useTaskStore } from "../store/taskStore";
 import { analyzeImageForTask } from "../utils/apiClient";
-import { resizeImageForAI } from "../utils/imageProcessing";
+import { resizeImageForAI, DEFAULT_IMAGE_QUALITY } from "../utils/imageProcessing";
 
 export default function CameraScreen() {
 	const [facing, setFacing] = useState<CameraType>("back");
@@ -140,7 +140,7 @@ export default function CameraScreen() {
 			// Capture image
 			console.log("📷 Taking picture...");
 			const photo = await cameraRef.current.takePictureAsync({
-				quality: 0.8, // Slightly higher quality since we'll process it
+				quality: DEFAULT_IMAGE_QUALITY, // Slightly higher quality since we'll process it
 				base64: false, // We don't need base64 from camera anymore
 				skipProcessing: false,
 			});
@@ -193,7 +193,7 @@ export default function CameraScreen() {
 			const result = await ImagePicker.launchImageLibraryAsync({
 				mediaTypes: ImagePicker.MediaTypeOptions.Images,
 				allowsEditing: false, // We'll do our own processing
-				quality: 0.8, // Slightly higher quality since we'll process it
+				quality: DEFAULT_IMAGE_QUALITY, // Slightly higher quality since we'll process it
 				base64: false, // We don't need base64 from picker anymore
 			});
 

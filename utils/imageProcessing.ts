@@ -1,6 +1,12 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 /**
+ * Default image quality for camera capture and image processing
+ * Value between 0 and 1, where 1 is highest quality
+ */
+export const DEFAULT_IMAGE_QUALITY = 0.8;
+
+/**
  * Resizes and center crops an image to 448x448 pixels for AI analysis
  * @param imageUri The URI of the image to process
  * @returns Promise containing the processed image with base64 data
@@ -73,7 +79,7 @@ export async function resizeImageForAI(imageUri: string) {
         },
       ],
       {
-        compress: 0.8, // Good quality but not too large
+        compress: DEFAULT_IMAGE_QUALITY, // Good quality but not too large
         format: SaveFormat.JPEG,
         base64: true, // We need base64 for AI analysis
       }
