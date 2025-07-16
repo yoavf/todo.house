@@ -1,6 +1,4 @@
-export { DraggableTaskCard } from './DraggableTaskCard';
-export { DragDropProvider, useDragDrop } from './DragDropContext';
-export { DropZone } from './DropZone';
+export { DraggableTaskItem } from './DraggableTaskItem';
 export { FAB } from './FAB';
 export { InlineTextEdit } from './InlineTextEdit';
 export { LocationPicker } from './LocationPicker';

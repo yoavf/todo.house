@@ -14,7 +14,7 @@ interface TaskStore {
   clearRecentlyAdded: () => void;
   hydrate: () => Promise<void>;
   persist: () => Promise<void>;
-  reorderTasks: (fromIndex: number, toIndex: number) => void;
+  reorderTasks: (newTaskOrder: Task[]) => void;
   snoozeTask: (id: string, duration: SnoozeDuration) => void;
   unsnoozeTask: (id: string) => void;
   setDueDate: (id: string, dueDate?: Date) => void;
@@ -133,36 +133,19 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   // Enhanced task list methods
-  reorderTasks: (fromIndex: number, toIndex: number) => {
+  reorderTasks: (newTaskOrder: Task[]) => {
     set((state) => {
-      const activeTasks = state.tasks.filter(task => !task.snoozeUntil || task.snoozeUntil <= new Date());
       const snoozedTasks = state.tasks.filter(task => task.snoozeUntil && task.snoozeUntil > new Date());
       
-      // Sort active tasks by order
-      const sortedActive = [...activeTasks].sort((a, b) => {
-        if (a.completed !== b.completed) {
-          return a.completed ? 1 : -1;
-        }
-        if (a.dueDate && b.dueDate) {
-          return a.dueDate.getTime() - b.dueDate.getTime();
-        }
-        if (a.dueDate && !b.dueDate) return -1;
-        if (!a.dueDate && b.dueDate) return 1;
-        return b.order - a.order;
-      });
-
-      // Perform reorder
-      const [movedTask] = sortedActive.splice(fromIndex, 1);
-      sortedActive.splice(toIndex, 0, movedTask);
-
-      // Update order values
+      // Update order values based on new array order
       const baseTimestamp = Date.now();
-      sortedActive.forEach((task, index) => {
-        task.order = baseTimestamp - index;
-      });
+      const reorderedTasks = newTaskOrder.map((task, index) => ({
+        ...task,
+        order: baseTimestamp - index,
+      }));
 
       return {
-        tasks: [...sortedActive, ...snoozedTasks],
+        tasks: [...reorderedTasks, ...snoozedTasks],
       };
     });
     

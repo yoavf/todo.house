@@ -1,15 +1,32 @@
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { Task } from '../types/Task';
-import { DraggableTaskCard } from './DraggableTaskCard';
-import { DragDropProvider } from './DragDropContext';
-import { DropZone } from './DropZone';
+import { useTaskStore } from '../store/taskStore';
+import { DraggableTaskItem } from './DraggableTaskItem';
 
 interface TaskListProps {
   tasks: Task[];
 }
 
 export function TaskList({ tasks }: TaskListProps) {
+  const { reorderTasks } = useTaskStore();
+
+  const handleDragEnd = useCallback(({ data }: { data: Task[] }) => {
+    reorderTasks(data);
+  }, [reorderTasks]);
+
+  const renderItem = useCallback(({ item, index, drag, isActive }: RenderItemParams<Task>) => {
+    return (
+      <DraggableTaskItem
+        task={item}
+        index={index}
+        drag={drag}
+        isActive={isActive}
+      />
+    );
+  }, []);
+
   if (tasks.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -20,26 +37,23 @@ export function TaskList({ tasks }: TaskListProps) {
   }
 
   return (
-    <DragDropProvider>
-      <FlatList
-        data={tasks}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <>
-            <DropZone index={index} />
-            <DraggableTaskCard 
-              task={item} 
-              index={index} 
-              isDragEnabled={true}
-            />
-            {index === tasks.length - 1 && <DropZone index={index + 1} />}
-          </>
-        )}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-        scrollEnabled={true}
-      />
-    </DragDropProvider>
+    <DraggableFlatList
+      data={tasks}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      onDragEnd={handleDragEnd}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.listContainer}
+      getItemLayout={(data, index) => ({
+        length: 80, // Approximate task card height
+        offset: 80 * index,
+        index,
+      })}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={10}
+      updateCellsBatchingPeriod={50}
+      windowSize={10}
+    />
   );
 }
 
