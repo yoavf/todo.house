@@ -21,15 +21,15 @@ This is a React Native mobile app called "todo.house" built with Expo that allow
 
 ```bash
 # Start development server
-npm start
+pnpm start
 
 # Run on specific platforms
-npm run android
-npm run ios
-npm run web
+pnpm run android
+pnpm run ios
+pnpm run web
 
 # Linting
-npm run lint
+pnpm run lint
 
 ```
 
