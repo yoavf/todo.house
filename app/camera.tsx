@@ -4,17 +4,17 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+	ActivityIndicator,
+	Alert,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SuccessAnimation } from "../components/SuccessAnimation";
 import { useTaskStore } from "../store/taskStore";
-import { analyzeImageForTask } from "../utils/aiAnalysis";
+import { analyzeImageForTask } from "../utils/apiClient";
 
 export default function CameraScreen() {
 	const [facing, setFacing] = useState<CameraType>("back");
