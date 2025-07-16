@@ -11,11 +11,11 @@ export const DropZone: React.FC<DropZoneProps> = ({ index }) => {
   const { isDragging, dropTargetIndex, draggedIndex } = useDragDrop();
 
   const animatedStyle = useAnimatedStyle(() => {
-    const isTargetZone = dropTargetIndex.value === index && 
+    const isTargetZone = dropTargetIndex.value === index &&
                          dropTargetIndex.value !== -1 &&
-                         isDragging.value && 
-                         draggedIndex.value !== index;
-    
+                         isDragging.value &&
+                         draggedIndex.value !== index - 1 && draggedIndex.value !== index;
+
     return {
       height: isTargetZone ? 40 : 0,
       opacity: isTargetZone ? 1 : 0,

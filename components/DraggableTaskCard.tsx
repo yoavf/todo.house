@@ -89,7 +89,7 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
       if (globalIsDragging.value && draggedIndex.value === index) {
         const displacement = event.translationY;
 
-        runOnJS(handleDragEnd)(index, index, displacement);
+        runOnJS(handleDragEnd)(index, dropTargetIndex.value, displacement);
 
         // Reset values
         globalIsDragging.value = false;
