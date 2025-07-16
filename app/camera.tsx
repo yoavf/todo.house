@@ -49,7 +49,7 @@ export default function CameraScreen() {
   };
 
   const handleClose = () => {
-    router.back();
+    router.replace('/');
   };
 
   const analyzeImage = async (imageUri: string, base64: string) => {
@@ -220,7 +220,7 @@ export default function CameraScreen() {
 
   const handleSuccessComplete = () => {
     setShowSuccess(false);
-    router.back();
+    router.replace('/');
   };
 
   return (
