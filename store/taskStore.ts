@@ -1,7 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { Task, SnoozeDuration } from '../types/Task';
-import { parseDateField, parseRequiredDateField } from '../utils/dateUtils';
+import { 
+  parseDateField, 
+  parseRequiredDateField,
+  getNextWeekendStart,
+  getNextWeekday,
+  getFirstWorkday,
+  isWeekend,
+  isLastDayOfWeekend
+} from '../utils/dateUtils';
+import * as Localization from 'expo-localization';
 
 interface TaskStore {
   tasks: Task[];
@@ -20,28 +29,43 @@ interface TaskStore {
   setDueDate: (id: string, dueDate?: Date) => void;
   getActiveTasks: () => Task[];
   getSnoozedTasks: () => Task[];
+  isSnoozed: (task: Task) => boolean;
 }
 
 const STORAGE_KEY = '@todo_house_tasks';
 
-const calculateSnoozeDate = (duration: SnoozeDuration): Date => {
+const calculateSnoozeDate = (duration: SnoozeDuration): Date | undefined => {
   const now = new Date();
+  const locale = Localization.getLocales()[0]?.languageTag;
   
   switch (duration) {
-    case '1hour':
-      return new Date(now.getTime() + 60 * 60 * 1000);
-    case '3hours':
-      return new Date(now.getTime() + 3 * 60 * 60 * 1000);
     case 'tomorrow':
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(9, 0, 0, 0); // 9 AM tomorrow
       return tomorrow;
-    case 'nextweek':
-      const nextWeek = new Date(now);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      nextWeek.setHours(9, 0, 0, 0); // 9 AM next week
-      return nextWeek;
+      
+    case 'this-weekend':
+      return getNextWeekendStart(now, locale);
+      
+    case 'next-workday':
+      const firstWorkday = getFirstWorkday(locale);
+      const today = now.getDay();
+      
+      // If today is the last day of weekend, go to next week's first workday
+      if (isLastDayOfWeekend(now, locale)) {
+        const nextWeekStart = new Date(now);
+        nextWeekStart.setDate(nextWeekStart.getDate() + 8);
+        return getNextWeekday(firstWorkday, nextWeekStart);
+      }
+      
+      // Otherwise, go to the next occurrence of first workday
+      return getNextWeekday(firstWorkday, now);
+      
+    case 'whenever':
+      // No specific date - return undefined to indicate indefinite snooze
+      return undefined;
+      
     default:
       return now;
   }
@@ -110,6 +134,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           createdAt: parseRequiredDateField(task.createdAt),
           dueDate: parseDateField(task.dueDate),
           snoozeUntil: parseDateField(task.snoozeUntil),
+          isWheneverSnoozed: task.isWheneverSnoozed || false,
           order: task.order !== undefined ? task.order : (task.createdAt ? parseRequiredDateField(task.createdAt).getTime() : Date.now()),
           imageUri: task.imageUri || undefined,
         }));
@@ -154,10 +179,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
   snoozeTask: (id: string, duration: SnoozeDuration) => {
     const snoozeUntil = calculateSnoozeDate(duration);
+    const isWheneverSnoozed = duration === 'whenever';
     
     set((state) => ({
       tasks: state.tasks.map((task) =>
-        task.id === id ? { ...task, snoozeUntil } : task
+        task.id === id ? { ...task, snoozeUntil, isWheneverSnoozed } : task
       ),
     }));
 
@@ -167,7 +193,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   unsnoozeTask: (id: string) => {
     set((state) => ({
       tasks: state.tasks.map((task) =>
-        task.id === id ? { ...task, snoozeUntil: undefined } : task
+        task.id === id ? { ...task, snoozeUntil: undefined, isWheneverSnoozed: false } : task
       ),
     }));
 
@@ -189,7 +215,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const now = new Date();
     
     return tasks
-      .filter(task => !task.snoozeUntil || task.snoozeUntil <= now)
+      .filter(task => !task.isWheneverSnoozed && (!task.snoozeUntil || task.snoozeUntil <= now))
       .sort((a, b) => {
         // Sort by completion status first
         if (a.completed !== b.completed) {
@@ -213,12 +239,22 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const now = new Date();
     
     return tasks
-      .filter(task => task.snoozeUntil && task.snoozeUntil > now)
+      .filter(task => task.isWheneverSnoozed || (task.snoozeUntil && task.snoozeUntil > now))
       .sort((a, b) => {
+        // Whenever tasks go to the bottom
+        if (a.isWheneverSnoozed && !b.isWheneverSnoozed) return 1;
+        if (!a.isWheneverSnoozed && b.isWheneverSnoozed) return -1;
+        
+        // Sort by snooze date for timed snoozes
         if (a.snoozeUntil && b.snoozeUntil) {
           return a.snoozeUntil.getTime() - b.snoozeUntil.getTime();
         }
         return 0;
       });
+  },
+
+  isSnoozed: (task: Task) => {
+    const now = new Date();
+    return task.isWheneverSnoozed || (task.snoozeUntil ? task.snoozeUntil > now : false);
   },
 }));
