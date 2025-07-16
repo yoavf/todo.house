@@ -244,7 +244,7 @@ export default function CameraScreen() {
         {/* Instructions */}
         <View style={styles.instructions}>
           <Text style={styles.instructionText}>
-            Point your camera at a household item or area that needs attention, or select an image from your gallery
+            Capture or select an image to create a task.
           </Text>
         </View>
 
