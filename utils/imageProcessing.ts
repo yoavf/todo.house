@@ -1,10 +1,16 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { Image } from 'react-native';
 
 /**
  * Default image quality for camera capture and image processing
  * Value between 0 and 1, where 1 is highest quality
  */
 export const DEFAULT_IMAGE_QUALITY = 0.8;
+
+/**
+ * Target size for AI image analysis (448x448 pixels)
+ */
+export const AI_TARGET_SIZE = 448;
 
 /**
  * Resizes and center crops an image to 448x448 pixels for AI analysis
@@ -16,24 +22,23 @@ export async function resizeImageForAI(imageUri: string) {
   console.log('📊 Input image URI:', imageUri);
 
   try {
-    // First, get the image dimensions by doing a minimal manipulation
-    const imageInfo = await manipulateAsync(imageUri, [], {
-      compress: 1,
-      format: SaveFormat.JPEG,
+    // Get image dimensions using React Native's Image.getSize
+    const { width: originalWidth, height: originalHeight } = await new Promise<{width: number, height: number}>((resolve, reject) => {
+      Image.getSize(
+        imageUri,
+        (width, height) => resolve({ width, height }),
+        reject
+      );
     });
 
     console.log('📐 Original image dimensions:', {
-      width: imageInfo.width,
-      height: imageInfo.height,
+      width: originalWidth,
+      height: originalHeight,
     });
 
-    const originalWidth = imageInfo.width;
-    const originalHeight = imageInfo.height;
-    const targetSize = 448;
-
-    // Calculate the scale factor to make the smaller dimension equal to 448
-    const scaleWidth = targetSize / originalWidth;
-    const scaleHeight = targetSize / originalHeight;
+    // Calculate the scale factor to make the smaller dimension equal to AI_TARGET_SIZE
+    const scaleWidth = AI_TARGET_SIZE / originalWidth;
+    const scaleHeight = AI_TARGET_SIZE / originalHeight;
     const scale = Math.max(scaleWidth, scaleHeight);
 
     // Calculate new dimensions after scaling
@@ -47,14 +52,14 @@ export async function resizeImageForAI(imageUri: string) {
     });
 
     // Calculate crop position to center the image
-    const cropX = Math.max(0, Math.round((scaledWidth - targetSize) / 2));
-    const cropY = Math.max(0, Math.round((scaledHeight - targetSize) / 2));
+    const cropX = Math.max(0, Math.round((scaledWidth - AI_TARGET_SIZE) / 2));
+    const cropY = Math.max(0, Math.round((scaledHeight - AI_TARGET_SIZE) / 2));
 
     console.log('✂️  Calculated crop position:', {
       cropX,
       cropY,
-      cropWidth: targetSize,
-      cropHeight: targetSize,
+      cropWidth: AI_TARGET_SIZE,
+      cropHeight: AI_TARGET_SIZE,
     });
 
     // Perform the image manipulation: resize then crop
@@ -73,8 +78,8 @@ export async function resizeImageForAI(imageUri: string) {
           crop: {
             originX: cropX,
             originY: cropY,
-            width: Math.min(targetSize, scaledWidth),
-            height: Math.min(targetSize, scaledHeight),
+            width: Math.min(AI_TARGET_SIZE, scaledWidth),
+            height: Math.min(AI_TARGET_SIZE, scaledHeight),
           },
         },
       ],
