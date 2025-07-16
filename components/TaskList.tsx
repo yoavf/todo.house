@@ -2,6 +2,8 @@ import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Task } from '../types/Task';
 import { DraggableTaskCard } from './DraggableTaskCard';
+import { DragDropProvider } from './DragDropContext';
+import { DropZone } from './DropZone';
 
 interface TaskListProps {
   tasks: Task[];
@@ -18,20 +20,26 @@ export function TaskList({ tasks }: TaskListProps) {
   }
 
   return (
-    <FlatList
-      data={tasks}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item, index }) => (
-        <DraggableTaskCard 
-          task={item} 
-          index={index} 
-          isDragEnabled={true}
-        />
-      )}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.listContainer}
-      scrollEnabled={true}
-    />
+    <DragDropProvider>
+      <FlatList
+        data={tasks}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item, index }) => (
+          <>
+            <DropZone index={index} />
+            <DraggableTaskCard 
+              task={item} 
+              index={index} 
+              isDragEnabled={true}
+            />
+            {index === tasks.length - 1 && <DropZone index={index + 1} />}
+          </>
+        )}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+        scrollEnabled={true}
+      />
+    </DragDropProvider>
   );
 }
 
