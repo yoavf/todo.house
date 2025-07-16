@@ -1,30 +1,22 @@
-import React from 'react';
-import { TouchableOpacity } from 'react-native';
-import { ScaleDecorator } from 'react-native-draggable-flatlist';
-import { Task } from '../types/Task';
-import { SwipeableTaskCard } from './SwipeableTaskCard';
+import type React from "react";
+import { ScaleDecorator } from "react-native-draggable-flatlist";
+import type { Task } from "../types/Task";
+import { SwipeableTaskCard } from "./SwipeableTaskCard";
 
 interface DraggableTaskItemProps {
-  task: Task;
-  index: number;
-  drag: () => void;
-  isActive: boolean;
+	task: Task;
+	drag: () => void;
+	isActive: boolean;
 }
 
-export const DraggableTaskItem: React.FC<DraggableTaskItemProps> = ({ 
-  task, 
-  index, 
-  drag, 
-  isActive 
+export const DraggableTaskItem: React.FC<DraggableTaskItemProps> = ({
+	task,
+	drag,
+	isActive,
 }) => {
-  return (
-    <ScaleDecorator>
-      <SwipeableTaskCard 
-        task={task} 
-        index={index} 
-        drag={drag}
-        isActive={isActive}
-      />
-    </ScaleDecorator>
-  );
+	return (
+		<ScaleDecorator>
+			<SwipeableTaskCard task={task} drag={drag} isActive={isActive} />
+		</ScaleDecorator>
+	);
 };

@@ -11,14 +11,12 @@ import { TaskCard } from "./TaskCard";
 
 interface SwipeableTaskCardProps {
 	task: Task;
-	index: number;
 	drag?: () => void;
 	isActive?: boolean;
 }
 
 export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	task,
-	index,
 	drag,
 	isActive = false,
 }) => {
