@@ -1,16 +1,21 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTaskStore } from '../../store/taskStore';
+import { useMemo } from 'react';
 
 export default function TabsLayout() {
   const getActiveTasks = useTaskStore((state) => state.getActiveTasks);
   const getSnoozedTasks = useTaskStore((state) => state.getSnoozedTasks);
   
-  const activeTasks = getActiveTasks();
-  const snoozedTasks = getSnoozedTasks();
-  
-  const pendingCount = activeTasks.filter(task => !task.completed).length;
-  const snoozedCount = snoozedTasks.length;
+  const { pendingCount, snoozedCount } = useMemo(() => {
+    const activeTasks = getActiveTasks();
+    const snoozedTasks = getSnoozedTasks();
+    
+    return {
+      pendingCount: activeTasks.filter(task => !task.completed).length,
+      snoozedCount: snoozedTasks.length
+    };
+  }, [getActiveTasks, getSnoozedTasks]);
 
   return (
     <Tabs

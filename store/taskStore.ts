@@ -10,7 +10,7 @@ import {
   isWeekend,
   isLastDayOfWeekend
 } from '../utils/dateUtils';
-import * as Localization from 'expo-localization';
+import { getCurrentLocale } from '../utils/localeUtils';
 
 interface TaskStore {
   tasks: Task[];
@@ -36,19 +36,19 @@ const STORAGE_KEY = '@todo_house_tasks';
 
 const calculateSnoozeDate = (duration: SnoozeDuration): Date | undefined => {
   const now = new Date();
-  const locale = Localization.getLocales()[0]?.languageTag;
+  const locale = getCurrentLocale();
   
   switch (duration) {
-    case 'tomorrow':
+    case SnoozeDuration.TOMORROW:
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(9, 0, 0, 0); // 9 AM tomorrow
       return tomorrow;
       
-    case 'this-weekend':
+    case SnoozeDuration.THIS_WEEKEND:
       return getNextWeekendStart(now, locale);
       
-    case 'next-workday':
+    case SnoozeDuration.NEXT_WORKDAY:
       const firstWorkday = getFirstWorkday(locale);
       const today = now.getDay();
       
@@ -62,7 +62,7 @@ const calculateSnoozeDate = (duration: SnoozeDuration): Date | undefined => {
       // Otherwise, go to the next occurrence of first workday
       return getNextWeekday(firstWorkday, now);
       
-    case 'whenever':
+    case SnoozeDuration.WHENEVER:
       // No specific date - return undefined to indicate indefinite snooze
       return undefined;
       
@@ -179,7 +179,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
   snoozeTask: (id: string, duration: SnoozeDuration) => {
     const snoozeUntil = calculateSnoozeDate(duration);
-    const isWheneverSnoozed = duration === 'whenever';
+    const isWheneverSnoozed = duration === SnoozeDuration.WHENEVER;
     
     set((state) => ({
       tasks: state.tasks.map((task) =>

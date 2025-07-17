@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTaskStore } from '../../store/taskStore';
 import { TaskCard } from '../../components/TaskCard';
 import { getRandomWheneverLabel } from '../../utils/dateUtils';
+import { MILLISECONDS_PER_HOUR, MILLISECONDS_PER_MINUTE } from '../../utils/constants';
 
 export default function SnoozedScreen() {
   const getSnoozedTasks = useTaskStore((state) => state.getSnoozedTasks);
@@ -19,8 +20,8 @@ export default function SnoozedScreen() {
     
     if (diff <= 0) return 'Ready to unsnooze';
     
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const hours = Math.floor(diff / MILLISECONDS_PER_HOUR);
+    const minutes = Math.floor((diff % MILLISECONDS_PER_HOUR) / MILLISECONDS_PER_MINUTE);
     const days = Math.floor(hours / 24);
     
     if (days > 0) {

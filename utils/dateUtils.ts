@@ -3,6 +3,11 @@
  */
 
 import { SnoozeDuration } from '../types/Task';
+import { getCurrentLocale, getCurrentRegion } from './localeUtils';
+import { MILLISECONDS_PER_DAY } from './constants';
+import * as Localization from 'expo-localization';
+
+const { Weekday } = Localization;
 
 /**
  * Safely parses a date field from stored data
@@ -35,28 +40,32 @@ export const parseRequiredDateField = (dateValue: any): Date => {
 };
 
 /**
- * Weekend configuration by locale
+ * Weekend configuration by locale using expo-localization standards
  */
 export interface WeekendConfig {
-  start: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  start: number; // Using Weekday constants: Sunday=1, Monday=2, ..., Saturday=7
   end: number;
 }
 
 /**
- * Get weekend configuration for a locale
- * Default to Saturday-Sunday (US style) if locale not recognized
+ * Get weekend configuration for a locale using proper expo-localization APIs
+ * Uses region detection instead of string matching
  */
 export const getWeekendConfig = (locale?: string): WeekendConfig => {
-  // Normalize locale
-  const normalizedLocale = locale?.toLowerCase() || 'en-us';
+  const region = getCurrentRegion();
   
   // Israel: Friday-Saturday weekend
-  if (normalizedLocale.includes('il') || normalizedLocale.includes('he')) {
-    return { start: 5, end: 6 }; // Friday-Saturday
+  if (region === 'IL') {
+    return { start: Weekday.FRIDAY, end: Weekday.SATURDAY }; // 6-7
   }
   
-  // Most other countries: Saturday-Sunday weekend
-  return { start: 6, end: 0 }; // Saturday-Sunday
+  // Many Middle Eastern countries: Friday-Saturday
+  if (['SA', 'AE', 'BH', 'KW', 'QA'].includes(region)) {
+    return { start: Weekday.FRIDAY, end: Weekday.SATURDAY }; // 6-7
+  }
+  
+  // Default: Saturday-Sunday weekend
+  return { start: Weekday.SATURDAY, end: Weekday.SUNDAY }; // 7-1
 };
 
 /**
@@ -65,7 +74,8 @@ export const getWeekendConfig = (locale?: string): WeekendConfig => {
 export const getFirstWorkday = (locale?: string): number => {
   const weekend = getWeekendConfig(locale);
   // Work week starts the day after weekend ends
-  return (weekend.end + 1) % 7;
+  // Convert from expo-localization format (1-7) to JavaScript format (0-6)
+  return weekend.end === Weekday.SUNDAY ? 1 : (weekend.end % 7);
 };
 
 /**
@@ -73,13 +83,16 @@ export const getFirstWorkday = (locale?: string): number => {
  */
 export const isWeekend = (date: Date, locale?: string): boolean => {
   const weekend = getWeekendConfig(locale);
-  const dayOfWeek = date.getDay();
+  const dayOfWeek = date.getDay() + 1; // Convert to expo-localization format (1-7)
   
   if (weekend.start <= weekend.end) {
-    // Weekend doesn't cross week boundary (e.g., Sat-Sun: 6-0 becomes 6-7)
+    // Weekend doesn't cross week boundary (e.g., Sat-Sun: 7-1 becomes 7-7 for comparison)
+    if (weekend.end === Weekday.SUNDAY) {
+      return dayOfWeek === weekend.start || dayOfWeek === Weekday.SUNDAY;
+    }
     return dayOfWeek >= weekend.start && dayOfWeek <= weekend.end;
   } else {
-    // Weekend crosses week boundary (e.g., Fri-Sat: 5-6)
+    // Weekend crosses week boundary (e.g., Fri-Sat: 6-7)
     return dayOfWeek >= weekend.start || dayOfWeek <= weekend.end;
   }
 };
@@ -89,22 +102,26 @@ export const isWeekend = (date: Date, locale?: string): boolean => {
  */
 export const isLastDayOfWeekend = (date: Date, locale?: string): boolean => {
   const weekend = getWeekendConfig(locale);
-  return date.getDay() === weekend.end;
+  const dayOfWeek = date.getDay() + 1; // Convert to expo-localization format (1-7)
+  return dayOfWeek === weekend.end;
 };
 
 /**
- * Get the name of a weekday
+ * Get the name of a weekday using proper locale support
  */
 export const getWeekdayName = (dayNumber: number, locale?: string): string => {
+  const currentLocale = locale || getCurrentLocale();
   const date = new Date();
-  date.setDate(date.getDate() - date.getDay() + dayNumber);
+  // Convert from JavaScript format (0-6) to expo-localization if needed
+  const jsDay = dayNumber > 7 ? dayNumber - 1 : dayNumber;
+  date.setDate(date.getDate() - date.getDay() + jsDay);
   
   try {
-    return date.toLocaleDateString(locale || 'en-US', { weekday: 'long' });
+    return date.toLocaleDateString(currentLocale, { weekday: 'long' });
   } catch {
     // Fallback to English names
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[dayNumber] || 'Sunday';
+    return days[jsDay] || 'Sunday';
   }
 };
 
@@ -129,7 +146,9 @@ export const getNextWeekday = (targetDay: number, fromDate: Date = new Date()): 
  */
 export const getNextWeekendStart = (fromDate: Date = new Date(), locale?: string): Date => {
   const weekend = getWeekendConfig(locale);
-  return getNextWeekday(weekend.start, fromDate);
+  // Convert from expo-localization format (1-7) to JavaScript format (0-6)
+  const jsWeekendStart = weekend.start === Weekday.SUNDAY ? 0 : weekend.start - 1;
+  return getNextWeekday(jsWeekendStart, fromDate);
 };
 
 /**
@@ -154,7 +173,7 @@ export const getRandomWheneverLabel = (): string => {
  */
 export const getSnoozeOptions = (locale?: string) => {
   const now = new Date();
-  const currentLocale = locale || 'en-US';
+  const currentLocale = locale || getCurrentLocale();
   const weekend = getWeekendConfig(currentLocale);
   const firstWorkday = getFirstWorkday(currentLocale);
   const firstWorkdayName = getWeekdayName(firstWorkday, currentLocale);
@@ -168,28 +187,28 @@ export const getSnoozeOptions = (locale?: string) => {
   // Calculate dates for display
   const weekendStart = getNextWeekendStart(now, currentLocale);
   const nextWorkday = isLastWeekendDay 
-    ? getNextWeekday(firstWorkday, new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000))
+    ? getNextWeekday(firstWorkday, new Date(now.getTime() + 8 * MILLISECONDS_PER_DAY))
     : getNextWeekday(firstWorkday, now);
     
-  const isWorkdayFarAway = nextWorkday.getTime() - now.getTime() > 7 * 24 * 60 * 60 * 1000;
+  const isWorkdayFarAway = nextWorkday.getTime() - now.getTime() > 7 * MILLISECONDS_PER_DAY;
   
   return [
     {
-      duration: 'tomorrow' as SnoozeDuration,
+      duration: SnoozeDuration.TOMORROW,
       label: 'Tomorrow',
       icon: 'sunny-outline',
       description: `Tomorrow at 9 AM`,
       date: tomorrow
     },
     {
-      duration: 'this-weekend' as SnoozeDuration,
+      duration: SnoozeDuration.THIS_WEEKEND,
       label: isCurrentlyWeekend ? 'Next Weekend' : 'This Weekend',
       icon: 'calendar-outline', 
       description: `${weekendStart.toLocaleDateString(currentLocale, { weekday: 'long', month: 'short', day: 'numeric' })} at 9 AM`,
       date: weekendStart
     },
     {
-      duration: 'next-workday' as SnoozeDuration,
+      duration: SnoozeDuration.NEXT_WORKDAY,
       label: isCurrentlyWeekend && !isLastWeekendDay 
         ? `Coming ${firstWorkdayName}`
         : isWorkdayFarAway 
@@ -200,7 +219,7 @@ export const getSnoozeOptions = (locale?: string) => {
       date: nextWorkday
     },
     {
-      duration: 'whenever' as SnoozeDuration,
+      duration: SnoozeDuration.WHENEVER,
       label: getRandomWheneverLabel(),
       icon: 'infinite-outline',
       description: 'No specific date',

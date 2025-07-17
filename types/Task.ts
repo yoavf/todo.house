@@ -12,4 +12,11 @@ export interface Task {
   imageUri?: string; // For tasks created from camera
 }
 
-export type SnoozeDuration = 'tomorrow' | 'this-weekend' | 'next-workday' | 'whenever';
+export const SnoozeDuration = {
+  TOMORROW: 'tomorrow',
+  THIS_WEEKEND: 'this-weekend',
+  NEXT_WORKDAY: 'next-workday',
+  WHENEVER: 'whenever'
+} as const;
+
+export type SnoozeDuration = typeof SnoozeDuration[keyof typeof SnoozeDuration];

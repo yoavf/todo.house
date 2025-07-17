@@ -5,7 +5,7 @@ import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useTaskStore } from '../store/taskStore';
 import { SnoozeDuration } from '../types/Task';
 import { getSnoozeOptions } from '../utils/dateUtils';
-import * as Localization from 'expo-localization';
+import { getCurrentLocale } from '../utils/localeUtils';
 
 interface SnoozeActionSheetProps {
   bottomSheetRef: React.RefObject<BottomSheetModal | null>;
@@ -21,7 +21,7 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
   const { snoozeTask } = useTaskStore();
   
   const snoozeOptions = useMemo(() => {
-    const locale = Localization.getLocales()[0]?.languageTag;
+    const locale = getCurrentLocale();
     return getSnoozeOptions(locale);
   }, []);
 
