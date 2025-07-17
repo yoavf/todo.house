@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useTaskStore } from '../../store/taskStore';
+import { useTaskStore, getSnoozedTasks } from '../../store/taskStore';
 import { TaskCard } from '../../components/TaskCard';
 import { getRandomWheneverLabel } from '../../utils/dateUtils';
 import { MILLISECONDS_PER_HOUR, MILLISECONDS_PER_MINUTE } from '../../utils/constants';
 
 export default function SnoozedScreen() {
-  const snoozedTasks = useTaskStore((state) => state.getSnoozedTasks());
+  const tasks = useTaskStore((state) => state.tasks);
   const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask);
+  
+  const snoozedTasks = useMemo(() => getSnoozedTasks(tasks), [tasks]);
 
   const formatTimeRemaining = (snoozeUntil?: Date): string => {
     if (!snoozeUntil) return getRandomWheneverLabel();
