@@ -1,9 +1,11 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useTaskStore } from '../store/taskStore';
 import { SnoozeDuration } from '../types/Task';
+import { getSnoozeOptions } from '../utils/dateUtils';
+import { getCurrentLocale } from '../utils/localeUtils';
 
 interface SnoozeActionSheetProps {
   bottomSheetRef: React.RefObject<BottomSheetModal | null>;
@@ -11,39 +13,17 @@ interface SnoozeActionSheetProps {
   onClose: () => void;
 }
 
-const SNOOZE_OPTIONS: { duration: SnoozeDuration; label: string; icon: string; description: string }[] = [
-  {
-    duration: '1hour',
-    label: '1 Hour',
-    icon: 'time-outline',
-    description: 'Snooze for 1 hour',
-  },
-  {
-    duration: '3hours',
-    label: '3 Hours',
-    icon: 'time-outline',
-    description: 'Snooze for 3 hours',
-  },
-  {
-    duration: 'tomorrow',
-    label: 'Tomorrow',
-    icon: 'sunny-outline',
-    description: 'Snooze until 9 AM tomorrow',
-  },
-  {
-    duration: 'nextweek',
-    label: 'Next Week',
-    icon: 'calendar-outline',
-    description: 'Snooze until 9 AM next week',
-  },
-];
-
 export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
   bottomSheetRef,
   taskId,
   onClose,
 }) => {
   const { snoozeTask } = useTaskStore();
+  
+  const snoozeOptions = useMemo(() => {
+    const locale = getCurrentLocale();
+    return getSnoozeOptions(locale);
+  }, []);
 
   const handleSnooze = useCallback((duration: SnoozeDuration) => {
     try {
@@ -51,14 +31,14 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
       onClose();
       
       // Show confirmation
-      const option = SNOOZE_OPTIONS.find(opt => opt.duration === duration);
+      const option = snoozeOptions.find(opt => opt.duration === duration);
       if (option) {
-        Alert.alert('Task Snoozed', `Task has been snoozed ${option.label.toLowerCase()}`);
+        Alert.alert('Task Snoozed', `Task has been snoozed until ${option.label.toLowerCase()}`);
       }
     } catch {
       Alert.alert('Error', 'Failed to snooze task');
     }
-  }, [snoozeTask, taskId, onClose]);
+  }, [snoozeTask, taskId, onClose, snoozeOptions]);
 
   return (
     <BottomSheetModal
@@ -79,7 +59,7 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
         <Text style={styles.subtitle}>Choose when to be reminded about this task</Text>
 
         <View style={styles.optionsContainer}>
-          {SNOOZE_OPTIONS.map((option) => (
+          {snoozeOptions.map((option) => (
             <TouchableOpacity
               key={option.duration}
               style={styles.option}

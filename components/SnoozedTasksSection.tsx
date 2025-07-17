@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTaskStore } from '../store/taskStore';
 import { TaskCard } from './TaskCard';
+import { getRandomWheneverLabel } from '../utils/dateUtils';
 
 interface SnoozedTasksSectionProps {
   isExpanded?: boolean;
@@ -16,7 +17,9 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
   const { getSnoozedTasks, unsnoozeTask } = useTaskStore();
   const snoozedTasks = getSnoozedTasks();
 
-  const formatTimeRemaining = (snoozeUntil: Date): string => {
+  const formatTimeRemaining = (snoozeUntil?: Date): string => {
+    if (!snoozeUntil) return getRandomWheneverLabel();
+    
     const now = new Date();
     const diff = snoozeUntil.getTime() - now.getTime();
     
@@ -78,7 +81,7 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
               
               <View style={styles.snoozeInfo}>
                 <Text style={styles.timeRemaining}>
-                  {task.snoozeUntil ? formatTimeRemaining(task.snoozeUntil) : ''}
+                  {formatTimeRemaining(task.snoozeUntil)}
                 </Text>
                 <TouchableOpacity
                   style={styles.unsnoozeButton}

@@ -32,6 +32,7 @@ export default function RootLayout() {
         <HydrationWrapper>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
               name="camera"
               options={{
