@@ -104,7 +104,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   remove: (id) => {
-    console.log('TaskStore: remove called for task:', id);
     set((state) => ({
       tasks: state.tasks.filter((task) => task.id !== id),
     }));
@@ -113,7 +112,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   toggle: (id) => {
-    console.log('TaskStore: toggle called for task:', id);
     set((state) => ({
       tasks: state.tasks.map((task) =>
         task.id === id ? { ...task, completed: !task.completed } : task
@@ -193,7 +191,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   unsnoozeTask: (id: string) => {
-    console.log('TaskStore: unsnoozeTask called for task:', id);
     set((state) => ({
       tasks: state.tasks.map((task) =>
         task.id === id ? { ...task, snoozeUntil: undefined, isWheneverSnoozed: false } : task

@@ -8,9 +8,8 @@ import { getRandomWheneverLabel } from '../../utils/dateUtils';
 import { MILLISECONDS_PER_HOUR, MILLISECONDS_PER_MINUTE } from '../../utils/constants';
 
 export default function SnoozedScreen() {
-  const getSnoozedTasks = useTaskStore((state) => state.getSnoozedTasks);
+  const snoozedTasks = useTaskStore((state) => state.getSnoozedTasks());
   const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask);
-  const snoozedTasks = getSnoozedTasks();
 
   const formatTimeRemaining = (snoozeUntil?: Date): string => {
     if (!snoozeUntil) return getRandomWheneverLabel();

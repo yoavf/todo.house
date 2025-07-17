@@ -14,9 +14,8 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
   isExpanded = false,
   onToggleExpanded,
 }) => {
-  const getSnoozedTasks = useTaskStore((state) => state.getSnoozedTasks);
+  const snoozedTasks = useTaskStore((state) => state.getSnoozedTasks());
   const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask);
-  const snoozedTasks = getSnoozedTasks();
 
   const formatTimeRemaining = (snoozeUntil?: Date): string => {
     if (!snoozeUntil) return getRandomWheneverLabel();
@@ -40,13 +39,7 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
   };
 
   const handleUnsnooze = (taskId: string) => {
-    console.log('SnoozedTasksSection: handleUnsnooze called for task:', taskId);
-    alert(`Unsnooze button pressed for task: ${taskId}`);
-    try {
-      unsnoozeTask(taskId);
-    } catch (error) {
-      console.error('Error unsnoozing task:', error);
-    }
+    unsnoozeTask(taskId);
   };
 
   if (snoozedTasks.length === 0) {
