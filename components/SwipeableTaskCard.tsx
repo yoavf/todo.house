@@ -20,19 +20,41 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	drag,
 	isActive = false,
 }) => {
-	const { remove, toggle } = useTaskStore();
+	const remove = useTaskStore((state) => state.remove);
+	const toggle = useTaskStore((state) => state.toggle);
 	const snoozeSheetRef = useRef<BottomSheetModal>(null);
 
 	const handleComplete = useCallback(() => {
-		toggle(task.id);
+		console.log('SwipeableTaskCard: handleComplete called for task:', task.id, 'completed:', task.completed);
+		console.log('toggle function:', typeof toggle);
+		try {
+			toggle(task.id);
+			console.log('SwipeableTaskCard: toggle call completed');
+		} catch (error) {
+			console.error('Error toggling task:', error);
+		}
 	}, [toggle, task.id]);
 
 	const handleSnooze = useCallback(() => {
-		snoozeSheetRef.current?.present();
-	}, []);
+		console.log('SwipeableTaskCard: handleSnooze called for task:', task.id);
+		console.log('snoozeSheetRef.current:', snoozeSheetRef.current);
+		try {
+			snoozeSheetRef.current?.present();
+			console.log('SwipeableTaskCard: snooze sheet present call completed');
+		} catch (error) {
+			console.error('Error opening snooze sheet:', error);
+		}
+	}, [task.id]);
 
 	const handleDelete = useCallback(() => {
-		remove(task.id);
+		console.log('SwipeableTaskCard: handleDelete called for task:', task.id);
+		console.log('remove function:', typeof remove);
+		try {
+			remove(task.id);
+			console.log('SwipeableTaskCard: remove call completed');
+		} catch (error) {
+			console.error('Error removing task:', error);
+		}
 	}, [remove, task.id]);
 
 	const renderUnderlayLeft = useCallback(
@@ -43,6 +65,8 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 					<TouchableOpacity
 						style={styles.completeButton}
 						onPress={handleComplete}
+						activeOpacity={0.7}
+						delayPressIn={0}
 						accessibilityLabel={task.completed ? "Undo task completion" : "Mark task as complete"}
 						accessibilityRole="button"
 					>
@@ -64,11 +88,21 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	const renderUnderlayRight = useCallback(
 		() => (
 			<View style={styles.actionsContainer}>
-				<TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+				<TouchableOpacity 
+					style={styles.deleteButton} 
+					onPress={handleDelete}
+					activeOpacity={0.7}
+					delayPressIn={0}
+				>
 					<Ionicons name="trash" size={20} color="white" />
 					<Text style={styles.actionText}>Delete</Text>
 				</TouchableOpacity>
-				<TouchableOpacity style={styles.snoozeButton} onPress={handleSnooze}>
+				<TouchableOpacity 
+					style={styles.snoozeButton} 
+					onPress={handleSnooze}
+					activeOpacity={0.7}
+					delayPressIn={0}
+				>
 					<Ionicons name="time" size={20} color="white" />
 					<Text style={styles.actionText}>Snooze</Text>
 				</TouchableOpacity>
