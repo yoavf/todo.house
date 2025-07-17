@@ -27,6 +27,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	const handleComplete = useCallback(() => {
 		console.log('SwipeableTaskCard: handleComplete called for task:', task.id, 'completed:', task.completed);
 		console.log('toggle function:', typeof toggle);
+		alert(`Complete button pressed for task: ${task.id}`);
 		try {
 			toggle(task.id);
 			console.log('SwipeableTaskCard: toggle call completed');
@@ -38,6 +39,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	const handleSnooze = useCallback(() => {
 		console.log('SwipeableTaskCard: handleSnooze called for task:', task.id);
 		console.log('snoozeSheetRef.current:', snoozeSheetRef.current);
+		alert(`Snooze button pressed for task: ${task.id}`);
 		try {
 			snoozeSheetRef.current?.present();
 			console.log('SwipeableTaskCard: snooze sheet present call completed');
@@ -49,6 +51,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	const handleDelete = useCallback(() => {
 		console.log('SwipeableTaskCard: handleDelete called for task:', task.id);
 		console.log('remove function:', typeof remove);
+		alert(`Delete button pressed for task: ${task.id}`);
 		try {
 			remove(task.id);
 			console.log('SwipeableTaskCard: remove call completed');
@@ -119,7 +122,8 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 				renderUnderlayRight={renderUnderlayRight}
 				snapPointsLeft={[100]}
 				snapPointsRight={[160]}
-				activationThreshold={10}
+				activationThreshold={5}
+				swipeEnabled={true}
 			>
 				<View style={styles.taskCard}>
 					<View style={styles.taskContent}>

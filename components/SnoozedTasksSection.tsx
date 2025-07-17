@@ -41,6 +41,7 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
 
   const handleUnsnooze = (taskId: string) => {
     console.log('SnoozedTasksSection: handleUnsnooze called for task:', taskId);
+    alert(`Unsnooze button pressed for task: ${taskId}`);
     try {
       unsnoozeTask(taskId);
     } catch (error) {

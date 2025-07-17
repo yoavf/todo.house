@@ -2,6 +2,7 @@ import React from 'react';
 import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FAB, TaskList } from '../../components';
+import { TestActionButtons } from '../../components/TestActionButtons';
 import { useTaskStore } from '../../store/taskStore';
 
 export default function ActiveTasksScreen() {
@@ -25,6 +26,14 @@ export default function ActiveTasksScreen() {
           <Text style={styles.sectionTitle}>Your Tasks</Text>
           <Text style={styles.pendingCount}>{pendingCount} pending</Text>
         </View>
+
+        {/* Test Action Buttons - temporary for debugging */}
+        {sortedTasks.length > 0 && (
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>Test Buttons (Debug):</Text>
+            <TestActionButtons task={sortedTasks[0]} />
+          </View>
+        )}
 
         {/* Task List */}
         <TaskList tasks={sortedTasks} />
