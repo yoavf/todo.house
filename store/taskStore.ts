@@ -27,8 +27,6 @@ interface TaskStore {
   snoozeTask: (id: string, duration: SnoozeDuration) => void;
   unsnoozeTask: (id: string) => void;
   setDueDate: (id: string, dueDate?: Date) => void;
-  getActiveTasks: () => Task[];
-  getSnoozedTasks: () => Task[];
   isSnoozed: (task: Task) => boolean;
 }
 
@@ -210,51 +208,51 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     get().persist();
   },
 
-  getActiveTasks: () => {
-    const { tasks } = get();
-    const now = new Date();
-    
-    return tasks
-      .filter(task => !task.isWheneverSnoozed && (!task.snoozeUntil || task.snoozeUntil <= now))
-      .sort((a, b) => {
-        // Sort by completion status first
-        if (a.completed !== b.completed) {
-          return a.completed ? 1 : -1;
-        }
-        
-        // Within each completion group, sort by due date first
-        if (a.dueDate && b.dueDate) {
-          return a.dueDate.getTime() - b.dueDate.getTime();
-        }
-        if (a.dueDate && !b.dueDate) return -1;
-        if (!a.dueDate && b.dueDate) return 1;
-        
-        // Then by order (newest first)
-        return b.order - a.order;
-      });
-  },
-
-  getSnoozedTasks: () => {
-    const { tasks } = get();
-    const now = new Date();
-    
-    return tasks
-      .filter(task => task.isWheneverSnoozed || (task.snoozeUntil && task.snoozeUntil > now))
-      .sort((a, b) => {
-        // Whenever tasks go to the bottom
-        if (a.isWheneverSnoozed && !b.isWheneverSnoozed) return 1;
-        if (!a.isWheneverSnoozed && b.isWheneverSnoozed) return -1;
-        
-        // Sort by snooze date for timed snoozes
-        if (a.snoozeUntil && b.snoozeUntil) {
-          return a.snoozeUntil.getTime() - b.snoozeUntil.getTime();
-        }
-        return 0;
-      });
-  },
 
   isSnoozed: (task: Task) => {
     const now = new Date();
     return task.isWheneverSnoozed || (task.snoozeUntil ? task.snoozeUntil > now : false);
   },
 }));
+
+// Helper functions for filtering and sorting tasks
+export const getActiveTasks = (tasks: Task[]): Task[] => {
+  const now = new Date();
+  
+  return tasks
+    .filter(task => !task.isWheneverSnoozed && (!task.snoozeUntil || task.snoozeUntil <= now))
+    .sort((a, b) => {
+      // Sort by completion status first
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+      
+      // Within each completion group, sort by due date first
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate.getTime() - b.dueDate.getTime();
+      }
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+      
+      // Then by order (newest first)
+      return b.order - a.order;
+    });
+};
+
+export const getSnoozedTasks = (tasks: Task[]): Task[] => {
+  const now = new Date();
+  
+  return tasks
+    .filter(task => task.isWheneverSnoozed || (task.snoozeUntil && task.snoozeUntil > now))
+    .sort((a, b) => {
+      // Whenever tasks go to the bottom
+      if (a.isWheneverSnoozed && !b.isWheneverSnoozed) return 1;
+      if (!a.isWheneverSnoozed && b.isWheneverSnoozed) return -1;
+      
+      // Sort by snooze date for timed snoozes
+      if (a.snoozeUntil && b.snoozeUntil) {
+        return a.snoozeUntil.getTime() - b.snoozeUntil.getTime();
+      }
+      return 0;
+    });
+};

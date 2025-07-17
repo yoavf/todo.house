@@ -20,7 +20,8 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	drag,
 	isActive = false,
 }) => {
-	const { remove, toggle } = useTaskStore();
+	const remove = useTaskStore((state) => state.remove);
+	const toggle = useTaskStore((state) => state.toggle);
 	const snoozeSheetRef = useRef<BottomSheetModal>(null);
 
 	const handleComplete = useCallback(() => {
@@ -43,6 +44,8 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 					<TouchableOpacity
 						style={styles.completeButton}
 						onPress={handleComplete}
+						activeOpacity={0.7}
+						delayPressIn={0}
 						accessibilityLabel={task.completed ? "Undo task completion" : "Mark task as complete"}
 						accessibilityRole="button"
 					>
@@ -64,11 +67,21 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	const renderUnderlayRight = useCallback(
 		() => (
 			<View style={styles.actionsContainer}>
-				<TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+				<TouchableOpacity 
+					style={styles.deleteButton} 
+					onPress={handleDelete}
+					activeOpacity={0.7}
+					delayPressIn={0}
+				>
 					<Ionicons name="trash" size={20} color="white" />
 					<Text style={styles.actionText}>Delete</Text>
 				</TouchableOpacity>
-				<TouchableOpacity style={styles.snoozeButton} onPress={handleSnooze}>
+				<TouchableOpacity 
+					style={styles.snoozeButton} 
+					onPress={handleSnooze}
+					activeOpacity={0.7}
+					delayPressIn={0}
+				>
 					<Ionicons name="time" size={20} color="white" />
 					<Text style={styles.actionText}>Snooze</Text>
 				</TouchableOpacity>
@@ -85,7 +98,8 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 				renderUnderlayRight={renderUnderlayRight}
 				snapPointsLeft={[100]}
 				snapPointsRight={[160]}
-				activationThreshold={10}
+				activationThreshold={5}
+				swipeEnabled={true}
 			>
 				<View style={styles.taskCard}>
 					<View style={styles.taskContent}>

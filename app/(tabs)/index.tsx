@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FAB, TaskList } from '../../components';
-import { useTaskStore } from '../../store/taskStore';
+import { useTaskStore, getActiveTasks } from '../../store/taskStore';
 
 export default function ActiveTasksScreen() {
-  const getActiveTasks = useTaskStore((state) => state.getActiveTasks);
-  const sortedTasks = getActiveTasks();
-
-  const pendingCount = sortedTasks.filter(task => !task.completed).length;
+  const tasks = useTaskStore((state) => state.tasks);
+  
+  const sortedTasks = useMemo(() => getActiveTasks(tasks), [tasks]);
+  const pendingCount = useMemo(() => sortedTasks.filter(task => !task.completed).length, [sortedTasks]);
 
   return (
     <SafeAreaView style={styles.container}>

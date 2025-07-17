@@ -1,21 +1,19 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTaskStore } from '../../store/taskStore';
+import { useTaskStore, getActiveTasks, getSnoozedTasks } from '../../store/taskStore';
 import { useMemo } from 'react';
 
 export default function TabsLayout() {
-  const getActiveTasks = useTaskStore((state) => state.getActiveTasks);
-  const getSnoozedTasks = useTaskStore((state) => state.getSnoozedTasks);
+  const tasks = useTaskStore((state) => state.tasks);
   
   const { pendingCount, snoozedCount } = useMemo(() => {
-    const activeTasks = getActiveTasks();
-    const snoozedTasks = getSnoozedTasks();
-    
+    const activeTasks = getActiveTasks(tasks);
+    const snoozedTasks = getSnoozedTasks(tasks);
     return {
       pendingCount: activeTasks.filter(task => !task.completed).length,
       snoozedCount: snoozedTasks.length
     };
-  }, [getActiveTasks, getSnoozedTasks]);
+  }, [tasks]);
 
   return (
     <Tabs
@@ -53,7 +51,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="time" size={size} color={color} />
           ),
-          tabBarBadge: snoozedCount > 0 ? snoozedCount : undefined,
         }}
       />
     </Tabs>

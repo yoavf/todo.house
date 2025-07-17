@@ -30,11 +30,6 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
       snoozeTask(taskId, duration);
       onClose();
       
-      // Show confirmation
-      const option = snoozeOptions.find(opt => opt.duration === duration);
-      if (option) {
-        Alert.alert('Task Snoozed', `Task has been snoozed until ${option.label.toLowerCase()}`);
-      }
     } catch {
       Alert.alert('Error', 'Failed to snooze task');
     }
@@ -44,7 +39,7 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
     <BottomSheetModal
       ref={bottomSheetRef}
       index={0}
-      snapPoints={['50%']}
+      snapPoints={['60%']}
       onDismiss={onClose}
       backgroundStyle={styles.bottomSheet}
     >
@@ -72,7 +67,6 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
                 <Text style={styles.optionLabel}>{option.label}</Text>
                 <Text style={styles.optionDescription}>{option.description}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#adb5bd" />
             </TouchableOpacity>
           ))}
         </View>

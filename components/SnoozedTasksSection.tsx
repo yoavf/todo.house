@@ -14,8 +14,8 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
   isExpanded = false,
   onToggleExpanded,
 }) => {
-  const { getSnoozedTasks, unsnoozeTask } = useTaskStore();
-  const snoozedTasks = getSnoozedTasks();
+  const snoozedTasks = useTaskStore((state) => state.getSnoozedTasks());
+  const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask);
 
   const formatTimeRemaining = (snoozeUntil?: Date): string => {
     if (!snoozeUntil) return getRandomWheneverLabel();
@@ -86,6 +86,8 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
                 <TouchableOpacity
                   style={styles.unsnoozeButton}
                   onPress={() => handleUnsnooze(task.id)}
+                  activeOpacity={0.7}
+                  delayPressIn={0}
                 >
                   <Ionicons name="alarm-outline" size={16} color="#007bff" />
                   <Text style={styles.unsnoozeText}>Unsnooze</Text>
