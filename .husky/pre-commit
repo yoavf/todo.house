@@ -2,13 +2,16 @@
 
 echo "🔍 Running pre-commit checks..."
 
-# Run linting
-echo "📝 Running lint..."
-pnpm run lint
+# Run Biome auto-fix
+echo "🔧 Auto-fixing code with Biome..."
+pnpm run lint:fix
 if [ $? -ne 0 ]; then
-  echo "❌ Linting failed. Please fix the errors before committing."
+  echo "❌ Biome auto-fix failed. Please check the errors."
   exit 1
 fi
+
+# Add any fixed files to the commit
+git add -u
 
 # Run tests
 echo "🧪 Running tests..."
