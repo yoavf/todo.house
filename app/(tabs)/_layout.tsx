@@ -2,9 +2,11 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTaskStore, getActiveTasks, getSnoozedTasks } from '../../store/taskStore';
 import { useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
   const tasks = useTaskStore((state) => state.tasks);
+  const insets = useSafeAreaInsets();
   
   const { pendingCount, snoozedCount } = useMemo(() => {
     const activeTasks = getActiveTasks(tasks);
@@ -26,6 +28,8 @@ export default function TabsLayout() {
           borderTopColor: '#e9ecef',
           borderTopWidth: 1,
           paddingTop: 8,
+          paddingBottom: insets.bottom,
+          height: 60 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 12,
