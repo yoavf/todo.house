@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View, Image, Modal } from 'react-native';
+import { Alert, Modal } from 'react-native';
+import { Card, XStack, YStack, Text, Checkbox, Button, Image, View, AnimatePresence, styled } from 'tamagui';
 import { useTaskStore } from '../store/taskStore';
 import { Task } from '../types/Task';
 import { InlineTextEdit } from './InlineTextEdit';
@@ -9,6 +10,45 @@ import { LocationPicker } from './LocationPicker';
 interface TaskCardProps {
   task: Task;
 }
+
+const StyledCard = styled(Card, {
+  padding: '$md',
+  marginBottom: '$md',
+  backgroundColor: '$background',
+  borderRadius: '$card',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+  position: 'relative',
+  
+  variants: {
+    completed: {
+      true: {
+        opacity: 0.6,
+      },
+    },
+    recentlyAdded: {
+      true: {
+        borderWidth: 2,
+        borderColor: '$green1',
+        shadowColor: '$green1',
+        shadowOpacity: 0.2,
+      },
+    },
+  } as const,
+});
+
+const Badge = styled(View, {
+  position: 'absolute',
+  top: -6,
+  right: -6,
+  backgroundColor: '$green1',
+  borderRadius: 8,
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+});
 
 export function TaskCard({ task }: TaskCardProps) {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -73,82 +113,127 @@ export function TaskCard({ task }: TaskCardProps) {
 
   return (
     <>
-      <View style={[
-        styles.card,
-        task.completed && styles.completedCard,
-        isRecentlyAdded && styles.recentlyAddedCard
-      ]}>
-        {/* Completion Checkbox */}
-        <TouchableOpacity
-          onPress={handleToggleComplete}
-          style={styles.checkboxContainer}
-        >
-          <View style={[styles.checkbox, task.completed && styles.checkedCheckbox]}>
-            {task.completed && (
-              <Ionicons name="checkmark" size={16} color="white" />
-            )}
-          </View>
-        </TouchableOpacity>
-
-        {/* Task Content */}
-        <View style={styles.content}>
-          {/* Title */}
-          <InlineTextEdit
-            value={task.title}
-            onUpdate={handleTitleUpdate}
-            style={task.completed ? [styles.title, styles.completedTitle] : styles.title}
-            placeholder="Task title"
-          />
-
-          {/* Location */}
-          <TouchableOpacity
-            onPress={() => setShowLocationPicker(true)}
-            style={styles.locationContainer}
+      <StyledCard
+        completed={task.completed}
+        recentlyAdded={isRecentlyAdded}
+        animation="quick"
+        scale={0.9}
+        hoverStyle={{ scale: 0.95 }}
+        pressStyle={{ scale: 0.95 }}
+      >
+        <XStack alignItems="flex-start" gap="$sm">
+          {/* Completion Checkbox */}
+          <Checkbox
+            checked={task.completed}
+            onCheckedChange={handleToggleComplete}
+            size="$4"
+            circular
+            theme={task.completed ? "green" : undefined}
           >
-            {task.location ? (
-              <Text style={[styles.location, task.completed && styles.completedText]}>
-                in {task.location}
-              </Text>
-            ) : (
-              <Text style={styles.addLocation}>Add location</Text>
-            )}
-          </TouchableOpacity>
+            <Checkbox.Indicator>
+              <Ionicons name="checkmark" size={16} color="white" />
+            </Checkbox.Indicator>
+          </Checkbox>
 
-          {/* Image thumbnail if available */}
-          {task.imageUri && (
-            <TouchableOpacity 
-              onPress={() => setShowImageModal(true)}
-              style={styles.imageContainer}
+          {/* Task Content */}
+          <YStack flex={1} gap="$xs">
+            {/* Title */}
+            <InlineTextEdit
+              value={task.title}
+              onUpdate={handleTitleUpdate}
+              style={{
+                fontSize: 16,
+                fontWeight: '600',
+                color: task.completed ? '#6c757d' : '#2c3e50',
+                textDecorationLine: task.completed ? 'line-through' : 'none',
+              }}
+              placeholder="Task title"
+            />
+
+            {/* Location */}
+            <Button
+              size="$2"
+              variant="ghost"
+              onPress={() => setShowLocationPicker(true)}
+              justifyContent="flex-start"
+              padding={0}
+              color={task.completed ? '$gray9' : '$gray10'}
             >
-              <Image 
-                source={{ uri: task.imageUri }} 
-                style={styles.imageThumbnail}
-                resizeMode="cover"
-              />
-              <View style={styles.imageOverlay}>
-                <Ionicons name="expand-outline" size={16} color="white" />
-              </View>
-            </TouchableOpacity>
-          )}
+              <Text 
+                fontSize={14} 
+                color={task.location ? (task.completed ? '$gray9' : '$gray10') : '$gray8'}
+                fontStyle={task.location ? 'normal' : 'italic'}
+              >
+                {task.location ? `in ${task.location}` : 'Add location'}
+              </Text>
+            </Button>
 
-          {/* Date */}
-          <Text style={[styles.date, task.completed && styles.completedText]}>
-            {formatDate(task.createdAt)}
-          </Text>
-        </View>
+            {/* Image thumbnail if available */}
+            {task.imageUri && (
+              <Button
+                onPress={() => setShowImageModal(true)}
+                padding={0}
+                backgroundColor="transparent"
+                borderWidth={0}
+                alignSelf="flex-start"
+              >
+                <View position="relative">
+                  <Image 
+                    source={{ uri: task.imageUri }} 
+                    width={60}
+                    height={60}
+                    borderRadius="$button"
+                    borderWidth={1}
+                    borderColor="$gray5"
+                  />
+                  <View
+                    position="absolute"
+                    bottom={4}
+                    right={4}
+                    backgroundColor="rgba(0, 0, 0, 0.6)"
+                    borderRadius={10}
+                    width={20}
+                    height={20}
+                    justifyContent="center"
+                    alignItems="center"
+                  >
+                    <Ionicons name="expand-outline" size={16} color="white" />
+                  </View>
+                </View>
+              </Button>
+            )}
 
-        {/* Delete Button */}
-        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-          <Ionicons name="trash-outline" size={20} color="#dc3545" />
-        </TouchableOpacity>
+            {/* Date */}
+            <Text fontSize={12} color={task.completed ? '$gray8' : '$gray9'}>
+              {formatDate(task.createdAt)}
+            </Text>
+          </YStack>
+
+          {/* Delete Button */}
+          <Button
+            size="$3"
+            variant="ghost"
+            icon={<Ionicons name="trash-outline" size={20} color="#dc3545" />}
+            onPress={handleDelete}
+            circular
+          />
+        </XStack>
 
         {/* Recently Added Indicator */}
-        {isRecentlyAdded && (
-          <View style={styles.newBadge}>
-            <Text style={styles.newBadgeText}>NEW</Text>
-          </View>
-        )}
-      </View>
+        <AnimatePresence>
+          {isRecentlyAdded && (
+            <Badge
+              animation="quick"
+              enterStyle={{ scale: 0, opacity: 0 }}
+              exitStyle={{ scale: 0, opacity: 0 }}
+            >
+              <Text color="white" fontSize={10} fontWeight="bold">
+                NEW
+              </Text>
+            </Badge>
+          )}
+        </AnimatePresence>
+      </StyledCard>
 
       {/* Location Picker Modal */}
       <LocationPicker
@@ -166,173 +251,34 @@ export function TaskCard({ task }: TaskCardProps) {
           animationType="fade"
           onRequestClose={() => setShowImageModal(false)}
         >
-          <View style={styles.imageModalContainer}>
-            <TouchableOpacity 
-              style={styles.imageModalBackdrop}
-              onPress={() => setShowImageModal(false)}
-            >
-              <View style={styles.imageModalContent}>
-                <Image 
-                  source={{ uri: task.imageUri }} 
-                  style={styles.imageModalImage}
-                  resizeMode="contain"
-                />
-                <TouchableOpacity 
-                  style={styles.imageModalClose}
-                  onPress={() => setShowImageModal(false)}
-                >
-                  <Ionicons name="close" size={24} color="white" />
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
+          <View 
+            flex={1} 
+            backgroundColor="rgba(0, 0, 0, 0.9)"
+            justifyContent="center"
+            alignItems="center"
+            onPress={() => setShowImageModal(false)}
+          >
+            <View width="90%" height="80%" position="relative">
+              <Image 
+                source={{ uri: task.imageUri }} 
+                width="100%"
+                height="100%"
+                resizeMode="contain"
+              />
+              <Button
+                position="absolute"
+                top={16}
+                right={16}
+                backgroundColor="rgba(0, 0, 0, 0.6)"
+                circular
+                size="$4"
+                icon={<Ionicons name="close" size={24} color="white" />}
+                onPress={() => setShowImageModal(false)}
+              />
+            </View>
           </View>
         </Modal>
       )}
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    position: 'relative',
-  },
-  completedCard: {
-    opacity: 0.6,
-  },
-  recentlyAddedCard: {
-    borderWidth: 2,
-    borderColor: '#28a745',
-    shadowColor: '#28a745',
-    shadowOpacity: 0.2,
-  },
-  checkboxContainer: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#dee2e6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkedCheckbox: {
-    backgroundColor: '#28a745',
-    borderColor: '#28a745',
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 4,
-  },
-  completedTitle: {
-    textDecorationLine: 'line-through',
-    color: '#6c757d',
-  },
-  locationContainer: {
-    marginBottom: 8,
-  },
-  location: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  addLocation: {
-    fontSize: 14,
-    color: '#adb5bd',
-    fontStyle: 'italic',
-  },
-  completedText: {
-    color: '#adb5bd',
-  },
-  date: {
-    fontSize: 12,
-    color: '#adb5bd',
-  },
-  deleteButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  newBadge: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: '#28a745',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  newBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  imageContainer: {
-    position: 'relative',
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
-  imageThumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  imageOverlay: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imageModalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-  },
-  imageModalBackdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imageModalContent: {
-    width: '90%',
-    height: '80%',
-    position: 'relative',
-  },
-  imageModalImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageModalClose: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

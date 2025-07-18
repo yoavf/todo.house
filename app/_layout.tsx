@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { TamaguiProvider } from 'tamagui';
 import { useTaskStore } from '../store/taskStore';
+import tamaguiConfig from '../tamagui.config';
 
 function HydrationWrapper({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -28,24 +30,26 @@ function HydrationWrapper({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <BottomSheetModalProvider>
-          <HydrationWrapper>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="camera"
-                options={{
-                  presentation: 'modal',
-                  headerShown: false,
-                }}
-              />
-            </Stack>
-          </HydrationWrapper>
-        </BottomSheetModalProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+    <TamaguiProvider config={tamaguiConfig}>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <BottomSheetModalProvider>
+            <HydrationWrapper>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="camera"
+                  options={{
+                    presentation: 'modal',
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
+            </HydrationWrapper>
+          </BottomSheetModalProvider>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </TamaguiProvider>
   );
 }

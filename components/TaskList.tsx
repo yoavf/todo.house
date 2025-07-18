@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View, YStack, styled } from "tamagui";
 import DraggableFlatList, {
   type RenderItemParams,
 } from "react-native-draggable-flatlist";
@@ -12,6 +12,26 @@ const TASK_CARD_HEIGHT = 80;
 interface TaskListProps {
 	tasks: Task[];
 }
+
+const EmptyContainer = styled(YStack, {
+	flex: 1,
+	justifyContent: "center",
+	alignItems: "center",
+	paddingVertical: 60,
+});
+
+const EmptyText = styled(Text, {
+	fontSize: 18,
+	fontWeight: "600",
+	color: "$gray10",
+	marginBottom: "$sm",
+});
+
+const EmptySubtext = styled(Text, {
+	fontSize: 14,
+	color: "$gray9",
+	textAlign: "center",
+});
 
 export function TaskList({ tasks }: TaskListProps) {
 	const { reorderTasks } = useTaskStore();
@@ -35,55 +55,34 @@ export function TaskList({ tasks }: TaskListProps) {
 
 	if (tasks.length === 0) {
 		return (
-			<View style={styles.emptyContainer}>
-				<Text style={styles.emptyText}>No tasks yet</Text>
-				<Text style={styles.emptySubtext}>
+			<EmptyContainer>
+				<EmptyText>No tasks yet</EmptyText>
+				<EmptySubtext>
 					Tap the + button to add your first task
-				</Text>
-			</View>
+				</EmptySubtext>
+			</EmptyContainer>
 		);
 	}
 
 	return (
-		<DraggableFlatList
-			data={tasks}
-			keyExtractor={(item) => item.id}
-			renderItem={renderItem}
-			onDragEnd={handleDragEnd}
-			showsVerticalScrollIndicator={false}
-			contentContainerStyle={styles.listContainer}
-			      getItemLayout={(_data, index) => ({
-				length: TASK_CARD_HEIGHT, // Approximate task card height
-				offset: TASK_CARD_HEIGHT * index,
-				index,
-			})}
-			removeClippedSubviews={true}
-			maxToRenderPerBatch={10}
-			updateCellsBatchingPeriod={50}
-			windowSize={10}
-		/>
+		<View style={{ flex: 1 }}>
+			<DraggableFlatList
+				data={tasks}
+				keyExtractor={(item) => item.id}
+				renderItem={renderItem}
+				onDragEnd={handleDragEnd}
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: 100 }}
+				getItemLayout={(_data, index) => ({
+					length: TASK_CARD_HEIGHT, // Approximate task card height
+					offset: TASK_CARD_HEIGHT * index,
+					index,
+				})}
+				removeClippedSubviews={true}
+				maxToRenderPerBatch={10}
+				updateCellsBatchingPeriod={50}
+				windowSize={10}
+			/>
+		</View>
 	);
 }
-
-const styles = StyleSheet.create({
-	listContainer: {
-		paddingBottom: 100, // Space for FAB
-	},
-	emptyContainer: {
-		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
-		paddingVertical: 60,
-	},
-	emptyText: {
-		fontSize: 18,
-		fontWeight: "600",
-		color: "#6c757d",
-		marginBottom: 8,
-	},
-	emptySubtext: {
-		fontSize: 14,
-		color: "#adb5bd",
-		textAlign: "center",
-	},
-});

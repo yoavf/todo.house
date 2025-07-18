@@ -20,6 +20,9 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
+    "@tamagui/babel-plugin": "^1.132.9",
+    "@tamagui/config": "^1.132.9",
+    "@tamagui/metro-plugin": "^1.132.9",
     "ai": "5.0.0-beta.18",
     "expo": "~53.0.17",
     "expo-blur": "~14.1.5",
@@ -51,6 +54,7 @@
     "react-native-swipeable-item": "^2.0.9",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
+    "tamagui": "^1.132.9",
     "zod": "^3.25.76",
     "zustand": "^5.0.6"
   },
