@@ -1,9 +1,6 @@
 // Global setup
 global.__DEV__ = true;
 
-// Mock React Native Animated if needed
-// jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
-
 // Mock expo-haptics
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
