@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Alert, Modal } from 'react-native';
 import { Card, XStack, YStack, Text, Checkbox, Button, Image, View, AnimatePresence, styled } from 'tamagui';
 import { useTaskStore } from '../store/taskStore';
@@ -42,8 +42,8 @@ const StyledCard = styled(Card, {
 
 const Badge = styled(View, {
   position: 'absolute',
-  top: -6,
-  right: -6,
+  top: '$-1',
+  right: '$-1',
   backgroundColor: '$green1',
   borderRadius: 8,
   paddingHorizontal: 6,
@@ -93,6 +93,13 @@ export function TaskCard({ task }: TaskCardProps) {
     setShowLocationPicker(false);
   };
 
+  const titleStyle = useMemo(() => ({
+    fontSize: 16,
+    fontWeight: '600',
+    color: task.completed ? '#6c757d' : '#2c3e50',
+    textDecorationLine: task.completed ? 'line-through' : 'none',
+  }), [task.completed]);
+
   const formatDate = (date: Date) => {
     const today = new Date();
     const yesterday = new Date(today);
@@ -141,12 +148,7 @@ export function TaskCard({ task }: TaskCardProps) {
             <InlineTextEdit
               value={task.title}
               onUpdate={handleTitleUpdate}
-              style={{
-                fontSize: 16,
-                fontWeight: '600',
-                color: task.completed ? '#6c757d' : '#2c3e50',
-                textDecorationLine: task.completed ? 'line-through' : 'none',
-              }}
+              style={titleStyle}
               placeholder="Task title"
             />
 
@@ -257,6 +259,8 @@ export function TaskCard({ task }: TaskCardProps) {
             justifyContent="center"
             alignItems="center"
             onPress={() => setShowImageModal(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close image modal"
           >
             <View width="90%" height="80%" position="relative">
               <Image 
@@ -274,6 +278,7 @@ export function TaskCard({ task }: TaskCardProps) {
                 size="$4"
                 icon={<Ionicons name="close" size={24} color="white" />}
                 onPress={() => setShowImageModal(false)}
+                accessibilityLabel="Close image modal"
               />
             </View>
           </View>

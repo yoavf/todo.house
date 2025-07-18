@@ -33,6 +33,10 @@ const EmptySubtext = styled(Text, {
 	textAlign: "center",
 });
 
+const Container = styled(View, {
+	flex: 1,
+});
+
 export function TaskList({ tasks }: TaskListProps) {
 	const { reorderTasks } = useTaskStore();
 
@@ -65,7 +69,7 @@ export function TaskList({ tasks }: TaskListProps) {
 	}
 
 	return (
-		<View style={{ flex: 1 }}>
+		<Container>
 			<DraggableFlatList
 				data={tasks}
 				keyExtractor={(item) => item.id}
@@ -83,6 +87,6 @@ export function TaskList({ tasks }: TaskListProps) {
 				updateCellsBatchingPeriod={50}
 				windowSize={10}
 			/>
-		</View>
+		</Container>
 	);
 }
