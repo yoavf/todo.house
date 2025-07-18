@@ -209,19 +209,6 @@ export function TaskCard({ task }: TaskCardProps) {
             {formatDate(task.createdAt)}
           </Text>
 
-          {/* Schedule Indicator */}
-          {task.isScheduled && (
-            <View style={styles.scheduleIndicator}>
-              <Ionicons
-                name="repeat"
-                size={14}
-                color="#28a745"
-                style={styles.scheduleIcon}
-              />
-              <Text style={styles.scheduleText}>Scheduled</Text>
-            </View>
-          )}
-
           {/* Future Task Indicator */}
           {task.isFutureTask && (
             <View style={styles.scheduleIndicator}>

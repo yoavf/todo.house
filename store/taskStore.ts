@@ -153,7 +153,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       createdAt: new Date(),
       order: Date.now(), // New tasks appear at top
-      isScheduled: !!taskData.schedule,
       isFutureTask: !!taskData.isFutureTask,
     }
 
@@ -294,7 +293,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
                 endDate: parseDateField(task.schedule.endDate),
               }
             : undefined,
-          isScheduled: task.isScheduled || false,
           isFutureTask: task.isFutureTask || false,
           seriesId: task.seriesId || undefined,
         }))
@@ -398,7 +396,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           ? {
               ...t,
               schedule,
-              isScheduled: !!schedule,
               seriesId: schedule ? seriesId : undefined,
             }
           : t,
