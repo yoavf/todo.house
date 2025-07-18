@@ -2,26 +2,28 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { FAB } from '../../components/FAB';
 import { useRouter } from 'expo-router';
+import { useTaskStore } from '../../store/taskStore';
 
-jest.mock('expo-router', () => ({
-  useRouter: jest.fn(),
+// Additional mocks not in jest-setup.js
+jest.mock('../../store/taskStore', () => ({
+  useTaskStore: jest.fn(),
 }));
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: 'Ionicons',
-}));
-
-jest.mock('expo-linear-gradient', () => ({
-  LinearGradient: 'LinearGradient',
+jest.mock('../../components/LocationPicker', () => ({
+  LocationPicker: 'LocationPicker',
 }));
 
 describe('FAB', () => {
   const mockPush = jest.fn();
+  const mockAdd = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue({
       push: mockPush,
+    });
+    (useTaskStore as jest.Mock).mockReturnValue({
+      add: mockAdd,
     });
   });
 
@@ -32,11 +34,35 @@ describe('FAB', () => {
     expect(touchable).toBeTruthy();
   });
 
-  it('navigates to camera screen when pressed', () => {
-    const { getByTestId } = render(<FAB />);
+  it('opens speed dial when pressed', () => {
+    const { getByTestId, queryByTestId } = render(<FAB />);
     
     const touchable = getByTestId('fab-button');
+    
+    // Speed dial options should not be visible initially
+    expect(queryByTestId('speed-dial-camera')).toBeNull();
+    expect(queryByTestId('speed-dial-voice')).toBeNull();
+    expect(queryByTestId('speed-dial-type')).toBeNull();
+    
+    // Press FAB to open speed dial
     fireEvent.press(touchable);
+    
+    // Speed dial options should now be visible
+    expect(queryByTestId('speed-dial-camera')).toBeTruthy();
+    expect(queryByTestId('speed-dial-voice')).toBeTruthy();
+    expect(queryByTestId('speed-dial-type')).toBeTruthy();
+  });
+
+  it('navigates to camera screen when camera option is pressed', () => {
+    const { getByTestId } = render(<FAB />);
+    
+    // Open speed dial first
+    const touchable = getByTestId('fab-button');
+    fireEvent.press(touchable);
+    
+    // Press camera option
+    const cameraOption = getByTestId('speed-dial-camera');
+    fireEvent.press(cameraOption);
     
     expect(mockPush).toHaveBeenCalledWith('/camera');
     expect(mockPush).toHaveBeenCalledTimes(1);
@@ -49,9 +75,6 @@ describe('FAB', () => {
     const styles = touchable.props.style;
     
     expect(styles).toEqual(expect.objectContaining({
-      position: 'absolute',
-      bottom: 30,
-      right: 30,
       borderRadius: 30,
     }));
   });

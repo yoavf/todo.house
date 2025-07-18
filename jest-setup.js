@@ -81,15 +81,24 @@ jest.mock('react-native-gesture-handler', () => {
 // Mock bottom sheet
 jest.mock('@gorhom/bottom-sheet', () => {
   const React = require('react');
-  const { View } = require('react-native');
+  const { View, TextInput } = require('react-native');
   return {
     BottomSheetModal: React.forwardRef(({ children }, ref) => {
       return <View testID="bottom-sheet-modal">{children}</View>;
     }),
     BottomSheetView: ({ children }) => <View>{children}</View>,
     BottomSheetModalProvider: ({ children }) => children,
+    BottomSheetTextInput: TextInput,
   };
 });
+
+// Mock LayoutAnimation
+jest.mock('react-native/Libraries/LayoutAnimation/LayoutAnimation', () => ({
+  configureNext: jest.fn(),
+  Presets: {
+    easeInEaseOut: {},
+  },
+}));
 
 // Mock all the Expo winter runtime globals
 global.__ExpoImportMetaRegistry = {};
