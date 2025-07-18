@@ -1,5 +1,4 @@
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
-import React from "react";
+import { fireEvent, render } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { TaskCard } from "../../components/TaskCard";
 import { useTaskStore } from "../../store/taskStore";
@@ -213,34 +212,6 @@ describe("TaskCard", () => {
 		const { getByTestId } = render(<TaskCard task={taskWithImage} />);
 
 		// Image preview button should be visible
-		const imageButton = getByTestId("image-preview");
-		expect(imageButton).toBeTruthy();
-	});
-
-	it("opens location picker when location button is pressed", () => {
-		const { getByTestId, getByText } = render(<TaskCard task={mockTask} />);
-
-		const locationButton = getByTestId("location-button");
-		fireEvent.press(locationButton);
-
-		// Location picker should be visible
-		expect(getByText("Choose Location")).toBeTruthy();
-	});
-});
-		const imageButton = getByTestId("image-preview");
-		expect(imageButton).toBeTruthy();
-	});
-
-	it("opens location picker when location button is pressed", () => {
-		const { getByTestId, getByText } = render(<TaskCard task={mockTask} />);
-
-		const locationButton = getByTestId("location-button");
-		fireEvent.press(locationButton);
-
-		// Location picker should be visible
-		expect(getByText("Choose Location")).toBeTruthy();
-	});
-});
 		const imageButton = getByTestId("image-preview");
 		expect(imageButton).toBeTruthy();
 	});
