@@ -1,18 +1,20 @@
-import React from 'react';
-import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native'
 
 interface TaskPlaceholderImageProps {
-  size?: number;
-  style?: StyleProp<ViewStyle>;
+  size?: number
+  style?: StyleProp<ViewStyle>
 }
 
-export function TaskPlaceholderImage({ size = 60, style }: TaskPlaceholderImageProps) {
+export function TaskPlaceholderImage({
+  size = 60,
+  style,
+}: TaskPlaceholderImageProps) {
   return (
     <View style={[styles.container, { width: size, height: size }, style]}>
       <Ionicons name="checkbox-outline" size={size * 0.5} color="#adb5bd" />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -24,4 +26,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-});
+})

@@ -1,22 +1,22 @@
 /**
  * Centralized locale utilities for consistent locale handling
  */
-import * as Localization from 'expo-localization';
+import * as Localization from 'expo-localization'
 
 /**
  * Get the current locale with fallback to en-US
  */
 export const getCurrentLocale = (): string => {
-  const locales = Localization.getLocales();
-  const locale = locales?.[0];
-  return locale?.languageTag || 'en-US';
-};
+  const locales = Localization.getLocales()
+  const locale = locales?.[0]
+  return locale?.languageTag || 'en-US'
+}
 
 /**
  * Get the current locale region with fallback
  */
 export const getCurrentRegion = (): string => {
-  const locales = Localization.getLocales();
-  const locale = locales?.[0];
-  return locale?.regionCode || 'US';
-};
+  const locales = Localization.getLocales()
+  const locale = locales?.[0]
+  return locale?.regionCode || 'US'
+}

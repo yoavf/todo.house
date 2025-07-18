@@ -1,4 +1,4 @@
-import { Task, SnoozeDuration } from '../types/Task';
+import type { Task } from '../types/Task'
 
 const TASK_TITLES = [
   'Clean the kitchen counter',
@@ -20,8 +20,8 @@ const TASK_TITLES = [
   'Clean oven',
   'Wash car',
   'Trim hedges',
-  'Clean gutters'
-];
+  'Clean gutters',
+]
 
 const LOCATIONS = [
   'Kitchen',
@@ -33,8 +33,8 @@ const LOCATIONS = [
   'Office',
   'Basement',
   'Attic',
-  'Laundry Room'
-];
+  'Laundry Room',
+]
 
 const SAMPLE_IMAGES = [
   'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop', // Kitchen
@@ -45,113 +45,123 @@ const SAMPLE_IMAGES = [
   'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop', // Bathroom
   'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=400&h=300&fit=crop', // Laundry
   'https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?w=400&h=300&fit=crop', // Clean space
-];
+]
 
 interface TaskFactoryOptions {
-  count?: number;
-  includeCompleted?: boolean;
-  includeSnoozed?: boolean;
-  includeImages?: boolean;
-  includeDueDates?: boolean;
+  count?: number
+  includeCompleted?: boolean
+  includeSnoozed?: boolean
+  includeImages?: boolean
+  includeDueDates?: boolean
 }
 
-export class TaskFactory {
-  private static taskCounter = 0;
+let taskCounter = 0
 
-  static generateTask(overrides?: Partial<Task>): Task {
-    const now = new Date();
-    const taskIndex = this.taskCounter++;
-    
-    const baseTask: Task = {
-      id: `task-${Date.now()}-${taskIndex}`,
-      title: TASK_TITLES[taskIndex % TASK_TITLES.length],
-      location: LOCATIONS[taskIndex % LOCATIONS.length],
-      createdAt: new Date(now.getTime() - taskIndex * 1000 * 60 * 60), // Each task 1 hour older
-      completed: false,
-      order: now.getTime() - taskIndex,
-    };
+export function generateTask(overrides?: Partial<Task>): Task {
+  const now = new Date()
+  const taskIndex = taskCounter++
 
-    return { ...baseTask, ...overrides };
+  const baseTask: Task = {
+    id: `task-${Date.now()}-${taskIndex}`,
+    title: TASK_TITLES[taskIndex % TASK_TITLES.length],
+    location: LOCATIONS[taskIndex % LOCATIONS.length],
+    createdAt: new Date(now.getTime() - taskIndex * 1000 * 60 * 60), // Each task 1 hour older
+    completed: false,
+    order: now.getTime() - taskIndex,
   }
 
-  static generateTasks(options: TaskFactoryOptions = {}): Task[] {
-    const {
-      count = 20,
-      includeCompleted = true,
-      includeSnoozed = true,
-      includeImages = true,
-      includeDueDates = true,
-    } = options;
+  return { ...baseTask, ...overrides }
+}
 
-    const tasks: Task[] = [];
-    this.taskCounter = 0;
-    const now = new Date();
+export function generateTasks(options: TaskFactoryOptions = {}): Task[] {
+  const {
+    count = 20,
+    includeCompleted = true,
+    includeSnoozed = true,
+    includeImages = true,
+    includeDueDates = true,
+  } = options
 
-    // Generate regular tasks
-    for (let i = 0; i < count; i++) {
-      let task = this.generateTask();
+  const tasks: Task[] = []
+  taskCounter = 0
+  const now = new Date()
 
-      // Add images to ~40% of tasks
-      if (includeImages && Math.random() < 0.4) {
-        task.imageUri = SAMPLE_IMAGES[i % SAMPLE_IMAGES.length];
-      }
+  // Generate regular tasks
+  for (let i = 0; i < count; i++) {
+    const task = generateTask()
 
-      // Add due dates to ~60% of tasks
-      if (includeDueDates && Math.random() < 0.6) {
-        const daysOffset = Math.floor(Math.random() * 14) - 7; // -7 to +7 days
-        const dueDate = new Date(now);
-        dueDate.setDate(dueDate.getDate() + daysOffset);
-        dueDate.setHours(Math.floor(Math.random() * 24), 0, 0, 0);
-        task.dueDate = dueDate;
-      }
-
-      // Make ~20% completed
-      if (includeCompleted && i < count * 0.2) {
-        task.completed = true;
-      }
-
-      // Snooze ~25% of tasks with various snooze options
-      if (includeSnoozed && i >= count * 0.75) {
-        const snoozeIndex = (i - Math.floor(count * 0.75)) % 4;
-        
-        switch (snoozeIndex) {
-          case 0: // Tomorrow
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(9, 0, 0, 0);
-            task.snoozeUntil = tomorrow;
-            break;
-          
-          case 1: // This weekend
-            const weekend = new Date(now);
-            const daysUntilSaturday = (6 - now.getDay() + 7) % 7 || 7;
-            weekend.setDate(weekend.getDate() + daysUntilSaturday);
-            weekend.setHours(9, 0, 0, 0);
-            task.snoozeUntil = weekend;
-            break;
-          
-          case 2: // Next workday
-            const nextMonday = new Date(now);
-            const daysUntilMonday = (1 - now.getDay() + 7) % 7 || 7;
-            nextMonday.setDate(nextMonday.getDate() + daysUntilMonday);
-            nextMonday.setHours(9, 0, 0, 0);
-            task.snoozeUntil = nextMonday;
-            break;
-          
-          case 3: // Whenever
-            task.isWheneverSnoozed = true;
-            task.snoozeUntil = undefined;
-            break;
-        }
-      }
-
-      tasks.push(task);
+    // Add images to ~40% of tasks
+    if (includeImages && Math.random() < 0.4) {
+      task.imageUri = SAMPLE_IMAGES[i % SAMPLE_IMAGES.length]
     }
 
-    return tasks;
+    // Add due dates to ~60% of tasks
+    if (includeDueDates && Math.random() < 0.6) {
+      const daysOffset = Math.floor(Math.random() * 14) - 7 // -7 to +7 days
+      const dueDate = new Date(now)
+      dueDate.setDate(dueDate.getDate() + daysOffset)
+      dueDate.setHours(Math.floor(Math.random() * 24), 0, 0, 0)
+      task.dueDate = dueDate
+    }
+
+    // Make ~20% completed
+    if (includeCompleted && i < count * 0.2) {
+      task.completed = true
+    }
+
+    // Snooze ~25% of tasks with various snooze options
+    if (includeSnoozed && i >= count * 0.75) {
+      const snoozeIndex = (i - Math.floor(count * 0.75)) % 4
+
+      switch (snoozeIndex) {
+        case 0: {
+          // Tomorrow
+          const tomorrow = new Date(now)
+          tomorrow.setDate(tomorrow.getDate() + 1)
+          tomorrow.setHours(9, 0, 0, 0)
+          task.snoozeUntil = tomorrow
+          break
+        }
+
+        case 1: {
+          // This weekend
+          const weekend = new Date(now)
+          const daysUntilSaturday = (6 - now.getDay() + 7) % 7 || 7
+          weekend.setDate(weekend.getDate() + daysUntilSaturday)
+          weekend.setHours(9, 0, 0, 0)
+          task.snoozeUntil = weekend
+          break
+        }
+
+        case 2: {
+          // Next workday
+          const nextMonday = new Date(now)
+          const daysUntilMonday = (1 - now.getDay() + 7) % 7 || 7
+          nextMonday.setDate(nextMonday.getDate() + daysUntilMonday)
+          nextMonday.setHours(9, 0, 0, 0)
+          task.snoozeUntil = nextMonday
+          break
+        }
+
+        case 3: // Whenever
+          task.isWheneverSnoozed = true
+          task.snoozeUntil = undefined
+          break
+      }
+    }
+
+    tasks.push(task)
   }
 
-  static reset() {
-    this.taskCounter = 0;
-  }
+  return tasks
+}
+
+export function resetTaskCounter() {
+  taskCounter = 0
+}
+
+export const TaskFactory = {
+  generateTask,
+  generateTasks,
+  reset: resetTaskCounter,
 }

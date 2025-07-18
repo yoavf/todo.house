@@ -1,8 +1,8 @@
 export interface TaskAnalysisResult {
-  success: boolean;
+  success: boolean
   task?: {
-    title: string;
-    location?: string;
-  };
-  error?: string;
+    title: string
+    location?: string
+  }
+  error?: string
 }

@@ -1,74 +1,74 @@
-import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTaskStore, getSnoozedTasks } from '../store/taskStore';
-import { TaskCard } from './TaskCard';
-import { getRandomWheneverLabel } from '../utils/dateUtils';
+import { Ionicons } from '@expo/vector-icons'
+import type React from 'react'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { getSnoozedTasks, useTaskStore } from '../store/taskStore'
+import { getRandomWheneverLabel } from '../utils/dateUtils'
+import { TaskCard } from './TaskCard'
 
 interface SnoozedTasksSectionProps {
-  isExpanded?: boolean;
-  onToggleExpanded?: () => void;
+  isExpanded?: boolean
+  onToggleExpanded?: () => void
 }
 
 export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
   isExpanded = false,
   onToggleExpanded,
 }) => {
-  const allTasks = useTaskStore((state) => state.tasks);
-  const snoozedTasks = getSnoozedTasks(allTasks);
-  const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask);
+  const allTasks = useTaskStore((state) => state.tasks)
+  const snoozedTasks = getSnoozedTasks(allTasks)
+  const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask)
 
   const formatTimeRemaining = (snoozeUntil?: Date): string => {
-    if (!snoozeUntil) return getRandomWheneverLabel();
-    
-    const now = new Date();
-    const diff = snoozeUntil.getTime() - now.getTime();
-    
-    if (diff <= 0) return 'Ready to unsnooze';
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const days = Math.floor(hours / 24);
-    
+    if (!snoozeUntil) return getRandomWheneverLabel()
+
+    const now = new Date()
+    const diff = snoozeUntil.getTime() - now.getTime()
+
+    if (diff <= 0) return 'Ready to unsnooze'
+
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const days = Math.floor(hours / 24)
+
     if (days > 0) {
-      return `${days}d ${hours % 24}h remaining`;
+      return `${days}d ${hours % 24}h remaining`
     } else if (hours > 0) {
-      return `${hours}h ${minutes}m remaining`;
+      return `${hours}h ${minutes}m remaining`
     } else {
-      return `${minutes}m remaining`;
+      return `${minutes}m remaining`
     }
-  };
+  }
 
   const handleUnsnooze = (taskId: string) => {
-    unsnoozeTask(taskId);
-  };
+    unsnoozeTask(taskId)
+  }
 
   if (snoozedTasks.length === 0) {
-    return null;
+    return null
   }
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.header} 
+      <TouchableOpacity
+        style={styles.header}
         onPress={onToggleExpanded}
         activeOpacity={0.7}
       >
         <View style={styles.headerLeft}>
-          <Ionicons 
-            name="time" 
-            size={20} 
-            color="#6c757d" 
-            style={styles.headerIcon} 
+          <Ionicons
+            name="time"
+            size={20}
+            color="#6c757d"
+            style={styles.headerIcon}
           />
           <Text style={styles.headerTitle}>
             Snoozed ({snoozedTasks.length})
           </Text>
         </View>
-        <Ionicons 
-          name={isExpanded ? "chevron-up" : "chevron-down"} 
-          size={20} 
-          color="#6c757d" 
+        <Ionicons
+          name={isExpanded ? 'chevron-up' : 'chevron-down'}
+          size={20}
+          color="#6c757d"
         />
       </TouchableOpacity>
 
@@ -79,7 +79,7 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
               <View style={styles.taskCard}>
                 <TaskCard task={task} />
               </View>
-              
+
               <View style={styles.snoozeInfo}>
                 <Text style={styles.timeRemaining}>
                   {formatTimeRemaining(task.snoozeUntil)}
@@ -99,8 +99,8 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
         </View>
       )}
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -171,4 +171,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 4,
   },
-});
+})

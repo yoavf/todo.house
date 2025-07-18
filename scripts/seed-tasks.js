@@ -1,36 +1,39 @@
-const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+const AsyncStorage =
+  require('@react-native-async-storage/async-storage').default
+const fs = require('node:fs')
+const path = require('node:path')
 
 // Polyfill for CI environment
 if (!global.localStorage) {
   global.localStorage = {
     data: {},
     getItem(key) {
-      return Promise.resolve(this.data[key] || null);
+      return Promise.resolve(this.data[key] || null)
     },
     setItem(key, value) {
-      this.data[key] = value;
-      return Promise.resolve();
+      this.data[key] = value
+      return Promise.resolve()
     },
     removeItem(key) {
-      delete this.data[key];
-      return Promise.resolve();
+      delete this.data[key]
+      return Promise.resolve()
     },
     clear() {
-      this.data = {};
-      return Promise.resolve();
-    }
-  };
+      this.data = {}
+      return Promise.resolve()
+    },
+  }
 }
 
 // Mock AsyncStorage for CI
-AsyncStorage.getItem = (key) => global.localStorage.getItem(key);
-AsyncStorage.setItem = (key, value) => global.localStorage.setItem(key, value);
+AsyncStorage.getItem = (key) => global.localStorage.getItem(key)
+AsyncStorage.setItem = (key, value) => global.localStorage.setItem(key, value)
 
 async function seedTasks() {
   try {
     // Import after polyfills are set up
-    const { TaskFactory } = require('../utils/taskFactory');
-    
+    const { TaskFactory } = require('../utils/taskFactory')
+
     // Generate diverse test tasks
     const tasks = TaskFactory.generateTasks({
       count: 15,
@@ -38,31 +41,30 @@ async function seedTasks() {
       includeSnoozed: true,
       includeImages: true,
       includeDueDates: true,
-    });
+    })
 
     // Store tasks in AsyncStorage
-    const STORAGE_KEY = '@todo_house_tasks';
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    
-    console.log(`Successfully seeded ${tasks.length} tasks`);
-    console.log('Task breakdown:');
-    console.log(`- With images: ${tasks.filter(t => t.imageUri).length}`);
-    console.log(`- Completed: ${tasks.filter(t => t.completed).length}`);
-    console.log(`- Snoozed: ${tasks.filter(t => t.snoozeUntil || t.isWheneverSnoozed).length}`);
-    console.log(`- With due dates: ${tasks.filter(t => t.dueDate).length}`);
-    
+    const STORAGE_KEY = '@todo_house_tasks'
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
+
+    console.log(`Successfully seeded ${tasks.length} tasks`)
+    console.log('Task breakdown:')
+    console.log(`- With images: ${tasks.filter((t) => t.imageUri).length}`)
+    console.log(`- Completed: ${tasks.filter((t) => t.completed).length}`)
+    console.log(
+      `- Snoozed: ${tasks.filter((t) => t.snoozeUntil || t.isWheneverSnoozed).length}`,
+    )
+    console.log(`- With due dates: ${tasks.filter((t) => t.dueDate).length}`)
+
     // Also save to a file for the web version
-    const fs = require('fs');
-    const path = require('path');
-    
-    const seedDataPath = path.join(process.cwd(), 'seed-data.json');
-    fs.writeFileSync(seedDataPath, JSON.stringify({ tasks }, null, 2));
-    console.log(`Seed data also saved to: ${seedDataPath}`);
-    
+    const seedDataPath = path.join(process.cwd(), 'seed-data.json')
+    fs.writeFileSync(seedDataPath, JSON.stringify({ tasks }, null, 2))
+    console.log(`Seed data also saved to: ${seedDataPath}`)
   } catch (error) {
-    console.error('Error seeding tasks:', error);
-    process.exit(1);
+    console.error('Error seeding tasks:', error)
+    process.exit(1)
   }
 }
 
-seedTasks();
+seedTasks()
+
