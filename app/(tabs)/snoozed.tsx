@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTaskStore, getSnoozedTasks } from '../../store/taskStore';
 import { TaskCard } from '../../components/TaskCard';
@@ -40,14 +39,7 @@ export default function SnoozedScreen() {
 
   if (snoozedTasks.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-        
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Snoozed Tasks</Text>
-        </View>
-
+      <View style={styles.container}>
         <View style={styles.emptyContainer}>
           <Ionicons name="time" size={64} color="#adb5bd" />
           <Text style={styles.emptyTitle}>No Snoozed Tasks</Text>
@@ -55,43 +47,43 @@ export default function SnoozedScreen() {
             Tasks you snooze will appear here until their snooze time expires.
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Snoozed Tasks</Text>
-        <Text style={styles.count}>{snoozedTasks.length} task{snoozedTasks.length === 1 ? '' : 's'}</Text>
-      </View>
-
+    <View style={styles.container}>
       <View style={styles.content}>
-        {snoozedTasks.map((task) => (
-          <View key={task.id} style={styles.taskContainer}>
-            <View style={styles.taskCard}>
-              <TaskCard task={task} />
+        {/* Tasks Section Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Snoozed Tasks</Text>
+          <Text style={styles.count}>{snoozedTasks.length} task{snoozedTasks.length === 1 ? '' : 's'}</Text>
+        </View>
+
+        <View style={styles.taskList}>
+          {snoozedTasks.map((task) => (
+            <View key={task.id} style={styles.taskContainer}>
+              <View style={styles.taskCard}>
+                <TaskCard task={task} />
+              </View>
+              
+              <View style={styles.snoozeInfo}>
+                <Text style={styles.timeRemaining}>
+                  {formatTimeRemaining(task.snoozeUntil)}
+                </Text>
+                <TouchableOpacity
+                  style={styles.unsnoozeButton}
+                  onPress={() => handleUnsnooze(task.id)}
+                >
+                  <Ionicons name="alarm-outline" size={16} color="#007bff" />
+                  <Text style={styles.unsnoozeText}>Unsnooze</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            
-            <View style={styles.snoozeInfo}>
-              <Text style={styles.timeRemaining}>
-                {formatTimeRemaining(task.snoozeUntil)}
-              </Text>
-              <TouchableOpacity
-                style={styles.unsnoozeButton}
-                onPress={() => handleUnsnooze(task.id)}
-              >
-                <Ionicons name="alarm-outline" size={16} color="#007bff" />
-                <Text style={styles.unsnoozeText}>Unsnooze</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
+          ))}
+        </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -100,25 +92,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  header: {
+  content: {
+    flex: 1,
     paddingHorizontal: 24,
-    paddingVertical: 16,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
+    marginTop: 16,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '600',
     color: '#2c3e50',
   },
   count: {
     fontSize: 16,
     color: '#6c757d',
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
+  taskList: {
     gap: 12,
   },
   emptyContainer: {
