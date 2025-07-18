@@ -91,7 +91,7 @@ const calculateNextDueDate = (schedule: Schedule, currentDueDate?: Date): Date |
       const currentMonth = nextDate.getMonth();
       
       // First set the month
-      nextDate.setDate(1); // Temporarily set to 1st to avoid month overflow
+      nextDate.setDate(1); // Temporarily set to 1st to prevent invalid dates when target month has fewer days
       nextDate.setMonth(currentMonth + schedule.interval);
       
       // Then set the date, clamping to the last day of the month if needed
