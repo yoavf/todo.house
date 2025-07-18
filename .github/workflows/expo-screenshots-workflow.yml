@@ -24,7 +24,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
           run_install: false
 
       - name: Get pnpm store
@@ -69,13 +68,13 @@ jobs:
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Create a unique folder for this PR's screenshots
           PR_FOLDER="pr-${{ github.event.pull_request.number }}"
-          
+
           # Fetch or create the screenshots branch
           git fetch origin gh-screenshots 2>/dev/null || true
-          
+
           # Switch to screenshots branch (create if doesn't exist)
           if git show-ref --verify --quiet refs/remotes/origin/gh-screenshots; then
             git checkout gh-screenshots
@@ -89,15 +88,15 @@ jobs:
             git add README.md
             git commit -m "Initialize screenshots branch"
           fi
-          
+
           # Create PR folder and copy screenshots
           mkdir -p "$PR_FOLDER"
           cp -r screenshots/* "$PR_FOLDER/" 2>/dev/null || true
-          
+
           # Add and commit
           git add "$PR_FOLDER"
           git commit -m "Update screenshots for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
-          
+
           # Push to origin
           git push origin gh-screenshots || git push --set-upstream origin gh-screenshots
 
