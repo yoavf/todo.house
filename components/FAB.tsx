@@ -1,23 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState, useRef, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, Animated, LayoutAnimation, UIManager, Platform } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, DeviceEventEmitter } from 'react-native';
+import { FAB as PaperFAB, Portal } from 'react-native-paper';
 import { BottomSheetModal, BottomSheetView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { LocationPicker } from './LocationPicker';
 import { useTaskStore } from '../store/taskStore';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-interface SpeedDialOption {
-  id: string;
-  icon: string;
-  label: string;
-  color: string;
-  action: () => void;
-}
 
 export function FAB() {
   const router = useRouter();
@@ -25,22 +13,30 @@ export function FAB() {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskLocation, setNewTaskLocation] = useState('');
+  const [isExtended, setIsExtended] = useState(true);
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const rotateAnimation = useRef(new Animated.Value(0)).current;
   const { add } = useTaskStore();
 
-  const handleToggle = useCallback(() => {
-    if (LayoutAnimation?.configureNext) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    }
-    setIsOpen(!isOpen);
+  // Handle user interaction for extended/collapsed state
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsExtended(false);
+    };
     
-    Animated.timing(rotateAnimation, {
-      toValue: isOpen ? 0 : 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [isOpen, rotateAnimation]);
+    const handleScrollEnd = () => {
+      setIsExtended(true);
+    };
+
+    // Subscribe to scroll events
+    const scrollSubscription = DeviceEventEmitter.addListener('taskListScroll', handleScroll);
+    const scrollEndSubscription = DeviceEventEmitter.addListener('taskListScrollEnd', handleScrollEnd);
+
+    // Cleanup subscriptions
+    return () => {
+      scrollSubscription.remove();
+      scrollEndSubscription.remove();
+    };
+  }, []);
 
   const handleCamera = useCallback(() => {
     setIsOpen(false);
@@ -70,93 +66,42 @@ export function FAB() {
     }
   }, [newTaskTitle, newTaskLocation, add]);
 
-  const speedDialOptions: SpeedDialOption[] = [
-    {
-      id: 'camera',
-      icon: 'camera',
-      label: 'Camera',
-      color: '#3b82f6',
-      action: handleCamera,
-    },
-    {
-      id: 'voice',
-      icon: 'mic',
-      label: 'Voice',
-      color: '#8b5cf6',
-      action: handleVoice,
-    },
-    {
-      id: 'type',
-      icon: 'create',
-      label: 'Type',
-      color: '#10b981',
-      action: handleType,
-    },
-  ];
-
-  const rotate = rotateAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '45deg'],
-  });
-
   return (
     <>
-      <View style={styles.container}>
-        {isOpen && (
-          <View style={styles.speedDialContainer}>
-            {speedDialOptions.map((option, index) => (
-              <Animated.View
-                key={option.id}
-                style={[
-                  styles.speedDialItem,
-                  {
-                    opacity: isOpen ? 1 : 0,
-                    transform: [
-                      {
-                        translateY: isOpen ? -(index + 1) * 70 : 0,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.labelContainer}
-                  onPress={option.action}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.speedDialLabel}>{option.label}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.speedDialButton, { backgroundColor: option.color }]}
-                  onPress={option.action}
-                  activeOpacity={0.8}
-                  testID={`speed-dial-${option.id}`}
-                >
-                  <Ionicons name={option.icon as any} size={24} color="white" />
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
-          </View>
-        )}
-
-        <TouchableOpacity
-          style={styles.mainButton}
-          onPress={handleToggle}
-          activeOpacity={0.8}
+      <Portal>
+        <PaperFAB.Group
+          open={isOpen}
+          visible
+          icon={isOpen ? 'close' : 'plus'}
+          label={isExtended && !isOpen ? 'Add task' : undefined}
+          actions={[
+            {
+              icon: 'camera',
+              onPress: handleCamera,
+              testID: 'speed-dial-camera',
+              style: { backgroundColor: '#3b82f6' },
+            },
+            {
+              icon: 'microphone',
+              onPress: handleVoice,
+              testID: 'speed-dial-voice',
+              style: { backgroundColor: '#8b5cf6' },
+            },
+            {
+              icon: 'pencil',
+              onPress: handleType,
+              testID: 'speed-dial-type',
+              style: { backgroundColor: '#10b981' },
+            },
+          ]}
+          onStateChange={({ open }) => setIsOpen(open)}
           testID="fab-button"
-        >
-          <LinearGradient
-            colors={['#4c84ff', '#3b82f6']}
-            style={styles.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Animated.View style={{ transform: [{ rotate }] }}>
-              <Ionicons name="add" size={32} color="white" />
-            </Animated.View>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+          style={styles.fab}
+          fabStyle={[styles.fabButton, { backgroundColor: '#3b82f6' }]}
+          color="white"
+          backdropColor="rgba(0, 0, 0, 0.3)"
+        />
+      </Portal>
 
       {/* Bottom Sheet for Type/Form */}
       <BottomSheetModal
@@ -232,60 +177,17 @@ export function FAB() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  fab: {
     position: 'absolute',
     bottom: 30,
     right: 30,
-    alignItems: 'center',
   },
-  mainButton: {
-    borderRadius: 30,
+  fabButton: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-  },
-  gradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  speedDialContainer: {
-    position: 'absolute',
-    bottom: 70,
-    alignItems: 'center',
-  },
-  speedDialItem: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  speedDialButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  labelContainer: {
-    marginRight: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 4,
-  },
-  speedDialLabel: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
   },
   bottomSheet: {
     backgroundColor: 'white',

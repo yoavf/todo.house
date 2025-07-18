@@ -121,3 +121,48 @@ jest.mock('react-native/Libraries/Utilities/defineLazyObjectProperty', () => ({
 jest.mock('expo/src/winter/runtime.native', () => ({
   __ExpoImportMetaRegistry: {}
 }));
+
+// Mock React Native Paper
+jest.mock('react-native-paper', () => {
+  const React = require('react');
+  const { View, TouchableOpacity, Text } = require('react-native');
+  
+  return {
+    Provider: ({ children }) => children,
+    Portal: ({ children }) => children,
+    FAB: {
+      Group: ({ open, visible, icon, label, actions, onStateChange, testID, style, fabStyle, ...props }) => {
+        return (
+          <View testID={testID} style={style}>
+            <TouchableOpacity 
+              onPress={() => onStateChange({ open: !open })}
+              style={fabStyle}
+            >
+              <Text>{icon}</Text>
+              {label && <Text>{label}</Text>}
+            </TouchableOpacity>
+            {open && actions && actions.map((action, index) => (
+              <TouchableOpacity
+                key={index}
+                testID={action.testID}
+                onPress={action.onPress}
+                style={action.style}
+              >
+                <Text>{action.icon}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        );
+      },
+    },
+    useTheme: () => ({
+      colors: {
+        primary: '#3b82f6',
+        accent: '#10b981',
+      },
+    }),
+  };
+});
+
+// Mock react-native-vector-icons
+jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'Icon');

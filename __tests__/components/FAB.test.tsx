@@ -37,15 +37,16 @@ describe('FAB', () => {
   it('opens speed dial when pressed', () => {
     const { getByTestId, queryByTestId } = render(<FAB />);
     
-    const touchable = getByTestId('fab-button');
+    const fabGroup = getByTestId('fab-button');
     
     // Speed dial options should not be visible initially
     expect(queryByTestId('speed-dial-camera')).toBeNull();
     expect(queryByTestId('speed-dial-voice')).toBeNull();
     expect(queryByTestId('speed-dial-type')).toBeNull();
     
-    // Press FAB to open speed dial
-    fireEvent.press(touchable);
+    // Press FAB to open speed dial - find the first TouchableOpacity child
+    const mainButton = fabGroup.children[0];
+    fireEvent.press(mainButton);
     
     // Speed dial options should now be visible
     expect(queryByTestId('speed-dial-camera')).toBeTruthy();
@@ -57,8 +58,9 @@ describe('FAB', () => {
     const { getByTestId } = render(<FAB />);
     
     // Open speed dial first
-    const touchable = getByTestId('fab-button');
-    fireEvent.press(touchable);
+    const fabGroup = getByTestId('fab-button');
+    const mainButton = fabGroup.children[0];
+    fireEvent.press(mainButton);
     
     // Press camera option
     const cameraOption = getByTestId('speed-dial-camera');
@@ -71,11 +73,14 @@ describe('FAB', () => {
   it('has correct styles applied', () => {
     const { getByTestId } = render(<FAB />);
     
-    const touchable = getByTestId('fab-button');
-    const styles = touchable.props.style;
+    const fabGroup = getByTestId('fab-button');
+    const styles = fabGroup.props.style;
     
+    // Check that the FAB has position styles
     expect(styles).toEqual(expect.objectContaining({
-      borderRadius: 30,
+      position: 'absolute',
+      bottom: 30,
+      right: 30,
     }));
   });
 
