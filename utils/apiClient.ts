@@ -1,6 +1,19 @@
 import type { TaskAnalysisResult } from "../types/TaskAnalysisResult";
 import { logger } from './logger';
 
+interface TranscriptionResult {
+	tasks: Array<{
+		title: string;
+		location?: string;
+		dueDate?: string;
+	}>;
+}
+
+export const apiClient = {
+	analyzeImage: analyzeImageForTask,
+	transcribeAudio,
+};
+
 export async function analyzeImageForTask(
 	base64Image: string,
 ): Promise<TaskAnalysisResult> {
@@ -75,5 +88,39 @@ export async function analyzeImageForTask(
 			success: false,
 			error: "Failed to analyze image. Please try again.",
 		};
+	}
+}
+
+export async function transcribeAudio(
+	data: { audioBase64: string; audioType?: string },
+): Promise<TranscriptionResult> {
+	logger.info('APIClient', '🎤 Client: Starting audio transcription...');
+
+	try {
+		logger.debug('APIClient', '📝 Client: Preparing transcription request...');
+
+		const response = await fetch("/api/transcribe-audio", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(data),
+		});
+
+		logger.debug('APIClient', '📡 Client: Transcription response status:', response.status);
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			logger.error('APIClient', '❌ Client: Transcription error response:', errorData);
+			throw new Error(errorData.error || `Server error: ${response.status}`);
+		}
+
+		const result = await response.json();
+		logger.info('APIClient', '✅ Client: Transcription response received:', result);
+
+		return result;
+	} catch (error) {
+		logger.error('APIClient', '❌ Client: Transcription request error:', error);
+		throw error;
 	}
 }

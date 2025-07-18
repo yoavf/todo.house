@@ -44,6 +44,13 @@ export default function RootLayout() {
                     headerShown: false,
                   }}
                 />
+                <Stack.Screen
+                  name="voice"
+                  options={{
+                    presentation: 'modal',
+                    headerShown: false,
+                  }}
+                />
               </Stack>
             </HydrationWrapper>
           </BottomSheetModalProvider>
