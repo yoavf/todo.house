@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTaskStore } from '../store/taskStore';
 import { apiClient } from '../utils/apiClient';
+import { logger } from '../utils/logger';
 
 // Constants
 const SILENCE_TIMEOUT_MS = 2000; // Stop recording after 2 seconds of silence
@@ -102,7 +103,7 @@ export default function VoiceScreen() {
 
   // Handle errors
   useSpeechRecognitionEvent('error', (event) => {
-    console.error('Speech recognition error:', event.error);
+    logger.error('Voice', '❌ Speech recognition error:', event.error);
     setIsListening(false);
     if (event.error !== 'no-speech') {
       Alert.alert('Error', 'Failed to recognize speech. Please try again.');
@@ -120,6 +121,7 @@ export default function VoiceScreen() {
 
   const startListening = useCallback(async () => {
     try {
+      logger.info('Voice', '🎤 Starting speech recognition...');
       setTranscript('');
       setIsListening(true);
       
@@ -129,8 +131,9 @@ export default function VoiceScreen() {
         interimResults: true,
         maxAlternatives: 1,
       });
+      logger.info('Voice', '✅ Speech recognition started');
     } catch (err) {
-      console.error('Failed to start speech recognition', err);
+      logger.error('Voice', '❌ Failed to start speech recognition:', err);
       setIsListening(false);
       Alert.alert('Error', 'Failed to start voice recognition. Please try again.');
     }
@@ -139,9 +142,11 @@ export default function VoiceScreen() {
   const processTranscript = useCallback(async (text: string) => {
     setIsProcessing(true);
     try {
+      logger.info('Voice', '📝 Processing transcript:', text);
       const result = await apiClient.extractTasks(text);
       
       if (result.tasks && result.tasks.length > 0) {
+        logger.info('Voice', `✅ Extracted ${result.tasks.length} task(s)`);
         // Add tasks to store
         result.tasks.forEach((task) => {
           add({
@@ -158,7 +163,7 @@ export default function VoiceScreen() {
         Alert.alert('No Tasks Found', 'Could not extract any tasks from your speech. Please try again.');
       }
     } catch (err) {
-      console.error('Failed to process transcript', err);
+      logger.error('Voice', '❌ Failed to process transcript:', err);
       Alert.alert('Error', 'Failed to process your speech. Please try again.');
     } finally {
       setIsProcessing(false);
@@ -184,7 +189,7 @@ export default function VoiceScreen() {
         Alert.alert('No Speech Detected', 'Please try again and speak clearly.');
       }
     } catch (err) {
-      console.error('Failed to stop speech recognition', err);
+      logger.error('Voice', '❌ Failed to stop speech recognition:', err);
       setIsListening(false);
     }
   }, [isListening, transcript, silenceTimer, processTranscript]);
