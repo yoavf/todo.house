@@ -1,7 +1,14 @@
 import { Ionicons } from '@expo/vector-icons'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { withLayoutContext } from 'expo-router'
-import { StatusBar, StyleSheet, Text, View } from 'react-native'
+import { useState } from 'react'
+import {
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { Navigator } = createMaterialTopTabNavigator()
@@ -9,17 +16,51 @@ const { Navigator } = createMaterialTopTabNavigator()
 const MaterialTopTabs = withLayoutContext(Navigator)
 
 export default function TabsLayout() {
+  const [viewMode, setViewMode] = useState<'large' | 'compact'>('compact')
+  const [showFilters, setShowFilters] = useState(false)
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>todo.house</Text>
+        <Text style={styles.title}>Home Tasks</Text>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() =>
+              setViewMode(viewMode === 'large' ? 'compact' : 'large')
+            }
+          >
+            <Ionicons
+              name={viewMode === 'large' ? 'grid' : 'list'}
+              size={24}
+              color="#2c3e50"
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Ionicons
+              name="filter"
+              size={24}
+              color={showFilters ? '#007bff' : '#2c3e50'}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Swipe instructions */}
+      <Text style={styles.swipeInstructions}>
+        Swipe left to remove • Swipe right to snooze
+      </Text>
 
       <MaterialTopTabs
         screenOptions={{
+          viewMode,
+          showFilters,
           tabBarActiveTintColor: '#007bff',
           tabBarInactiveTintColor: '#6c757d',
           tabBarLabelStyle: {
@@ -105,11 +146,33 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#2c3e50',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    backgroundColor: '#e9ecef',
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeInstructions: {
+    fontSize: 14,
+    color: '#6c757d',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 12,
   },
   tabLabelContainer: {
     flexDirection: 'row',
