@@ -123,14 +123,14 @@ jobs:
 
             // Create comment body
             let comment = '## 📱 Expo App Screenshots\n\n';
-            comment += 'Generated screenshots from the latest changes:\n\n';
+            comment += 'Generated screenshots from the latest changes (click to view full size):\n\n';
 
-            // Add each screenshot with direct GitHub URL
+            // Add each screenshot with direct GitHub URL as thumbnail
             screenshots.forEach((screenshot, index) => {
               const screenshotUrl = `${baseUrl}/${screenshot}`;
               const title = screenshot.replace('.png', '').replace(/-/g, ' ');
               comment += `### ${title}\n`;
-              comment += `![${title}](${screenshotUrl})\n\n`;
+              comment += `<a href="${screenshotUrl}" target="_blank"><img src="${screenshotUrl}" alt="${title}" width="300"></a>\n\n`;
             });
 
             // Add footer with timestamp
