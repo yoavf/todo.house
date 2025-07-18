@@ -1,0 +1,59 @@
+{
+  "cli": {
+    "version": ">= 12.6.2",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "20.11.1",
+      "env": {
+        "EAS_BUILD_RUNNER": "eas-build"
+      }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "remote"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.todo.house"
+      }
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "remote"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.todo.house"
+      }
+    },
+    "production": {
+      "extends": "base",
+      "ios": {
+        "autoIncrement": true
+      },
+      "android": {
+        "autoIncrement": true,
+        "credentialsSource": "remote"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.todo.house"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

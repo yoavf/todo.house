@@ -11,7 +11,7 @@ module.exports = {
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   transformIgnorePatterns: [
-    'node_modules/(?!(?:.pnpm/)?((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|zustand|react-native-svg))',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|zustand|react-native-svg))',
   ],
   globals: {
     __ExpoImportMetaRegistry: {},
