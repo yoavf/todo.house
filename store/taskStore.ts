@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { Task, SnoozeDuration } from '../types/Task';
+import { Task, SnoozeDuration, Schedule, ScheduleFrequency } from '../types/Task';
 import { 
   parseDateField, 
   parseRequiredDateField,
@@ -28,7 +28,9 @@ interface TaskStore {
   snoozeTask: (id: string, duration: SnoozeDuration) => void;
   unsnoozeTask: (id: string) => void;
   setDueDate: (id: string, dueDate?: Date) => void;
+  setSchedule: (id: string, schedule?: Schedule) => void;
   isSnoozed: (task: Task) => boolean;
+  calculateNextDueDate: (schedule: Schedule, currentDueDate?: Date) => Date | undefined;
 }
 
 const STORAGE_KEY = '@todo_house_tasks';
@@ -70,6 +72,40 @@ const calculateSnoozeDate = (duration: SnoozeDuration): Date | undefined => {
   }
 };
 
+// Helper function to calculate the next due date based on a schedule
+const calculateNextDueDate = (schedule: Schedule, currentDueDate?: Date): Date | undefined => {
+  if (!schedule) return undefined;
+  
+  const baseDate = currentDueDate || new Date();
+  const nextDate = new Date(baseDate);
+  
+  switch (schedule.frequency) {
+    case ScheduleFrequency.DAILY:
+      nextDate.setDate(nextDate.getDate() + schedule.interval);
+      break;
+    case ScheduleFrequency.WEEKLY:
+      nextDate.setDate(nextDate.getDate() + (7 * schedule.interval));
+      break;
+    case ScheduleFrequency.MONTHLY:
+      // Handle month calculation (accounting for different month lengths)
+      const currentMonth = nextDate.getMonth();
+      nextDate.setMonth(currentMonth + schedule.interval);
+      break;
+    case ScheduleFrequency.YEARLY:
+      nextDate.setFullYear(nextDate.getFullYear() + schedule.interval);
+      break;
+    default:
+      return undefined;
+  }
+  
+  // Check if we've reached the end date or max occurrences
+  if (schedule.endDate && nextDate > schedule.endDate) {
+    return undefined;
+  }
+  
+  return nextDate;
+};
+
 export const useTaskStore = create<TaskStore>((set, get) => ({
   tasks: [],
   hydrated: false,
@@ -81,6 +117,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       createdAt: new Date(),
       order: Date.now(), // New tasks appear at top
+      isScheduled: !!taskData.schedule,
+      isFutureTask: !!taskData.isFutureTask,
     };
 
     set((state) => ({
@@ -111,11 +149,35 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   toggle: (id) => {
+    const task = get().tasks.find(task => task.id === id);
+    if (!task) return;
+    
+    // Toggle the completion status
     set((state) => ({
       tasks: state.tasks.map((task) =>
         task.id === id ? { ...task, completed: !task.completed } : task
       ),
     }));
+    
+    // If the task is now completed and has a schedule, create the next occurrence
+    if (!task.completed && task.schedule) {
+      const nextDueDate = get().calculateNextDueDate(task.schedule, task.dueDate);
+      
+      if (nextDueDate) {
+        // Create a new future task with the next due date
+        get().add({
+          title: task.title,
+          location: task.location,
+          completed: false,
+          dueDate: nextDueDate,
+          schedule: task.schedule,
+          imageUri: task.imageUri,
+          isFutureTask: true,
+        });
+        
+        logger.info('TaskStore', 'Created next scheduled task with due date:', nextDueDate);
+      }
+    }
 
     get().persist();
   },
@@ -136,6 +198,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           isWheneverSnoozed: task.isWheneverSnoozed || false,
           order: task.order !== undefined ? task.order : (task.createdAt ? parseRequiredDateField(task.createdAt).getTime() : Date.now()),
           imageUri: task.imageUri || undefined,
+          // Parse schedule dates if they exist
+          schedule: task.schedule ? {
+            ...task.schedule,
+            endDate: parseDateField(task.schedule.endDate),
+          } : undefined,
+          isScheduled: task.isScheduled || false,
+          isFutureTask: task.isFutureTask || false,
         }));
         set({ tasks, hydrated: true });
       } else {
@@ -160,6 +229,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   reorderTasks: (newTaskOrder: Task[]) => {
     set((state) => {
       const snoozedTasks = state.tasks.filter(task => task.snoozeUntil && task.snoozeUntil > new Date());
+      const futureTasks = state.tasks.filter(task => task.isFutureTask);
       
       // Update order values based on new array order
       const baseTimestamp = Date.now();
@@ -169,7 +239,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }));
 
       return {
-        tasks: [...reorderedTasks, ...snoozedTasks],
+        tasks: [...reorderedTasks, ...snoozedTasks, ...futureTasks],
       };
     });
     
@@ -208,7 +278,22 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     get().persist();
   },
+  
+  setSchedule: (id: string, schedule?: Schedule) => {
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        task.id === id ? { 
+          ...task, 
+          schedule, 
+          isScheduled: !!schedule 
+        } : task
+      ),
+    }));
 
+    get().persist();
+  },
+
+  calculateNextDueDate,
 
   isSnoozed: (task: Task) => {
     const now = new Date();
@@ -221,7 +306,12 @@ export const getActiveTasks = (tasks: Task[]): Task[] => {
   const now = new Date();
   
   return tasks
-    .filter(task => !task.isWheneverSnoozed && (!task.snoozeUntil || task.snoozeUntil <= now))
+    .filter(task => 
+      // Not snoozed
+      (!task.isWheneverSnoozed && (!task.snoozeUntil || task.snoozeUntil <= now)) &&
+      // Not a future task
+      !task.isFutureTask
+    )
     .sort((a, b) => {
       // Sort by completion status first
       if (a.completed !== b.completed) {
@@ -244,7 +334,12 @@ export const getSnoozedTasks = (tasks: Task[]): Task[] => {
   const now = new Date();
   
   return tasks
-    .filter(task => task.isWheneverSnoozed || (task.snoozeUntil && task.snoozeUntil > now))
+    .filter(task => 
+      // Is snoozed
+      (task.isWheneverSnoozed || (task.snoozeUntil && task.snoozeUntil > now)) &&
+      // Not a future task
+      !task.isFutureTask
+    )
     .sort((a, b) => {
       // Whenever tasks go to the bottom
       if (a.isWheneverSnoozed && !b.isWheneverSnoozed) return 1;
@@ -255,5 +350,22 @@ export const getSnoozedTasks = (tasks: Task[]): Task[] => {
         return a.snoozeUntil.getTime() - b.snoozeUntil.getTime();
       }
       return 0;
+    });
+};
+
+// New helper function to get future tasks
+export const getFutureTasks = (tasks: Task[]): Task[] => {
+  return tasks
+    .filter(task => task.isFutureTask)
+    .sort((a, b) => {
+      // Sort by due date
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate.getTime() - b.dueDate.getTime();
+      }
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+      
+      // Then by creation date (newest first)
+      return b.createdAt.getTime() - a.createdAt.getTime();
     });
 };
