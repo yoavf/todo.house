@@ -168,7 +168,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     
     // If the task is now completed and has a schedule, create the next occurrence
     if (!task.completed && task.schedule) {
-      const nextDueDate = get().calculateNextDueDate(task.schedule, task.dueDate);
+      const nextDueDate = calculateNextDueDate(task.schedule, task.dueDate);
       
       if (nextDueDate) {
         // Create a new future task with the next due date
