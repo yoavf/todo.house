@@ -155,6 +155,14 @@ jest.mock('react-native-paper', () => {
         );
       },
     },
+    AnimatedFAB: ({ icon, label, extended, onPress, visible, testID, style, ...props }) => {
+      return visible !== false ? (
+        <TouchableOpacity testID={testID} onPress={onPress} style={style}>
+          <Text>{icon}</Text>
+          {extended && label && <Text>{label}</Text>}
+        </TouchableOpacity>
+      ) : null;
+    },
     useTheme: () => ({
       colors: {
         primary: '#3b82f6',
