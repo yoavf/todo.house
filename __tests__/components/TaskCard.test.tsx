@@ -1,6 +1,7 @@
 import { fireEvent, render } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { TaskCard } from "../../components/TaskCard";
+import { TaskPlaceholderImage } from "../../components/TaskPlaceholderImage";
 import { useTaskStore } from "../../store/taskStore";
 import type { Task } from "../../types/Task";
 
@@ -224,5 +225,17 @@ describe("TaskCard", () => {
 
 		// Location picker should be visible
 		expect(getByText("Choose Location")).toBeTruthy();
+	});
+
+	it("shows placeholder image when no image is present", () => {
+		const { queryByTestId, UNSAFE_getByType } = render(<TaskCard task={mockTask} />);
+
+		// Image preview button should not be visible
+		const imageButton = queryByTestId("image-preview");
+		expect(imageButton).toBeNull();
+
+		// TaskPlaceholderImage component should be rendered
+		const placeholder = UNSAFE_getByType(TaskPlaceholderImage);
+		expect(placeholder).toBeTruthy();
 	});
 });

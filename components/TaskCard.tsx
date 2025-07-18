@@ -6,6 +6,7 @@ import { Task, Schedule } from '../types/Task';
 import { InlineTextEdit } from './InlineTextEdit';
 import { LocationPicker } from './LocationPicker';
 import { SchedulePicker } from './SchedulePicker';
+import { TaskPlaceholderImage } from './TaskPlaceholderImage';
 
 interface TaskCardProps {
   task: Task;
@@ -145,8 +146,8 @@ export function TaskCard({ task }: TaskCardProps) {
             )}
           </TouchableOpacity>
 
-          {/* Image thumbnail if available */}
-          {task.imageUri && (
+          {/* Image thumbnail or placeholder */}
+          {task.imageUri ? (
             <TouchableOpacity 
               onPress={() => setShowImageModal(true)}
               style={styles.imageContainer}
@@ -161,6 +162,10 @@ export function TaskCard({ task }: TaskCardProps) {
                 <Ionicons name="expand-outline" size={16} color="white" />
               </View>
             </TouchableOpacity>
+          ) : (
+            <View style={styles.imageContainer}>
+              <TaskPlaceholderImage size={60} />
+            </View>
           )}
 
           {/* Date */}
