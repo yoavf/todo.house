@@ -20,6 +20,7 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
+    "@tamagui/animations-react-native": "^1.132.9",
     "@tamagui/babel-plugin": "^1.132.9",
     "@tamagui/config": "^1.132.9",
     "@tamagui/metro-plugin": "^1.132.9",

@@ -12,10 +12,10 @@ interface TaskCardProps {
 }
 
 const StyledCard = styled(Card, {
-  padding: '$md',
-  marginBottom: '$md',
+  padding: '$4',
+  marginBottom: '$4',
   backgroundColor: '$background',
-  borderRadius: '$card',
+  borderRadius: '$4',
   shadowColor: '#000',
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.1,
@@ -121,7 +121,7 @@ export function TaskCard({ task }: TaskCardProps) {
         hoverStyle={{ scale: 0.95 }}
         pressStyle={{ scale: 0.95 }}
       >
-        <XStack alignItems="flex-start" gap="$sm">
+        <XStack alignItems="flex-start" gap="$3">
           {/* Completion Checkbox */}
           <Checkbox
             checked={task.completed}
@@ -136,7 +136,7 @@ export function TaskCard({ task }: TaskCardProps) {
           </Checkbox>
 
           {/* Task Content */}
-          <YStack flex={1} gap="$xs">
+          <YStack flex={1} gap="$2">
             {/* Title */}
             <InlineTextEdit
               value={task.title}

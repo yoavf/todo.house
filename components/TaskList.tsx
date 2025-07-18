@@ -24,7 +24,7 @@ const EmptyText = styled(Text, {
 	fontSize: 18,
 	fontWeight: "600",
 	color: "$gray10",
-	marginBottom: "$sm",
+	marginBottom: "$3",
 });
 
 const EmptySubtext = styled(Text, {
