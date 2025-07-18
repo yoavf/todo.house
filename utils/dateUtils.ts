@@ -4,7 +4,7 @@
 
 import { SnoozeDuration } from '../types/Task';
 import { getCurrentLocale, getCurrentRegion } from './localeUtils';
-import { MILLISECONDS_PER_DAY } from './constants';
+import { MILLISECONDS_PER_DAY, DEFAULT_MORNING_HOUR, DEFAULT_MORNING_MINUTE, DEFAULT_MORNING_SECOND } from './constants';
 import * as Localization from 'expo-localization';
 
 const { Weekday } = Localization;
@@ -137,7 +137,7 @@ export const getNextWeekday = (targetDay: number, fromDate: Date = new Date()): 
   const daysToAdd = daysUntil === 0 ? 7 : daysUntil;
   
   result.setDate(result.getDate() + daysToAdd);
-  result.setHours(9, 0, 0, 0); // Set to 9 AM
+  result.setHours(DEFAULT_MORNING_HOUR, DEFAULT_MORNING_MINUTE, DEFAULT_MORNING_SECOND, 0);
   return result;
 };
 
@@ -226,4 +226,11 @@ export const getSnoozeOptions = (locale?: string) => {
       date: undefined
     }
   ];
+};
+
+/**
+ * Gets the last day of the month for a given date
+ */
+export const getLastDayOfMonth = (date: Date): number => {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 };

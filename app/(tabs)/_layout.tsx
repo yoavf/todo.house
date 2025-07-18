@@ -75,6 +75,23 @@ export default function TabsLayout() {
 						),
 					}}
 				/>
+				<MaterialTopTabs.Screen 
+					name="future" 
+					options={{
+						title: 'Future',
+						tabBarLabel: ({ focused, color }) => (
+							<View style={styles.tabLabelContainer}>
+								<Ionicons 
+									name={focused ? "calendar" : "calendar-outline"} 
+									size={20} 
+									color={color}
+									style={styles.tabIcon}
+								/>
+								<Text style={[styles.tabLabel, { color }]}>Future</Text>
+							</View>
+						),
+					}}
+				/>
 			</MaterialTopTabs>
 		</SafeAreaView>
 	);

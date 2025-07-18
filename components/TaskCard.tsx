@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View, Image, Modal } from 'react-native';
 import { useTaskStore } from '../store/taskStore';
-import { Task } from '../types/Task';
+import { Task, Schedule } from '../types/Task';
 import { InlineTextEdit } from './InlineTextEdit';
 import { LocationPicker } from './LocationPicker';
+import { SchedulePicker } from './SchedulePicker';
 
 interface TaskCardProps {
   task: Task;
@@ -13,7 +14,8 @@ interface TaskCardProps {
 export function TaskCard({ task }: TaskCardProps) {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const { toggle, remove, update, recentlyAddedId, clearRecentlyAdded } = useTaskStore();
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const { toggle, remove, update, setSchedule, recentlyAddedId, clearRecentlyAdded } = useTaskStore();
   const isRecentlyAdded = recentlyAddedId === task.id;
 
   // Clear the recently added highlight after a delay
@@ -51,6 +53,11 @@ export function TaskCard({ task }: TaskCardProps) {
   const handleLocationUpdate = (newLocation: string) => {
     update(task.id, { location: newLocation || undefined });
     setShowLocationPicker(false);
+  };
+  
+  const handleScheduleUpdate = (schedule: Schedule | undefined) => {
+    setSchedule(task.id, schedule);
+    setShowSchedulePicker(false);
   };
 
   const formatDate = (date: Date) => {
@@ -116,6 +123,27 @@ export function TaskCard({ task }: TaskCardProps) {
               <Text style={styles.addLocation}>Add location</Text>
             )}
           </TouchableOpacity>
+          
+          {/* Schedule Button */}
+          <TouchableOpacity
+            onPress={() => setShowSchedulePicker(true)}
+            style={styles.scheduleButton}
+            testID="schedule-button"
+          >
+            {task.schedule ? (
+              <View style={styles.scheduleButtonContent}>
+                <Ionicons name="repeat" size={16} color="#28a745" style={styles.scheduleButtonIcon} />
+                <Text style={styles.scheduleButtonTextActive}>
+                  Every {task.schedule.interval} {task.schedule.frequency}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.scheduleButtonContent}>
+                <Ionicons name="repeat-outline" size={16} color="#adb5bd" style={styles.scheduleButtonIcon} />
+                <Text style={styles.scheduleButtonText}>Add schedule</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
           {/* Image thumbnail if available */}
           {task.imageUri && (
@@ -139,6 +167,22 @@ export function TaskCard({ task }: TaskCardProps) {
           <Text style={[styles.date, task.completed && styles.completedText]}>
             {formatDate(task.createdAt)}
           </Text>
+
+          {/* Schedule Indicator */}
+          {task.isScheduled && (
+            <View style={styles.scheduleIndicator}>
+              <Ionicons name="repeat" size={14} color="#28a745" style={styles.scheduleIcon} />
+              <Text style={styles.scheduleText}>Scheduled</Text>
+            </View>
+          )}
+
+          {/* Future Task Indicator */}
+          {task.isFutureTask && (
+            <View style={styles.scheduleIndicator}>
+              <Ionicons name="calendar" size={14} color="#6f42c1" style={styles.scheduleIcon} />
+              <Text style={styles.scheduleText}>Future</Text>
+            </View>
+          )}
         </View>
 
         {/* Delete Button */}
@@ -161,6 +205,14 @@ export function TaskCard({ task }: TaskCardProps) {
         onSelect={handleLocationUpdate}
         onClose={() => setShowLocationPicker(false)}
         testID="location-picker"
+      />
+      
+      {/* Schedule Picker Modal */}
+      <SchedulePicker
+        visible={showSchedulePicker}
+        onSave={handleScheduleUpdate}
+        onClose={() => setShowSchedulePicker(false)}
+        initialSchedule={task.schedule}
       />
 
       {/* Image Modal */}
@@ -263,12 +315,49 @@ const styles = StyleSheet.create({
     color: '#adb5bd',
     fontStyle: 'italic',
   },
+  scheduleButton: {
+    marginBottom: 8,
+  },
+  scheduleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  scheduleButtonIcon: {
+    marginRight: 4,
+  },
+  scheduleButtonText: {
+    fontSize: 14,
+    color: '#adb5bd',
+    fontStyle: 'italic',
+  },
+  scheduleButtonTextActive: {
+    fontSize: 14,
+    color: '#28a745',
+  },
   completedText: {
     color: '#adb5bd',
   },
   date: {
     fontSize: 12,
     color: '#adb5bd',
+  },
+  scheduleIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  scheduleIcon: {
+    marginRight: 4,
+  },
+  scheduleText: {
+    fontSize: 12,
+    color: '#28a745',
+    fontWeight: '500',
   },
   deleteButton: {
     padding: 4,
