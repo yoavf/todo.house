@@ -31,14 +31,27 @@ async function takeScreenshots() {
     })
 
     // Wait for app to fully load and hydrate with seed data
-    // In a real app, we would wait for specific elements like:
-    // await page.waitForSelector('[data-testid="task-list"]', { timeout: 30000 })
-    // However, in CI with Expo web, we need to ensure React hydration completes
-    const APP_HYDRATION_TIMEOUT = parseInt(
-      process.env.APP_HYDRATION_TIMEOUT || '8000',
-      10,
-    )
-    await page.waitForTimeout(APP_HYDRATION_TIMEOUT)
+    // First wait for basic hydration
+    await page.waitForTimeout(5000)
+
+    // Then wait for either tasks to load or empty state to appear
+    try {
+      // Wait for tasks or empty state (whichever appears first)
+      await Promise.race([
+        page.waitForSelector('text="Your Tasks"', { timeout: 15000 }),
+        page.waitForSelector('[data-testid="empty-container"]', {
+          timeout: 15000,
+        }),
+      ])
+
+      // Additional wait to ensure content is fully rendered
+      await page.waitForTimeout(3000)
+    } catch (error) {
+      console.log(
+        'Warning: Could not detect app content, proceeding with fallback timeout',
+      )
+      await page.waitForTimeout(10000)
+    }
 
     // 1. Take screenshot of home screen with seeded tasks
     await page.screenshot({

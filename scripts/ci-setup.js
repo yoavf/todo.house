@@ -65,6 +65,6 @@ module.exports = { getCiSetupScript }
 
 // If run directly, generate and log the script
 if (require.main === module) {
-  const script = getCiSetupScript()
+  getCiSetupScript()
   console.log('CI setup script generated successfully')
 }
