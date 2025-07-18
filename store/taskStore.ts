@@ -30,7 +30,6 @@ interface TaskStore {
   setDueDate: (id: string, dueDate?: Date) => void;
   setSchedule: (id: string, schedule?: Schedule) => void;
   isSnoozed: (task: Task) => boolean;
-  calculateNextDueDate: (schedule: Schedule, currentDueDate?: Date) => Date | undefined;
 }
 
 const STORAGE_KEY = '@todo_house_tasks';
@@ -87,9 +86,17 @@ const calculateNextDueDate = (schedule: Schedule, currentDueDate?: Date): Date |
       nextDate.setDate(nextDate.getDate() + (7 * schedule.interval));
       break;
     case ScheduleFrequency.MONTHLY:
-      // Handle month calculation (accounting for different month lengths)
+      // Handle month calculation with proper month-end handling
+      const currentDate = nextDate.getDate();
       const currentMonth = nextDate.getMonth();
+      
+      // First set the month
+      nextDate.setDate(1); // Temporarily set to 1st to avoid month overflow
       nextDate.setMonth(currentMonth + schedule.interval);
+      
+      // Then set the date, clamping to the last day of the month if needed
+      const lastDayOfMonth = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+      nextDate.setDate(Math.min(currentDate, lastDayOfMonth));
       break;
     case ScheduleFrequency.YEARLY:
       nextDate.setFullYear(nextDate.getFullYear() + schedule.interval);
@@ -292,8 +299,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     get().persist();
   },
-
-  calculateNextDueDate,
 
   isSnoozed: (task: Task) => {
     const now = new Date();

@@ -55,7 +55,7 @@ export function TaskCard({ task }: TaskCardProps) {
     setShowLocationPicker(false);
   };
   
-  const handleScheduleUpdate = (schedule: Schedule) => {
+  const handleScheduleUpdate = (schedule: Schedule | undefined) => {
     setSchedule(task.id, schedule);
     setShowSchedulePicker(false);
   };

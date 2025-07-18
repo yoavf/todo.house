@@ -6,7 +6,7 @@ import { Schedule, ScheduleFrequency } from '../types/Task';
 interface SchedulePickerProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (schedule: Schedule) => void;
+  onSave: (schedule: Schedule | undefined) => void;
   initialSchedule?: Schedule;
 }
 
