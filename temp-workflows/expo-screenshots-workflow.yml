@@ -86,8 +86,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Create a unique folder for this PR's screenshots
+          # Create a unique folder for this PR's screenshots with timestamp
           PR_FOLDER="pr-${{ github.event.pull_request.number }}"
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          SCREENSHOT_FOLDER="${PR_FOLDER}/${TIMESTAMP}"
           
           # Fetch or create the screenshots branch
           git fetch origin gh-screenshots 2>/dev/null || true
@@ -106,13 +108,17 @@ jobs:
             git commit -m "Initialize screenshots branch"
           fi
           
-          # Create PR folder and copy screenshots
-          mkdir -p "$PR_FOLDER"
-          cp -r screenshots/* "$PR_FOLDER/" 2>/dev/null || true
+          # Create folder structure and copy screenshots
+          mkdir -p "$SCREENSHOT_FOLDER"
+          cp -r screenshots/* "$SCREENSHOT_FOLDER/" 2>/dev/null || true
+          
+          # Also update the "latest" symlink
+          rm -f "${PR_FOLDER}/latest"
+          ln -s "${TIMESTAMP}" "${PR_FOLDER}/latest"
           
           # Add and commit
           git add "$PR_FOLDER"
-          git commit -m "Update screenshots for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
+          git commit -m "Update screenshots for PR #${{ github.event.pull_request.number }} at ${TIMESTAMP}" || echo "No changes to commit"
           
           # Push to origin
           git push origin gh-screenshots || git push --set-upstream origin gh-screenshots
@@ -123,6 +129,7 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
+            const { execSync } = require('child_process');
 
             // Get list of screenshots
             const screenshotsDir = 'screenshots';
@@ -135,19 +142,27 @@ jobs:
               return;
             }
 
-            // Base URL for raw GitHub content
-            const baseUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/gh-screenshots/pr-${context.issue.number}`;
+            // Get current timestamp
+            const timestamp = new Date().toISOString();
+            const timestampFolder = timestamp.replace(/[:.]/g, '-').split('T')[0] + '-' + 
+                                   timestamp.split('T')[1].split('.')[0].replace(/[:.]/g, '');
 
-            // Create comment body with smaller thumbnails in a grid
+            // Base URLs for screenshots
+            const prNumber = context.issue.number;
+            const baseUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/gh-screenshots/pr-${prNumber}`;
+            const latestUrl = `${baseUrl}/latest`;
+
+            // Create comment body for latest screenshots
             let comment = '## 📱 Expo App Screenshots\n\n';
-            comment += 'Generated screenshots from the latest changes:\n\n';
+            comment += '### 🆕 Latest Screenshots\n\n';
+            comment += 'Generated from the most recent commit:\n\n';
             
-            // Create a grid layout for thumbnails
+            // Create a grid layout for latest thumbnails
             comment += '<table>\n<tr>\n';
             
             let colCount = 0;
             screenshots.forEach((screenshot, index) => {
-              const screenshotUrl = `${baseUrl}/${screenshot}`;
+              const screenshotUrl = `${latestUrl}/${screenshot}`;
               const title = screenshot.replace('.png', '')
                 .replace(/^\d+-/, '') // Remove number prefix
                 .replace(/-/g, ' ')
@@ -162,7 +177,7 @@ jobs:
               comment += '<td align="center">\n';
               comment += `<b>${title}</b><br>\n`;
               comment += `<a href="${screenshotUrl}" target="_blank">`;
-              comment += `<img src="${screenshotUrl}" alt="${title}" width="200">`;
+              comment += `<img src="${screenshotUrl}" alt="${title}" width="250">`;
               comment += `</a>\n`;
               comment += '</td>\n';
               
@@ -182,19 +197,13 @@ jobs:
               comment += '- **Next Workday**: Snooze until the next workday\n';
               comment += '- **Whenever**: Indefinite snooze\n\n';
               
-              const snoozeUrl = `${baseUrl}/${snoozeScreenshot}`;
+              const snoozeUrl = `${latestUrl}/${snoozeScreenshot}`;
               comment += `<a href="${snoozeUrl}" target="_blank">`;
               comment += `<img src="${snoozeUrl}" alt="Snooze Action Sheet" width="300">`;
-              comment += `</a>\n\n`;
+              comment += `</a>\n\n';
             }
 
-            // Add footer with timestamp and details
-            const timestamp = new Date().toISOString();
-            comment += `\n---\n`;
-            comment += `*Screenshots generated automatically by GitHub Actions at ${timestamp}*\n`;
-            comment += `*${screenshots.length} screenshots captured with seeded test data*`;
-
-            // Check if we already commented
+            // Check if we already have a comment to get history
             const { data: comments } = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -206,6 +215,84 @@ jobs:
               comment.body.includes('📱 Expo App Screenshots')
             );
 
+            // Extract previous screenshots history if exists
+            let historySection = '';
+            if (botComment && botComment.body.includes('### 📸 Screenshot History')) {
+              // Extract everything after "Screenshot History" header
+              const historyMatch = botComment.body.match(/### 📸 Screenshot History[\s\S]*$/);
+              if (historyMatch) {
+                historySection = historyMatch[0];
+                // Remove the footer from history
+                historySection = historySection.replace(/\n---\n\*Screenshots generated automatically[\s\S]*$/, '');
+              }
+            }
+
+            // If we have history, prepend the current screenshots to it
+            if (historySection) {
+              // Add current screenshots to history with smaller thumbnails
+              let newHistoryEntry = `\n<details>\n<summary><b>${timestamp}</b> - ${screenshots.length} screenshots</summary>\n\n`;
+              newHistoryEntry += '<table>\n<tr>\n';
+              
+              let histColCount = 0;
+              screenshots.forEach((screenshot) => {
+                const screenshotUrl = `${latestUrl}/${screenshot}`;
+                
+                // Start new row every 4 images for history (smaller thumbnails)
+                if (histColCount === 4) {
+                  newHistoryEntry += '</tr>\n<tr>\n';
+                  histColCount = 0;
+                }
+                
+                newHistoryEntry += '<td align="center">\n';
+                newHistoryEntry += `<a href="${screenshotUrl}" target="_blank">`;
+                newHistoryEntry += `<img src="${screenshotUrl}" alt="${screenshot}" width="150">`;
+                newHistoryEntry += `</a>\n`;
+                newHistoryEntry += '</td>\n';
+                
+                histColCount++;
+              });
+              
+              newHistoryEntry += '</tr>\n</table>\n\n</details>\n';
+              
+              // Update history section
+              historySection = historySection.replace('### 📸 Screenshot History\n', 
+                                                    '### 📸 Screenshot History\n' + newHistoryEntry);
+            } else {
+              // Create new history section
+              historySection = '### 📸 Screenshot History\n';
+              historySection += `\n<details>\n<summary><b>${timestamp}</b> - ${screenshots.length} screenshots</summary>\n\n`;
+              historySection += '<table>\n<tr>\n';
+              
+              let histColCount = 0;
+              screenshots.forEach((screenshot) => {
+                const screenshotUrl = `${latestUrl}/${screenshot}`;
+                
+                // Start new row every 4 images for history
+                if (histColCount === 4) {
+                  historySection += '</tr>\n<tr>\n';
+                  histColCount = 0;
+                }
+                
+                historySection += '<td align="center">\n';
+                historySection += `<a href="${screenshotUrl}" target="_blank">`;
+                historySection += `<img src="${screenshotUrl}" alt="${screenshot}" width="150">`;
+                historySection += `</a>\n`;
+                historySection += '</td>\n';
+                
+                histColCount++;
+              });
+              
+              historySection += '</tr>\n</table>\n\n</details>\n';
+            }
+
+            // Add history section to comment
+            comment += historySection;
+
+            // Add footer with timestamp and details
+            comment += `\n---\n`;
+            comment += `*Screenshots generated automatically by GitHub Actions at ${timestamp}*\n`;
+            comment += `*${screenshots.length} screenshots captured with seeded test data*`;
+
             if (botComment) {
               // Update existing comment
               await github.rest.issues.updateComment({
@@ -214,6 +301,7 @@ jobs:
                 repo: context.repo.repo,
                 body: comment
               });
+              console.log('Updated existing comment');
             } else {
               // Create new comment
               await github.rest.issues.createComment({
@@ -222,4 +310,5 @@ jobs:
                 repo: context.repo.repo,
                 body: comment
               });
+              console.log('Created new comment');
             }
