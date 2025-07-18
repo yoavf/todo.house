@@ -34,14 +34,6 @@ echo "✅ Found todo.house project"
 echo "📦 Installing dependencies with pnpm..."
 pnpm install
 
-# Verify TypeScript compilation
-echo "🔍 Checking TypeScript compilation..."
-npx tsc --noEmit
-
-# Run linter
-echo "🧹 Running linter..."
-pnpm run lint
-
 echo ""
 echo "🎉 Setup complete!"
 echo ""
