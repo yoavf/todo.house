@@ -1,6 +1,7 @@
 import { fireEvent, render } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { TaskCard } from "../../components/TaskCard";
+import { TaskPlaceholderImage } from "../../components/TaskPlaceholderImage";
 import { useTaskStore } from "../../store/taskStore";
 import type { Task } from "../../types/Task";
 
@@ -234,7 +235,6 @@ describe("TaskCard", () => {
 		expect(imageButton).toBeNull();
 
 		// TaskPlaceholderImage component should be rendered
-		const TaskPlaceholderImage = require("../../components/TaskPlaceholderImage").TaskPlaceholderImage;
 		const placeholder = UNSAFE_getByType(TaskPlaceholderImage);
 		expect(placeholder).toBeTruthy();
 	});

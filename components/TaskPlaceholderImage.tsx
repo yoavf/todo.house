@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface TaskPlaceholderImageProps {
   size?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function TaskPlaceholderImage({ size = 60, style }: TaskPlaceholderImageProps) {
