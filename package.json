@@ -73,7 +73,8 @@
     "jest": "^30.0.4",
     "jest-expo": "^53.0.9",
     "react-test-renderer": "^19.0.0",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "playwright": "^1.49.1"
   },
   "private": true
 }
