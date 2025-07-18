@@ -225,4 +225,17 @@ describe("TaskCard", () => {
 		// Location picker should be visible
 		expect(getByText("Choose Location")).toBeTruthy();
 	});
+
+	it("shows placeholder image when no image is present", () => {
+		const { queryByTestId, UNSAFE_getByType } = render(<TaskCard task={mockTask} />);
+
+		// Image preview button should not be visible
+		const imageButton = queryByTestId("image-preview");
+		expect(imageButton).toBeNull();
+
+		// TaskPlaceholderImage component should be rendered
+		const TaskPlaceholderImage = require("../../components/TaskPlaceholderImage").TaskPlaceholderImage;
+		const placeholder = UNSAFE_getByType(TaskPlaceholderImage);
+		expect(placeholder).toBeTruthy();
+	});
 });

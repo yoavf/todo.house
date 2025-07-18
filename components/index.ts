@@ -8,4 +8,5 @@ export { SuccessAnimation } from './SuccessAnimation';
 export { SwipeableTaskCard } from './SwipeableTaskCard';
 export { TaskCard } from './TaskCard';
 export { TaskList } from './TaskList';
+export { TaskPlaceholderImage } from './TaskPlaceholderImage';
 
