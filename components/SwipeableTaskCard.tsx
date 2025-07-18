@@ -13,12 +13,14 @@ interface SwipeableTaskCardProps {
   task: Task
   drag?: () => void
   isActive?: boolean
+  onPress?: () => void
 }
 
 export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
   task,
   drag,
   isActive = false,
+  onPress,
 }) => {
   const remove = useTaskStore((state) => state.remove)
   const toggle = useTaskStore((state) => state.toggle)
@@ -106,7 +108,12 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
         activationThreshold={5}
         swipeEnabled={true}
       >
-        <View style={styles.taskCard}>
+        <TouchableOpacity
+          style={styles.taskCard}
+          onPress={onPress}
+          activeOpacity={0.95}
+          disabled={!onPress}
+        >
           <View style={styles.taskContent}>
             <TaskCard task={task} />
           </View>
@@ -122,7 +129,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
               <Ionicons name="reorder-three" size={20} color="#999" />
             </TouchableOpacity>
           )}
-        </View>
+        </TouchableOpacity>
       </SwipeableItem>
 
       <SnoozeActionSheet
