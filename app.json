@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "todo.house",
-    "slug": "todo.house",
+    "slug": "todo-house",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

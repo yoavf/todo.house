@@ -4,6 +4,9 @@ const config = getDefaultConfig(__dirname, {
   isCSSEnabled: true,
 });
 
+// Add .mjs support for Tamagui
+config.resolver.sourceExts.push('mjs');
+
 const { withTamagui } = require('@tamagui/metro-plugin');
 module.exports = withTamagui(config, {
   components: ['tamagui'],
