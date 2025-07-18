@@ -6,7 +6,7 @@ on:
       - main
       - develop
   pull_request:
-    types: [opened, synchronize]
+    types: [labeled]
   workflow_dispatch:
     inputs:
       platform:
@@ -32,6 +32,7 @@ jobs:
   build:
     name: EAS Build
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.label.name, 'build'))
     steps:
       - name: 🏗 Setup repo
         uses: actions/checkout@v4
@@ -68,3 +69,5 @@ jobs:
           echo "### Build Status 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Check the [Expo dashboard](https://expo.dev/accounts/yoavfr/projects/todohouse/builds) for build progress and download links." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **Tip**: To trigger builds on PRs, add the \`build\` label to your pull request." >> $GITHUB_STEP_SUMMARY
