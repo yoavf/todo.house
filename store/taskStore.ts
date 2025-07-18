@@ -1,4 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import webAsyncStorage from "../utils/webAsyncStorage";
+
+// Use web storage in web environment or CI
+const storage = (typeof window !== 'undefined' && (window as any).__CI_MODE__) 
+  ? webAsyncStorage 
+  : AsyncStorage;
 import { create } from "zustand";
 import {
   type Schedule,
@@ -265,7 +271,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
 	hydrate: async () => {
 		try {
-			const stored = await AsyncStorage.getItem(STORAGE_KEY);
+			const stored = await storage.getItem(STORAGE_KEY);
 			if (stored) {
 				const tasks = JSON.parse(stored).map((task: any) => ({
 					...task,
@@ -304,7 +310,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 	persist: async () => {
 		try {
 			const { tasks } = get();
-			await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+			await storage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 		} catch (error) {
 			logger.error("TaskStore", "Failed to persist tasks:", error);
 		}

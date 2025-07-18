@@ -33,7 +33,7 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
     } catch {
       Alert.alert('Error', 'Failed to snooze task');
     }
-  }, [snoozeTask, taskId, onClose, snoozeOptions]);
+  }, [snoozeTask, taskId, onClose]);
 
   return (
     <BottomSheetModal
