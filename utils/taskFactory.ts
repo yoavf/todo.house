@@ -55,113 +55,122 @@ interface TaskFactoryOptions {
   includeDueDates?: boolean
 }
 
-let taskCounter = 0
+/**
+ * Creates a task factory instance with isolated counter state.
+ * This prevents shared mutable state issues when the module is imported multiple times.
+ */
+export function createTaskFactory() {
+  let taskCounter = 0
 
-export function generateTask(overrides?: Partial<Task>): Task {
-  const now = new Date()
-  const taskIndex = taskCounter++
+  const generateTask = (overrides?: Partial<Task>): Task => {
+    const now = new Date()
+    const taskIndex = taskCounter++
 
-  const baseTask: Task = {
-    id: `task-${Date.now()}-${taskIndex}`,
-    title: TASK_TITLES[taskIndex % TASK_TITLES.length],
-    location: LOCATIONS[taskIndex % LOCATIONS.length],
-    createdAt: new Date(now.getTime() - taskIndex * 1000 * 60 * 60), // Each task 1 hour older
-    completed: false,
-    order: now.getTime() - taskIndex,
+    const baseTask: Task = {
+      id: `task-${Date.now()}-${taskIndex}`,
+      title: TASK_TITLES[taskIndex % TASK_TITLES.length],
+      location: LOCATIONS[taskIndex % LOCATIONS.length],
+      createdAt: new Date(now.getTime() - taskIndex * 1000 * 60 * 60), // Each task 1 hour older
+      completed: false,
+      order: now.getTime() - taskIndex,
+    }
+
+    return { ...baseTask, ...overrides }
   }
 
-  return { ...baseTask, ...overrides }
-}
+  const generateTasks = (options: TaskFactoryOptions = {}): Task[] => {
+    const {
+      count = 20,
+      includeCompleted = true,
+      includeSnoozed = true,
+      includeImages = true,
+      includeDueDates = true,
+    } = options
 
-export function generateTasks(options: TaskFactoryOptions = {}): Task[] {
-  const {
-    count = 20,
-    includeCompleted = true,
-    includeSnoozed = true,
-    includeImages = true,
-    includeDueDates = true,
-  } = options
+    const tasks: Task[] = []
+    taskCounter = 0
+    const now = new Date()
 
-  const tasks: Task[] = []
-  taskCounter = 0
-  const now = new Date()
+    // Generate regular tasks
+    for (let i = 0; i < count; i++) {
+      const task = generateTask()
 
-  // Generate regular tasks
-  for (let i = 0; i < count; i++) {
-    const task = generateTask()
-
-    // Add images to ~40% of tasks
-    if (includeImages && Math.random() < 0.4) {
-      task.imageUri = SAMPLE_IMAGES[i % SAMPLE_IMAGES.length]
-    }
-
-    // Add due dates to ~60% of tasks
-    if (includeDueDates && Math.random() < 0.6) {
-      const daysOffset = Math.floor(Math.random() * 14) - 7 // -7 to +7 days
-      const dueDate = new Date(now)
-      dueDate.setDate(dueDate.getDate() + daysOffset)
-      dueDate.setHours(Math.floor(Math.random() * 24), 0, 0, 0)
-      task.dueDate = dueDate
-    }
-
-    // Make ~20% completed
-    if (includeCompleted && i < count * 0.2) {
-      task.completed = true
-    }
-
-    // Snooze ~25% of tasks with various snooze options
-    if (includeSnoozed && i >= count * 0.75) {
-      const snoozeIndex = (i - Math.floor(count * 0.75)) % 4
-
-      switch (snoozeIndex) {
-        case 0: {
-          // Tomorrow
-          const tomorrow = new Date(now)
-          tomorrow.setDate(tomorrow.getDate() + 1)
-          tomorrow.setHours(9, 0, 0, 0)
-          task.snoozeUntil = tomorrow
-          break
-        }
-
-        case 1: {
-          // This weekend
-          const weekend = new Date(now)
-          const daysUntilSaturday = (6 - now.getDay() + 7) % 7 || 7
-          weekend.setDate(weekend.getDate() + daysUntilSaturday)
-          weekend.setHours(9, 0, 0, 0)
-          task.snoozeUntil = weekend
-          break
-        }
-
-        case 2: {
-          // Next workday
-          const nextMonday = new Date(now)
-          const daysUntilMonday = (1 - now.getDay() + 7) % 7 || 7
-          nextMonday.setDate(nextMonday.getDate() + daysUntilMonday)
-          nextMonday.setHours(9, 0, 0, 0)
-          task.snoozeUntil = nextMonday
-          break
-        }
-
-        case 3: // Whenever
-          task.isWheneverSnoozed = true
-          task.snoozeUntil = undefined
-          break
+      // Add images to ~40% of tasks
+      if (includeImages && Math.random() < 0.4) {
+        task.imageUri = SAMPLE_IMAGES[i % SAMPLE_IMAGES.length]
       }
+
+      // Add due dates to ~60% of tasks
+      if (includeDueDates && Math.random() < 0.6) {
+        const daysOffset = Math.floor(Math.random() * 14) - 7 // -7 to +7 days
+        const dueDate = new Date(now)
+        dueDate.setDate(dueDate.getDate() + daysOffset)
+        dueDate.setHours(Math.floor(Math.random() * 24), 0, 0, 0)
+        task.dueDate = dueDate
+      }
+
+      // Make ~20% completed
+      if (includeCompleted && i < count * 0.2) {
+        task.completed = true
+      }
+
+      // Snooze ~25% of tasks with various snooze options
+      if (includeSnoozed && i >= count * 0.75) {
+        const snoozeIndex = (i - Math.floor(count * 0.75)) % 4
+
+        switch (snoozeIndex) {
+          case 0: {
+            // Tomorrow
+            const tomorrow = new Date(now)
+            tomorrow.setDate(tomorrow.getDate() + 1)
+            tomorrow.setHours(9, 0, 0, 0)
+            task.snoozeUntil = tomorrow
+            break
+          }
+
+          case 1: {
+            // This weekend
+            const weekend = new Date(now)
+            const daysUntilSaturday = (6 - now.getDay() + 7) % 7 || 7
+            weekend.setDate(weekend.getDate() + daysUntilSaturday)
+            weekend.setHours(9, 0, 0, 0)
+            task.snoozeUntil = weekend
+            break
+          }
+
+          case 2: {
+            // Next workday
+            const nextMonday = new Date(now)
+            const daysUntilMonday = (1 - now.getDay() + 7) % 7 || 7
+            nextMonday.setDate(nextMonday.getDate() + daysUntilMonday)
+            nextMonday.setHours(9, 0, 0, 0)
+            task.snoozeUntil = nextMonday
+            break
+          }
+
+          case 3: // Whenever
+            task.isWheneverSnoozed = true
+            task.snoozeUntil = undefined
+            break
+        }
+      }
+
+      tasks.push(task)
     }
 
-    tasks.push(task)
+    return tasks
   }
 
-  return tasks
+  const reset = () => {
+    taskCounter = 0
+  }
+
+  return {
+    generateTask,
+    generateTasks,
+    reset,
+  }
 }
 
-export function resetTaskCounter() {
-  taskCounter = 0
-}
-
-export const TaskFactory = {
-  generateTask,
-  generateTasks,
-  reset: resetTaskCounter,
-}
+// Default factory instance for backward compatibility
+export const TaskFactory = createTaskFactory()

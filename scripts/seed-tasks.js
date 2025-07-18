@@ -3,31 +3,34 @@ const AsyncStorage =
 const fs = require('node:fs')
 const path = require('node:path')
 
-// Polyfill for CI environment
+// Mock implementation for localStorage in CI environment
+const mockLocalStorage = {
+  data: {},
+  getItem(key) {
+    return Promise.resolve(this.data[key] || null)
+  },
+  setItem(key, value) {
+    this.data[key] = value
+    return Promise.resolve()
+  },
+  removeItem(key) {
+    delete this.data[key]
+    return Promise.resolve()
+  },
+  clear() {
+    this.data = {}
+    return Promise.resolve()
+  },
+}
+
+// Only set up polyfill if not already present
 if (!global.localStorage) {
-  global.localStorage = {
-    data: {},
-    getItem(key) {
-      return Promise.resolve(this.data[key] || null)
-    },
-    setItem(key, value) {
-      this.data[key] = value
-      return Promise.resolve()
-    },
-    removeItem(key) {
-      delete this.data[key]
-      return Promise.resolve()
-    },
-    clear() {
-      this.data = {}
-      return Promise.resolve()
-    },
-  }
+  global.localStorage = mockLocalStorage
 }
 
 // Mock AsyncStorage for CI
-AsyncStorage.getItem = (key) => global.localStorage.getItem(key)
-AsyncStorage.setItem = (key, value) => global.localStorage.setItem(key, value)
+AsyncStorage.getItem = (key) => mockLocalStorage.getItem(key)
+AsyncStorage.setItem = (key, value) => mockLocalStorage.setItem(key, value)
 
 async function seedTasks() {
   try {

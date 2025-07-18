@@ -2,6 +2,19 @@
 const fs = require('node:fs')
 const path = require('node:path')
 
+// Read and parse seed data safely
+const seedDataPath = path.join(process.cwd(), 'seed-data.json')
+let seedDataJSON = '{}'
+
+try {
+  const seedDataContent = fs.readFileSync(seedDataPath, 'utf8')
+  // Parse to validate JSON, then re-stringify to ensure it's safe
+  const seedData = JSON.parse(seedDataContent)
+  seedDataJSON = JSON.stringify(seedData)
+} catch (e) {
+  console.error('Failed to read or parse seed data:', e)
+}
+
 // Create a temporary environment file for CI
 const envContent = `
 // CI Environment Setup
@@ -10,7 +23,8 @@ window.__CI_MODE__ = true
 // Load seed data if available
 if (window.__CI_MODE__) {
   try {
-    const seedData = ${fs.readFileSync(path.join(process.cwd(), 'seed-data.json'), 'utf8')}
+    // Safely parse the validated JSON data
+    const seedData = JSON.parse('${seedDataJSON.replace(/'/g, "\\'")}')
     window.__SEED_DATA__ = seedData
     
     // Override AsyncStorage for web in CI
