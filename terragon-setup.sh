@@ -2,19 +2,18 @@
 set -e
 
 # terragon-setup.sh - Setup script for todo.house codebase development
-# This script sets up the React Native Expo project with pnpm package manager
+# This script sets up the React Native Expo project with npm package manager
 
 echo "🏠 Setting up todo.house codebase for development..."
 
-# Check if pnpm is installed
-if ! command -v pnpm &> /dev/null; then
-    echo "❌ pnpm is not installed. Please install pnpm first:"
-    echo "   npm install -g pnpm"
-    echo "   or visit: https://pnpm.io/installation"
+# Check if npm is installed
+if ! command -v npm &> /dev/null; then
+    echo "❌ npm is not installed. Please install Node.js first:"
+    echo "   Visit: https://nodejs.org/"
     exit 1
 fi
 
-echo "✅ pnpm is installed ($(pnpm --version))"
+echo "✅ npm is installed ($(npm --version))"
 
 # Check if we're in the right directory
 if [ ! -f "package.json" ]; then
@@ -31,18 +30,18 @@ fi
 echo "✅ Found todo.house project"
 
 # Install dependencies
-echo "📦 Installing dependencies with pnpm..."
-pnpm install
+echo "📦 Installing dependencies with npm..."
+npm install
 
 echo ""
 echo "🎉 Setup complete!"
 echo ""
 echo "Available commands:"
-echo "  pnpm start          - Start development server"
-echo "  pnpm run android    - Run on Android"
-echo "  pnpm run ios        - Run on iOS"
-echo "  pnpm run web        - Run on web"
-echo "  pnpm run lint       - Run linter"
+echo "  npm start           - Start development server"
+echo "  npm run android     - Run on Android"
+echo "  npm run ios         - Run on iOS"
+echo "  npm run web         - Run on web"
+echo "  npm run lint        - Run linter"
 echo ""
 echo "📝 Note: You may need to set up environment variables for AI features:"
 echo "   - OPENAI_API_KEY (for image analysis)"
