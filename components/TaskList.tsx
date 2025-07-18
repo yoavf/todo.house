@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { DeviceEventEmitter, StyleSheet, Text, View } from 'react-native'
-import DraggableFlatList, {
-  type RenderItemParams,
-} from 'react-native-draggable-flatlist'
-import { useTaskStore } from '../store/taskStore'
+import {
+  DeviceEventEmitter,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
 import type { Task } from '../types/Task'
-import { DraggableTaskItem } from './DraggableTaskItem'
+import { SwipeableTaskCard } from './SwipeableTaskCard'
 
 const TASK_CARD_HEIGHT = 80
 
@@ -14,15 +16,7 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks }: TaskListProps) {
-  const { reorderTasks } = useTaskStore()
   const scrollTimeout = useRef<NodeJS.Timeout>()
-
-  const handleDragEnd = useCallback(
-    ({ data }: { data: Task[] }) => {
-      reorderTasks(data)
-    },
-    [reorderTasks],
-  )
 
   const handleScroll = useCallback(() => {
     // Emit scroll event to FAB
@@ -48,12 +42,9 @@ export function TaskList({ tasks }: TaskListProps) {
     }
   }, [])
 
-  const renderItem = useCallback(
-    ({ item, drag, isActive }: RenderItemParams<Task>) => {
-      return <DraggableTaskItem task={item} drag={drag} isActive={isActive} />
-    },
-    [],
-  )
+  const renderItem = useCallback(({ item }: { item: Task }) => {
+    return <SwipeableTaskCard task={item} />
+  }, [])
 
   if (tasks.length === 0) {
     return (
@@ -67,17 +58,16 @@ export function TaskList({ tasks }: TaskListProps) {
   }
 
   return (
-    <DraggableFlatList
+    <FlatList
       data={tasks}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
-      onDragEnd={handleDragEnd}
       onScroll={handleScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.listContainer}
       getItemLayout={(_data, index) => ({
-        length: TASK_CARD_HEIGHT, // Approximate task card height
+        length: TASK_CARD_HEIGHT,
         offset: TASK_CARD_HEIGHT * index,
         index,
       })}

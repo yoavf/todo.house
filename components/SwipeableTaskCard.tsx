@@ -11,15 +11,11 @@ import { TaskCard } from './TaskCard'
 
 interface SwipeableTaskCardProps {
   task: Task
-  drag?: () => void
-  isActive?: boolean
   onPress?: () => void
 }
 
 export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
   task,
-  drag,
-  isActive = false,
   onPress,
 }) => {
   const remove = useTaskStore((state) => state.remove)
@@ -95,10 +91,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
   )
 
   return (
-    <View
-      style={[styles.container, { opacity: isActive ? 0.8 : 1 }]}
-      testID="swipeable-container"
-    >
+    <View style={styles.container} testID="swipeable-container">
       <SwipeableItem
         item={task}
         renderUnderlayLeft={renderUnderlayLeft}
@@ -117,18 +110,6 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
           <View style={styles.taskContent}>
             <TaskCard task={task} />
           </View>
-          {drag && (
-            <TouchableOpacity
-              onLongPress={drag}
-              delayLongPress={300}
-              disabled={isActive}
-              style={styles.dragHandle}
-              activeOpacity={0.6}
-              testID="drag-handle"
-            >
-              <Ionicons name="reorder-three" size={20} color="#999" />
-            </TouchableOpacity>
-          )}
         </TouchableOpacity>
       </SwipeableItem>
 

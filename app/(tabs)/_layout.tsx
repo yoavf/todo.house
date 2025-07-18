@@ -25,12 +25,7 @@ export default function TabsLayout() {
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Home Tasks</Text>
-          <Text style={styles.subtitle}>
-            Swipe left to remove • Swipe right to snooze
-          </Text>
-        </View>
+        <Text style={styles.title}>Home Tasks</Text>
         <View style={styles.headerButtons}>
           {/* View Toggle */}
           <View style={styles.viewToggleContainer}>
@@ -182,11 +177,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#2c3e50',
-  },
-  subtitle: {
-    fontSize: 12,
-    color: '#6c757d',
-    marginTop: 2,
   },
   headerButtons: {
     flexDirection: 'row',

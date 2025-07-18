@@ -1,47 +1,10 @@
 import { render } from '@testing-library/react-native'
 import { TaskList } from '../../components/TaskList'
-import { useTaskStore } from '../../store/taskStore'
 import type { Task } from '../../types/Task'
 
-// Mock store
-jest.mock('../../store/taskStore')
-
-// Mock DraggableFlatList
-jest.mock('react-native-draggable-flatlist', () => ({
-  __esModule: true,
-  default: ({
-    data,
-    renderItem,
-    onDragEnd: _onDragEnd,
-    contentContainerStyle,
-  }: {
-    data: any[]
-    renderItem: any
-    onDragEnd: any
-    contentContainerStyle: any
-  }) => {
-    const _React = require('react')
-    const { View } = require('react-native')
-    return (
-      <View testID="draggable-list" style={contentContainerStyle}>
-        {data.map((item: any, index: number) => (
-          <View key={item.id}>
-            {renderItem({
-              item,
-              drag: jest.fn(),
-              isActive: false,
-              getIndex: () => index,
-            })}
-          </View>
-        ))}
-      </View>
-    )
-  },
-}))
-
-// Mock DraggableTaskItem
-jest.mock('../../components/DraggableTaskItem', () => ({
-  DraggableTaskItem: ({ task }: { task: any }) => {
+// Mock SwipeableTaskCard
+jest.mock('../../components/SwipeableTaskCard', () => ({
+  SwipeableTaskCard: ({ task }: { task: any }) => {
     const View = require('react-native').View
     const Text = require('react-native').Text
     return (
@@ -53,8 +16,6 @@ jest.mock('../../components/DraggableTaskItem', () => ({
 }))
 
 describe('TaskList', () => {
-  const mockReorderTasks = jest.fn()
-
   const mockTasks: Task[] = [
     {
       id: 'task-1',
@@ -81,9 +42,6 @@ describe('TaskList', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(useTaskStore as unknown as jest.Mock).mockReturnValue({
-      reorderTasks: mockReorderTasks,
-    })
   })
 
   it('renders list of tasks', () => {
@@ -99,27 +57,11 @@ describe('TaskList', () => {
   })
 
   it('renders empty state when no tasks', () => {
-    const { getByText } = render(<TaskList tasks={[]} />)
+    const { getByText, getByTestId } = render(<TaskList tasks={[]} />)
 
     expect(getByText('No tasks yet')).toBeTruthy()
     expect(getByText('Tap the + button to add your first task')).toBeTruthy()
-  })
-
-  it('calls reorderTasks when provided', () => {
-    // This test would need access to the actual DraggableFlatList implementation
-    // For now, we'll verify the mock is set up correctly
-    expect(mockReorderTasks).toBeDefined()
-  })
-
-  it('renders with correct content container styles', () => {
-    const { getByTestId } = render(<TaskList tasks={mockTasks} />)
-
-    const list = getByTestId('draggable-list')
-    expect(list.props.style).toEqual(
-      expect.objectContaining({
-        paddingBottom: 100,
-      }),
-    )
+    expect(getByTestId('empty-container')).toBeTruthy()
   })
 
   it('empty state renders with correct styles', () => {
