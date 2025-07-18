@@ -33,7 +33,7 @@ describe('TaskCard', () => {
     jest.useFakeTimers();
     
     // Mock useTaskStore to handle both direct usage and selector usage
-    (useTaskStore as jest.Mock).mockImplementation((selector?: any) => {
+    (useTaskStore as jest.Mock).mockImplementation((selector?: (state: any) => any) => {
       const state = {
         toggle: mockToggle,
         remove: mockRemove,
@@ -96,8 +96,15 @@ describe('TaskCard', () => {
     const deleteButton = getByTestId('delete-button');
     fireEvent.press(deleteButton);
     
-    const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
-    deleteCallback();
+    // Find the Alert.alert call and get the delete button's onPress callback
+    const alertCalls = (Alert.alert as jest.Mock).mock.calls;
+    const deleteAlertCall = alertCalls.find(call => call[0] === 'Delete Task');
+    expect(deleteAlertCall).toBeDefined();
+    
+    const deleteOption = deleteAlertCall[2].find((button: any) => button.text === 'Delete');
+    expect(deleteOption).toBeDefined();
+    
+    deleteOption.onPress();
     
     expect(mockRemove).toHaveBeenCalledWith('test-1');
   });
@@ -113,7 +120,7 @@ describe('TaskCard', () => {
   });
 
   it('shows recently added highlight', () => {
-    (useTaskStore as jest.Mock).mockImplementation((selector?: any) => {
+    (useTaskStore as jest.Mock).mockImplementation((selector?: (state: any) => any) => {
       const state = {
         toggle: mockToggle,
         remove: mockRemove,
@@ -144,7 +151,7 @@ describe('TaskCard', () => {
   });
 
   it('clears recently added highlight after 3 seconds', () => {
-    (useTaskStore as jest.Mock).mockImplementation((selector?: any) => {
+    (useTaskStore as jest.Mock).mockImplementation((selector?: (state: any) => any) => {
       const state = {
         toggle: mockToggle,
         remove: mockRemove,

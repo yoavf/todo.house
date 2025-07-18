@@ -95,13 +95,15 @@ describe('imageProcessing', () => {
       // Mock manipulateAsync
       (manipulateAsync as jest.Mock).mockResolvedValue(mockProcessedImage);
 
-      const result = await resizeImageForAI(mockImageUri);
-
-      // Calculate expected values
-      const scale = AI_TARGET_SIZE / 800; // Scale based on height
-      const scaledWidth = Math.round(1200 * scale);
-      const scaledHeight = Math.round(800 * scale);
+      // Calculate expected values for landscape image
+      const originalWidth = 1200;
+      const originalHeight = 800;
+      const scale = AI_TARGET_SIZE / originalHeight; // Scale based on height to fit
+      const scaledWidth = Math.round(originalWidth * scale);
+      const scaledHeight = Math.round(originalHeight * scale);
       const cropX = Math.round((scaledWidth - AI_TARGET_SIZE) / 2);
+
+      const result = await resizeImageForAI(mockImageUri);
 
       expect(manipulateAsync).toHaveBeenCalledWith(
         mockImageUri,
@@ -144,13 +146,15 @@ describe('imageProcessing', () => {
       // Mock manipulateAsync
       (manipulateAsync as jest.Mock).mockResolvedValue(mockProcessedImage);
 
-      const result = await resizeImageForAI(mockImageUri);
-
-      // Calculate expected values
-      const scale = AI_TARGET_SIZE / 600; // Scale based on width
-      const scaledWidth = Math.round(600 * scale);
-      const scaledHeight = Math.round(900 * scale);
+      // Calculate expected values for portrait image
+      const originalWidth = 600;
+      const originalHeight = 900;
+      const scale = AI_TARGET_SIZE / originalWidth; // Scale based on width to fit
+      const scaledWidth = Math.round(originalWidth * scale);
+      const scaledHeight = Math.round(originalHeight * scale);
       const cropY = Math.round((scaledHeight - AI_TARGET_SIZE) / 2);
+
+      const result = await resizeImageForAI(mockImageUri);
 
       expect(manipulateAsync).toHaveBeenCalledWith(
         mockImageUri,
