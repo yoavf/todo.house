@@ -113,7 +113,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 							style={styles.dragHandle}
 							activeOpacity={0.6}
 						>
-							<Ionicons name="reorder-three" size={20} color="#999" />
+							<Ionicons name="reorder-three" size={20} color="#9CA3AF" />
 						</TouchableOpacity>
 					)}
 				</View>
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 	},
 	taskCard: {
-		backgroundColor: "white",
-		borderRadius: 12,
+		backgroundColor: "transparent",
+		borderRadius: 16,
 		flexDirection: "row",
 		alignItems: "center",
 	},
@@ -167,25 +167,25 @@ const styles = StyleSheet.create({
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
-		backgroundColor: "#28a745",
-		borderTopRightRadius: 12,
-		borderBottomRightRadius: 12,
+		backgroundColor: "#10B981",
+		borderTopRightRadius: 16,
+		borderBottomRightRadius: 16,
 	},
 	deleteButton: {
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
-		backgroundColor: "#dc3545",
-		borderTopLeftRadius: 12,
-		borderBottomLeftRadius: 12,
+		backgroundColor: "#EF4444",
+		borderTopLeftRadius: 16,
+		borderBottomLeftRadius: 16,
 	},
 	snoozeButton: {
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
-		backgroundColor: "#ffc107",
-		borderTopRightRadius: 12,
-		borderBottomRightRadius: 12,
+		backgroundColor: "#F59E0B",
+		borderTopRightRadius: 16,
+		borderBottomRightRadius: 16,
 	},
 	actionText: {
 		color: "white",

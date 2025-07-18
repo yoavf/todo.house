@@ -85,7 +85,7 @@ export function TaskCard({ task }: TaskCardProps) {
         >
           <View style={[styles.checkbox, task.completed && styles.checkedCheckbox]}>
             {task.completed && (
-              <Ionicons name="checkmark" size={16} color="white" />
+              <Ionicons name="checkmark" size={18} color="white" />
             )}
           </View>
         </TouchableOpacity>
@@ -139,7 +139,7 @@ export function TaskCard({ task }: TaskCardProps) {
 
         {/* Delete Button */}
         <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-          <Ionicons name="trash-outline" size={20} color="#dc3545" />
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
         </TouchableOpacity>
 
         {/* Recently Added Indicator */}
@@ -194,94 +194,111 @@ export function TaskCard({ task }: TaskCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'flex-start',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 5,
     position: 'relative',
+    borderWidth: 1,
+    borderColor: '#F0F0F5',
   },
   completedCard: {
-    opacity: 0.6,
+    opacity: 0.7,
+    backgroundColor: '#FAFAFA',
   },
   recentlyAddedCard: {
     borderWidth: 2,
-    borderColor: '#28a745',
-    shadowColor: '#28a745',
-    shadowOpacity: 0.2,
+    borderColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
   },
   checkboxContainer: {
-    marginRight: 12,
-    marginTop: 2,
+    marginRight: 16,
+    marginTop: 1,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#dee2e6',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2.5,
+    borderColor: '#E5E5EA',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FAFAFA',
   },
   checkedCheckbox: {
-    backgroundColor: '#28a745',
-    borderColor: '#28a745',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   content: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 4,
+    color: '#1A1A1A',
+    marginBottom: 6,
+    letterSpacing: -0.3,
+    lineHeight: 22,
   },
   completedTitle: {
     textDecorationLine: 'line-through',
-    color: '#6c757d',
+    color: '#9CA3AF',
   },
   locationContainer: {
     marginBottom: 8,
   },
   location: {
     fontSize: 14,
-    color: '#6c757d',
+    color: '#6B7280',
+    fontWeight: '500',
   },
   addLocation: {
     fontSize: 14,
-    color: '#adb5bd',
+    color: '#D1D5DB',
     fontStyle: 'italic',
   },
   completedText: {
-    color: '#adb5bd',
+    color: '#D1D5DB',
   },
   date: {
-    fontSize: 12,
-    color: '#adb5bd',
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontWeight: '500',
+    letterSpacing: -0.2,
   },
   deleteButton: {
-    padding: 4,
+    padding: 8,
     marginLeft: 8,
+    borderRadius: 8,
   },
   newBadge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: '#28a745',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    top: -8,
+    right: -8,
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   newBadgeText: {
     color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   imageContainer: {
     position: 'relative',
