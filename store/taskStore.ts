@@ -24,6 +24,13 @@ import {
 } from '../utils/dateUtils'
 import { getCurrentLocale } from '../utils/localeUtils'
 import { logger } from '../utils/logger'
+import webAsyncStorage from '../utils/webAsyncStorage'
+
+// Use web storage in web environment or CI
+const storage =
+  typeof window !== 'undefined' && window.__CI_MODE__
+    ? webAsyncStorage
+    : AsyncStorage
 
 interface TaskStore {
   tasks: Task[]
@@ -265,7 +272,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
   hydrate: async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY)
+      const stored = await storage.getItem(STORAGE_KEY)
       if (stored) {
         const tasks = JSON.parse(stored).map((task: unknown) => ({
           ...task,
@@ -304,7 +311,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   persist: async () => {
     try {
       const { tasks } = get()
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
+      await storage.setItem(STORAGE_KEY, JSON.stringify(tasks))
     } catch (error) {
       logger.error('TaskStore', 'Failed to persist tasks:', error)
     }

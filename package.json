@@ -30,6 +30,7 @@
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.10",
     "expo-constants": "~17.1.7",
+    "expo-dev-client": "~5.2.4",
     "expo-font": "~13.3.2",
     "expo-haptics": "~14.1.4",
     "expo-image": "~2.3.2",
@@ -68,15 +69,15 @@
     "@babel/plugin-transform-flow-strip-types": "^7.27.1",
     "@biomejs/biome": "^2.1.2",
     "@testing-library/react-native": "^13.2.0",
-    "@types/jest": "^30.0.0",
+    "@types/jest": "^29.5.12",
     "@types/node": "^24.0.14",
     "@types/react": "~19.0.10",
     "husky": "^9.1.7",
-    "jest": "^30.0.4",
+    "jest": "^29.7.0",
     "jest-expo": "^53.0.9",
+    "playwright": "^1.49.1",
     "react-test-renderer": "^19.0.0",
-    "typescript": "~5.8.3",
-    "playwright": "^1.49.1"
+    "typescript": "~5.8.3"
   },
   "private": true
 }

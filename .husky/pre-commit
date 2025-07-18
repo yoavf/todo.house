@@ -4,7 +4,8 @@ echo "🔍 Running pre-commit checks..."
 
 # Run Biome auto-fix
 echo "🔧 Auto-fixing code with Biome..."
-pnpm run lint:fix
+npm run lint:fix
+
 if [ $? -ne 0 ]; then
   echo "❌ Biome auto-fix failed. Please check the errors."
   exit 1
@@ -15,7 +16,7 @@ git add -u
 
 # Run tests
 echo "🧪 Running tests..."
-pnpm test
+npm test
 if [ $? -ne 0 ]; then
   echo "❌ Tests failed. Please fix the failing tests before committing."
   exit 1

@@ -1,56 +1,66 @@
-const { chromium } = require('playwright')
+// Check if enhanced script exists, otherwise use basic functionality
 const fs = require('node:fs')
 const path = require('node:path')
 
-async function takeScreenshots() {
-  const browser = await chromium.launch({ headless: true })
-  const context = await browser.newContext({
-    viewport: { width: 390, height: 844 }, // iPhone 14 Pro dimensions
-    deviceScaleFactor: 3,
-  })
+const enhancedScriptPath = path.join(__dirname, 'take-screenshots-enhanced.js')
 
-  const page = await context.newPage()
+if (fs.existsSync(enhancedScriptPath)) {
+  // Use the enhanced script if available
+  require(enhancedScriptPath)
+} else {
+  // Fallback to basic functionality
+  const { chromium } = require('playwright')
 
-  // Create screenshots directory
-  const screenshotsDir = path.join(process.cwd(), 'screenshots')
-  if (!fs.existsSync(screenshotsDir)) {
-    fs.mkdirSync(screenshotsDir)
-  }
-
-  try {
-    // Navigate to the Expo web app
-    await page.goto('http://localhost:8081', {
-      waitUntil: 'networkidle',
-      timeout: 60000,
+  async function takeScreenshots() {
+    const browser = await chromium.launch({ headless: true })
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 }, // iPhone 14 Pro dimensions
+      deviceScaleFactor: 3,
     })
 
-    // Wait for app to fully load
-    await page.waitForTimeout(5000)
+    const page = await context.newPage()
 
-    // Take screenshot of home screen
-    await page.screenshot({
-      path: path.join(screenshotsDir, 'home-screen.png'),
-      fullPage: false,
-    })
-
-    // Try to interact with the app and take more screenshots
-    // Click on FAB if exists
-    const fabButton = await page.$('[aria-label="Add task"]')
-    if (fabButton) {
-      await fabButton.click()
-      await page.waitForTimeout(2000)
-      await page.screenshot({
-        path: path.join(screenshotsDir, 'add-task-menu.png'),
-        fullPage: false,
-      })
+    // Create screenshots directory
+    const screenshotsDir = path.join(process.cwd(), 'screenshots')
+    if (!fs.existsSync(screenshotsDir)) {
+      fs.mkdirSync(screenshotsDir)
     }
 
-    console.log('Screenshots taken successfully')
-  } catch (error) {
-    console.error('Error taking screenshots:', error)
-  } finally {
-    await browser.close()
-  }
-}
+    try {
+      // Navigate to the Expo web app
+      await page.goto('http://localhost:8081', {
+        waitUntil: 'networkidle',
+        timeout: 60000,
+      })
 
-takeScreenshots().catch(console.error)
+      // Wait for app to fully load
+      await page.waitForTimeout(5000)
+
+      // Take screenshot of home screen
+      await page.screenshot({
+        path: path.join(screenshotsDir, 'home-screen.png'),
+        fullPage: false,
+      })
+
+      // Try to interact with the app and take more screenshots
+      // Click on FAB if exists
+      const fabButton = await page.$('[aria-label="Add task"]')
+      if (fabButton) {
+        await fabButton.click()
+        await page.waitForTimeout(2000)
+        await page.screenshot({
+          path: path.join(screenshotsDir, 'add-task-menu.png'),
+          fullPage: false,
+        })
+      }
+
+      console.log('Screenshots taken successfully')
+    } catch (error) {
+      console.error('Error taking screenshots:', error)
+    } finally {
+      await browser.close()
+    }
+  }
+
+  takeScreenshots().catch(console.error)
+}
