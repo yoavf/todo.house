@@ -31,6 +31,7 @@ export interface Task {
   schedule?: Schedule; // For recurring tasks
   isScheduled?: boolean; // Flag to identify scheduled tasks
   isFutureTask?: boolean; // Flag to identify future tasks generated from schedules
+  seriesId?: string; // Identifier for tasks that belong to the same recurring series
 }
 
 export const SnoozeDuration = {

@@ -159,6 +159,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const task = get().tasks.find(task => task.id === id);
     if (!task) return;
     
+    const isCompleting = !task.completed;
+    
     // Toggle the completion status
     set((state) => ({
       tasks: state.tasks.map((task) =>
@@ -166,23 +168,62 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       ),
     }));
     
-    // If the task is now completed and has a schedule, create the next occurrence
-    if (!task.completed && task.schedule) {
-      const nextDueDate = calculateNextDueDate(task.schedule, task.dueDate);
+    // Handle scheduled tasks
+    if (task.schedule) {
+      // Generate a seriesId if this is the first task in a series
+      const seriesId = task.seriesId || `series-${task.id}`;
       
-      if (nextDueDate) {
-        // Create a new future task with the next due date
-        get().add({
-          title: task.title,
-          location: task.location,
-          completed: false,
-          dueDate: nextDueDate,
-          schedule: task.schedule,
-          imageUri: task.imageUri,
-          isFutureTask: true,
-        });
+      // Update the current task with the seriesId if it doesn't have one
+      if (!task.seriesId) {
+        set((state) => ({
+          tasks: state.tasks.map((t) =>
+            t.id === id ? { ...t, seriesId } : t
+          ),
+        }));
+      }
+      
+      if (isCompleting) {
+        // Task is being completed - create the next occurrence
+        const nextDueDate = calculateNextDueDate(task.schedule, task.dueDate);
         
-        logger.info('TaskStore', 'Created next scheduled task with due date:', nextDueDate);
+        if (nextDueDate) {
+          // First, check if there's already a future task in this series
+          const existingFutureTask = get().tasks.find(t => 
+            t.seriesId === seriesId && t.isFutureTask && !t.completed
+          );
+          
+          if (existingFutureTask) {
+            // Update the existing future task if needed
+            if (existingFutureTask.dueDate?.getTime() !== nextDueDate.getTime()) {
+              set((state) => ({
+                tasks: state.tasks.map((t) =>
+                  t.id === existingFutureTask.id ? { ...t, dueDate: nextDueDate } : t
+                ),
+              }));
+            }
+          } else {
+            // Create a new future task with the next due date
+            get().add({
+              title: task.title,
+              location: task.location,
+              completed: false,
+              dueDate: nextDueDate,
+              schedule: task.schedule,
+              imageUri: task.imageUri,
+              isFutureTask: true,
+              seriesId: seriesId,
+            });
+            
+            logger.info('TaskStore', 'Created next scheduled task with due date:', nextDueDate);
+          }
+        }
+      } else {
+        // Task is being uncompleted - remove any future tasks in this series
+        set((state) => ({
+          tasks: state.tasks.filter((t) => 
+            !(t.seriesId === seriesId && t.isFutureTask && !t.completed)
+          ),
+        }));
       }
     }
 
@@ -212,6 +253,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           } : undefined,
           isScheduled: task.isScheduled || false,
           isFutureTask: task.isFutureTask || false,
+          seriesId: task.seriesId || undefined,
         }));
         set({ tasks, hydrated: true });
       } else {
@@ -287,13 +329,29 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   
   setSchedule: (id: string, schedule?: Schedule) => {
+    const task = get().tasks.find(task => task.id === id);
+    if (!task) return;
+    
+    // Generate a seriesId if adding a schedule and there isn't one already
+    const seriesId = schedule ? (task.seriesId || `series-${task.id}`) : undefined;
+    
+    // If removing a schedule, we need to clean up any future tasks in this series
+    if (task.schedule && !schedule && task.seriesId) {
+      set((state) => ({
+        tasks: state.tasks.filter((t) => 
+          !(t.seriesId === task.seriesId && t.isFutureTask && !t.completed)
+        ),
+      }));
+    }
+    
     set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === id ? { 
-          ...task, 
+      tasks: state.tasks.map((t) =>
+        t.id === id ? { 
+          ...t, 
           schedule, 
-          isScheduled: !!schedule 
-        } : task
+          isScheduled: !!schedule,
+          seriesId: schedule ? seriesId : undefined
+        } : t
       ),
     }));
 
