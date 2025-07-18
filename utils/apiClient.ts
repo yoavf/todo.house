@@ -1,13 +1,14 @@
 import type { TaskAnalysisResult } from "../types/TaskAnalysisResult";
+import { logger } from './logger';
 
 export async function analyzeImageForTask(
 	base64Image: string,
 ): Promise<TaskAnalysisResult> {
-	console.log("🔍 Client: Starting API image analysis...");
-	console.log("📊 Client: Image data length:", base64Image.length);
+	logger.info('APIClient', '🔍 Client: Starting API image analysis...');
+	logger.debug('APIClient', '📊 Client: Image data length:', base64Image.length);
 
 	if (!base64Image || base64Image.length === 0) {
-		console.error("❌ Client: Empty or invalid base64 image");
+		logger.error('APIClient', '❌ Client: Empty or invalid base64 image');
 		return {
 			success: false,
 			error: "Invalid image data provided.",
@@ -15,7 +16,7 @@ export async function analyzeImageForTask(
 	}
 
 	try {
-		console.log("📝 Client: Preparing API request...");
+		logger.debug('APIClient', '📝 Client: Preparing API request...');
 
 		const response = await fetch("/api/analyze-image", {
 			method: "POST",
@@ -27,11 +28,11 @@ export async function analyzeImageForTask(
 			}),
 		});
 
-		console.log("📡 Client: API response status:", response.status);
+		logger.debug('APIClient', '📡 Client: API response status:', response.status);
 
 		if (!response.ok) {
 			const errorData = await response.json();
-			console.error("❌ Client: API error response:", errorData);
+			logger.error('APIClient', '❌ Client: API error response:', errorData);
 
 			return {
 				success: false,
@@ -40,15 +41,15 @@ export async function analyzeImageForTask(
 		}
 
 		const result = await response.json();
-		console.log("✅ Client: API response received:", result);
+		logger.info('APIClient', '✅ Client: API response received:', result);
 
 		return result;
 	} catch (error) {
-		console.error("❌ Client: API request error:", error);
+		logger.error('APIClient', '❌ Client: API request error:', error);
 
 		if (error instanceof Error) {
-			console.error("Client Error name:", error.name);
-			console.error("Client Error message:", error.message);
+			logger.error('APIClient', 'Client Error name:', error.name);
+			logger.error('APIClient', 'Client Error message:', error.message);
 
 			// Check for specific error types
 			if (

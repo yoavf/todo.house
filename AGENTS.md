@@ -137,12 +137,28 @@ The app requires OpenAI API configuration:
 
 The project includes comprehensive testing setup:
 
-- **Jest** as the test runner with TypeScript support
-- **React Native Testing Library** for component testing
+- **Jest** as the test runner with jest-expo preset
+- **React Native Testing Library** (v13.2.0) for component testing
 - **Unit tests** for store functionality and utilities
 - **Mocking** for Expo modules and external dependencies
 - **Coverage reporting** with lcov output
 - **Automated testing** via GitHub Actions CI/CD
+- **Centralized logger** with environment-aware logging (disabled in tests)
+
+### Test Configuration
+
+- Uses `jest-expo` preset for proper React Native/Expo support
+- Custom mocks for Expo winter runtime globals
+- Comprehensive `transformIgnorePatterns` for pnpm compatibility
+- Logger automatically disabled in test environment via `NODE_ENV=test`
+
+### Running Tests
+
+```bash
+pnpm test              # Run all tests
+pnpm test:watch        # Run tests in watch mode
+pnpm test:coverage     # Run tests with coverage report
+```
 
 Debug utilities:
 - Test AI button in header for OpenAI integration testing

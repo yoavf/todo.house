@@ -77,11 +77,12 @@ export function TaskCard({ task }: TaskCardProps) {
         styles.card,
         task.completed && styles.completedCard,
         isRecentlyAdded && styles.recentlyAddedCard
-      ]}>
+      ]} testID="task-card">
         {/* Completion Checkbox */}
         <TouchableOpacity
           onPress={handleToggleComplete}
           style={styles.checkboxContainer}
+          testID="task-checkbox"
         >
           <View style={[styles.checkbox, task.completed && styles.checkedCheckbox]}>
             {task.completed && (
@@ -98,12 +99,14 @@ export function TaskCard({ task }: TaskCardProps) {
             onUpdate={handleTitleUpdate}
             style={task.completed ? [styles.title, styles.completedTitle] : styles.title}
             placeholder="Task title"
+            testID="title-edit"
           />
 
           {/* Location */}
           <TouchableOpacity
             onPress={() => setShowLocationPicker(true)}
             style={styles.locationContainer}
+            testID="location-button"
           >
             {task.location ? (
               <Text style={[styles.location, task.completed && styles.completedText]}>
@@ -119,6 +122,7 @@ export function TaskCard({ task }: TaskCardProps) {
             <TouchableOpacity 
               onPress={() => setShowImageModal(true)}
               style={styles.imageContainer}
+              testID="image-preview"
             >
               <Image 
                 source={{ uri: task.imageUri }} 
@@ -138,7 +142,7 @@ export function TaskCard({ task }: TaskCardProps) {
         </View>
 
         {/* Delete Button */}
-        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton} testID="delete-button">
           <Ionicons name="trash-outline" size={20} color="#EF4444" />
         </TouchableOpacity>
 
@@ -156,6 +160,7 @@ export function TaskCard({ task }: TaskCardProps) {
         currentLocation={task.location}
         onSelect={handleLocationUpdate}
         onClose={() => setShowLocationPicker(false)}
+        testID="location-picker"
       />
 
       {/* Image Modal */}

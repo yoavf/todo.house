@@ -1,6 +1,7 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { logger } from './logger';
 
 // Define the schema for the task extraction
 const TaskSchema = z.object({
@@ -21,9 +22,9 @@ export interface TaskAnalysisResult {
 // Create OpenAI provider instance with explicit API key configuration
 function createOpenAIProvider() {
   const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  console.log('🔧 Creating OpenAI provider with API key present:', !!apiKey);
-  console.log('🔧 API key length:', apiKey?.length || 0);
-  console.log('🔧 API key prefix:', apiKey?.substring(0, 7) || 'none');
+  logger.debug('AIAnalysis', '🔧 Creating OpenAI provider with API key present:', !!apiKey);
+  logger.debug('AIAnalysis', '🔧 API key length:', apiKey?.length || 0);
+  logger.debug('AIAnalysis', '🔧 API key prefix:', apiKey?.substring(0, 7) || 'none');
 
   if (!apiKey) {
     throw new Error('No OpenAI API key found');
@@ -38,17 +39,17 @@ function createOpenAIProvider() {
 }
 
 export async function analyzeImageForTask(base64Image: string): Promise<TaskAnalysisResult> {
-  console.log('🔍 Starting AI image analysis...');
-  console.log('📊 Image data length:', base64Image.length);
+  logger.info('AIAnalysis', '🔍 Starting AI image analysis...');
+  logger.debug('AIAnalysis', '📊 Image data length:', base64Image.length);
 
   // Check if we have an API key
   const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  console.log('🔑 API Key present:', !!apiKey);
-  console.log('🔑 API Key length:', apiKey?.length || 0);
-  console.log('🔑 API Key starts with sk-:', apiKey?.startsWith('sk-') || false);
+  logger.debug('AIAnalysis', '🔑 API Key present:', !!apiKey);
+  logger.debug('AIAnalysis', '🔑 API Key length:', apiKey?.length || 0);
+  logger.debug('AIAnalysis', '🔑 API Key starts with sk-:', apiKey?.startsWith('sk-') || false);
 
   if (!apiKey) {
-    console.error('❌ No OpenAI API key found');
+    logger.error('AIAnalysis', '❌ No OpenAI API key found');
     return {
       success: false,
       error: 'OpenAI API key not configured. Please check your environment variables.',
@@ -56,7 +57,7 @@ export async function analyzeImageForTask(base64Image: string): Promise<TaskAnal
   }
 
   if (!apiKey.startsWith('sk-')) {
-    console.error('❌ Invalid OpenAI API key format (should start with sk-)');
+    logger.error('AIAnalysis', '❌ Invalid OpenAI API key format (should start with sk-)');
     return {
       success: false,
       error: 'Invalid OpenAI API key format. Please check your API key.',
@@ -64,7 +65,7 @@ export async function analyzeImageForTask(base64Image: string): Promise<TaskAnal
   }
 
   if (!base64Image || base64Image.length === 0) {
-    console.error('❌ Empty or invalid base64 image');
+    logger.error('AIAnalysis', '❌ Empty or invalid base64 image');
     return {
       success: false,
       error: 'Invalid image data provided.',
@@ -72,19 +73,19 @@ export async function analyzeImageForTask(base64Image: string): Promise<TaskAnal
   }
 
   try {
-    console.log('📝 Preparing OpenAI request...');
+    logger.debug('AIAnalysis', '📝 Preparing OpenAI request...');
 
     // Clean the base64 data - remove any data URL prefix if present
     // According to AI SDK docs, we should pass base64 string directly
     const cleanBase64 = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
-    console.log('🧹 Cleaned base64 length:', cleanBase64.length);
+    logger.debug('AIAnalysis', '🧹 Cleaned base64 length:', cleanBase64.length);
 
     // Create OpenAI provider with explicit API key
-    console.log('🔧 Creating OpenAI provider...');
+    logger.debug('AIAnalysis', '🔧 Creating OpenAI provider...');
     const provider = createOpenAIProvider();
     const model = provider.chat('gpt-4.1-nano');
-    console.log('🤖 OpenAI model initialized with provider');
-    console.log('🔍 About to call generateObject...');
+    logger.debug('AIAnalysis', '🤖 OpenAI model initialized with provider');
+    logger.debug('AIAnalysis', '🔍 About to call generateObject...');
 
     const result = await generateObject({
       model,
@@ -123,19 +124,19 @@ Examples of good tasks:
       ],
     });
 
-    console.log('✅ OpenAI response received');
-    console.log('📋 Raw result:', JSON.stringify(result.object, null, 2));
+    logger.info('AIAnalysis', '✅ OpenAI response received');
+    logger.debug('AIAnalysis', '📋 Raw result:', JSON.stringify(result.object, null, 2));
 
     // Check confidence threshold
     if (result.object.confidence < 0.7) {
-      console.log(`⚠️ Low confidence: ${result.object.confidence}`);
+      logger.warn('AIAnalysis', `⚠️ Low confidence: ${result.object.confidence}`);
       return {
         success: false,
         error: 'Could not identify a clear household task in this image. Try capturing an area that needs cleaning or organizing.',
       };
     }
 
-    console.log(`✅ High confidence task identified: "${result.object.title}" (${result.object.confidence})`);
+    logger.info('AIAnalysis', `✅ High confidence task identified: "${result.object.title}" (${result.object.confidence})`);
 
     return {
       success: true,
@@ -145,20 +146,20 @@ Examples of good tasks:
       },
     };
   } catch (error) {
-    console.error('❌ AI Analysis Error:', error);
+    logger.error('AIAnalysis', '❌ AI Analysis Error:', error);
 
     // Log more details about the error
     if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+      logger.error('AIAnalysis', 'Error name:', error.name);
+      logger.error('AIAnalysis', 'Error message:', error.message);
+      logger.error('AIAnalysis', 'Error stack:', error.stack);
 
       // Check for specific error types
       if (error.message.includes('API key') || error.message.includes('401')) {
-        console.error('🔑 API key related error');
-        console.error('🔍 Double-checking API key at error time:');
-        console.error('🔑 API Key present at error:', !!apiKey);
-        console.error('🔑 API Key length at error:', apiKey?.length || 0);
+        logger.error('AIAnalysis', '🔑 API key related error');
+        logger.error('AIAnalysis', '🔍 Double-checking API key at error time:');
+        logger.error('AIAnalysis', '🔑 API Key present at error:', !!apiKey);
+        logger.error('AIAnalysis', '🔑 API Key length at error:', apiKey?.length || 0);
         return {
           success: false,
           error: 'OpenAI API key is invalid or not configured properly.',
@@ -166,7 +167,7 @@ Examples of good tasks:
       }
 
       if (error.message.includes('rate limit') || error.message.includes('429')) {
-        console.error('⏰ Rate limit error');
+        logger.error('AIAnalysis', '⏰ Rate limit error');
         return {
           success: false,
           error: 'Rate limit exceeded. Please wait a moment and try again.',
@@ -174,7 +175,7 @@ Examples of good tasks:
       }
 
       if (error.message.includes('network') || error.message.includes('fetch') || error.message.includes('download')) {
-        console.error('🌐 Network error');
+        logger.error('AIAnalysis', '🌐 Network error');
         return {
           success: false,
           error: 'Network error. This might be due to React Native environment. Please check your internet connection.',
@@ -183,7 +184,7 @@ Examples of good tasks:
 
       // If it's a download error, it might be an issue with the AI SDK in React Native
       if (error.name === 'AI_DownloadError') {
-        console.error('📱 AI SDK download error - might be React Native compatibility issue');
+        logger.error('AIAnalysis', '📱 AI SDK download error - might be React Native compatibility issue');
         return {
           success: false,
           error: 'AI SDK compatibility issue with React Native. This feature may need alternative implementation.',

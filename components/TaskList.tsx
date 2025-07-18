@@ -35,7 +35,7 @@ export function TaskList({ tasks }: TaskListProps) {
 
 	if (tasks.length === 0) {
 		return (
-			<View style={styles.emptyContainer}>
+			<View style={styles.emptyContainer} testID="empty-container">
 				<Text style={styles.emptyText}>No tasks yet</Text>
 				<Text style={styles.emptySubtext}>
 					Tap the + button to add your first task

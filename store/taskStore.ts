@@ -11,6 +11,7 @@ import {
   isLastDayOfWeekend
 } from '../utils/dateUtils';
 import { getCurrentLocale } from '../utils/localeUtils';
+import { logger } from '../utils/logger';
 
 interface TaskStore {
   tasks: Task[];
@@ -141,7 +142,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         set({ hydrated: true });
       }
     } catch (error) {
-      console.error('Failed to hydrate tasks:', error);
+      logger.error('TaskStore', 'Failed to hydrate tasks:', error);
       set({ hydrated: true });
     }
   },
@@ -151,7 +152,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const { tasks } = get();
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     } catch (error) {
-      console.error('Failed to persist tasks:', error);
+      logger.error('TaskStore', 'Failed to persist tasks:', error);
     }
   },
 

@@ -16,6 +16,7 @@ import { SuccessAnimation } from "../components/SuccessAnimation";
 import { useTaskStore } from "../store/taskStore";
 import { analyzeImageForTask } from "../utils/apiClient";
 import { resizeImageForAI, DEFAULT_IMAGE_QUALITY } from "../utils/imageProcessing";
+import { logger } from "../utils/logger";
 
 export default function CameraScreen() {
 	const [facing, setFacing] = useState<CameraType>("back");
@@ -71,24 +72,24 @@ export default function CameraScreen() {
 
 	const analyzeImage = async (originalImageUri: string) => {
 		try {
-			console.log("🚀 Starting image processing and AI analysis...");
+			logger.info('Camera', '🚀 Starting image processing and AI analysis...');
 			
 			// Process image: resize and center crop to 448x448
-			console.log("🖼️ Processing image for AI analysis...");
+			logger.debug('Camera', '🖼️ Processing image for AI analysis...');
 			const processedImage = await resizeImageForAI(originalImageUri);
-			console.log("✅ Image processed successfully:", {
+			logger.info('Camera', '✅ Image processed successfully:', {
 				width: processedImage.width,
 				height: processedImage.height,
 				base64Length: processedImage.base64.length,
 			});
 
 			// Analyze processed image with AI
-			console.log("🤖 Starting AI analysis...");
+			logger.debug('Camera', '🤖 Starting AI analysis...');
 			const analysis = await analyzeImageForTask(processedImage.base64);
-			console.log("📋 Analysis complete:", analysis);
+			logger.info('Camera', '📋 Analysis complete:', analysis);
 
 			if (analysis.success && analysis.task) {
-				console.log("✅ Task extracted successfully:", analysis.task);
+				logger.info('Camera', '✅ Task extracted successfully:', analysis.task);
 
 				// Add the task to store with original image URI (for display purposes)
 				const taskId = add({
@@ -98,12 +99,12 @@ export default function CameraScreen() {
 					imageUri: originalImageUri, // Use original image for display
 				});
 
-				console.log("💾 Task added to store with ID:", taskId);
+				logger.debug('Camera', '💾 Task added to store with ID:', taskId);
 
 				// Show success animation instead of alert
 				setShowSuccess(true);
 			} else {
-				console.log("⚠️ Analysis failed:", analysis.error);
+				logger.warn('Camera', '⚠️ Analysis failed:', analysis.error);
 
 				// Show error with option to add manually
 				Alert.alert(
@@ -117,8 +118,8 @@ export default function CameraScreen() {
 				);
 			}
 		} catch (error) {
-			console.error("❌ Image analysis error:", error);
-			console.error("Error details:", {
+			logger.error('Camera', '❌ Image analysis error:', error);
+			logger.error('Camera', 'Error details:', {
 				name: error instanceof Error ? error.name : "Unknown",
 				message: error instanceof Error ? error.message : String(error),
 				stack: error instanceof Error ? error.stack : undefined,
@@ -134,19 +135,19 @@ export default function CameraScreen() {
 		if (!cameraRef.current || isAnalyzing) return;
 
 		try {
-			console.log("📸 Starting image capture...");
+			logger.debug('Camera', '📸 Starting image capture...');
 			setIsAnalyzing(true);
 
 			// Capture image
-			console.log("📷 Taking picture...");
+			logger.debug('Camera', '📷 Taking picture...');
 			const photo = await cameraRef.current.takePictureAsync({
 				quality: DEFAULT_IMAGE_QUALITY, // Slightly higher quality since we'll process it
 				base64: false, // We don't need base64 from camera anymore
 				skipProcessing: false,
 			});
 
-			console.log("📸 Picture captured successfully");
-			console.log("📊 Photo details:", {
+			logger.info('Camera', '📸 Picture captured successfully');
+			logger.debug('Camera', '📊 Photo details:', {
 				uri: photo.uri,
 				width: photo.width,
 				height: photo.height,
@@ -154,8 +155,8 @@ export default function CameraScreen() {
 
 			await analyzeImage(photo.uri);
 		} catch (error) {
-			console.error("❌ Camera capture error:", error);
-			console.error("Error details:", {
+			logger.error('Camera', '❌ Camera capture error:', error);
+			logger.error('Camera', 'Error details:', {
 				name: error instanceof Error ? error.name : "Unknown",
 				message: error instanceof Error ? error.message : String(error),
 				stack: error instanceof Error ? error.stack : undefined,
@@ -165,7 +166,7 @@ export default function CameraScreen() {
 				{ text: "OK" },
 			]);
 		} finally {
-			console.log("🏁 Capture and analysis flow complete");
+			logger.debug('Camera', '🏁 Capture and analysis flow complete');
 			setIsAnalyzing(false);
 		}
 	};
@@ -174,7 +175,7 @@ export default function CameraScreen() {
 		if (isAnalyzing) return;
 
 		try {
-			console.log("🖼️ Starting image picker...");
+			logger.debug('Camera', '🖼️ Starting image picker...');
 			setIsAnalyzing(true);
 
 			// Request media library permissions
@@ -199,8 +200,8 @@ export default function CameraScreen() {
 
 			if (!result.canceled && result.assets && result.assets.length > 0) {
 				const asset = result.assets[0];
-				console.log("🖼️ Image selected successfully");
-				console.log("📊 Image details:", {
+				logger.info('Camera', '🖼️ Image selected successfully');
+				logger.debug('Camera', '📊 Image details:', {
 					uri: asset.uri,
 					width: asset.width,
 					height: asset.height,
@@ -208,11 +209,11 @@ export default function CameraScreen() {
 
 				await analyzeImage(asset.uri);
 			} else {
-				console.log("📷 Image selection cancelled");
+				logger.debug('Camera', '📷 Image selection cancelled');
 			}
 		} catch (error) {
-			console.error("❌ Image picker error:", error);
-			console.error("Error details:", {
+			logger.error('Camera', '❌ Image picker error:', error);
+			logger.error('Camera', 'Error details:', {
 				name: error instanceof Error ? error.name : "Unknown",
 				message: error instanceof Error ? error.message : String(error),
 				stack: error instanceof Error ? error.stack : undefined,
@@ -222,7 +223,7 @@ export default function CameraScreen() {
 				{ text: "OK" },
 			]);
 		} finally {
-			console.log("🏁 Image picker flow complete");
+			logger.debug('Camera', '🏁 Image picker flow complete');
 			setIsAnalyzing(false);
 		}
 	};

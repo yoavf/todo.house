@@ -16,6 +16,7 @@ export function FAB() {
       style={styles.container}
       onPress={handlePress}
       activeOpacity={0.8}
+      testID="fab-button"
     >
       <LinearGradient
         colors={['#10B981', '#059669']}

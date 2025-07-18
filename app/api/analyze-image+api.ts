@@ -1,6 +1,7 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { logger } from '../../utils/logger';
 
 // Define the schema for the task extraction
 const TaskSchema = z.object({
@@ -12,7 +13,7 @@ const TaskSchema = z.object({
 // Create OpenAI provider instance
 function createOpenAIProvider() {
   const apiKey = process.env.OPENAI_API_KEY;
-  console.log('🔧 API: Creating OpenAI provider with API key present:', !!apiKey);
+  logger.debug('API', '🔧 API: Creating OpenAI provider with API key present:', !!apiKey);
 
   if (!apiKey) {
     throw new Error('No OpenAI API key found in server environment');
@@ -25,7 +26,7 @@ function createOpenAIProvider() {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  console.log('🔍 API: Starting image analysis request...');
+  logger.info('API', '🔍 API: Starting image analysis request...');
 
   try {
     const body = await request.json();
@@ -38,12 +39,12 @@ export async function POST(request: Request): Promise<Response> {
       }, { status: 400 });
     }
 
-    console.log('📊 API: Image data length:', base64Image.length);
+    logger.debug('API', '📊 API: Image data length:', base64Image.length);
 
     // Check if we have an API key
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      console.error('❌ API: No OpenAI API key found');
+      logger.error('API', '❌ API: No OpenAI API key found');
       return Response.json({
         success: false,
         error: 'OpenAI API key not configured on server',
@@ -51,24 +52,24 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     if (!apiKey.startsWith('sk-')) {
-      console.error('❌ API: Invalid OpenAI API key format');
+      logger.error('API', '❌ API: Invalid OpenAI API key format');
       return Response.json({
         success: false,
         error: 'Invalid OpenAI API key format on server',
       }, { status: 500 });
     }
 
-    console.log('📝 API: Preparing OpenAI request...');
+    logger.debug('API', '📝 API: Preparing OpenAI request...');
 
     // Clean the base64 data - remove any data URL prefix if present
     const cleanBase64 = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
-    console.log('🧹 API: Cleaned base64 length:', cleanBase64.length);
+    logger.debug('API', '🧹 API: Cleaned base64 length:', cleanBase64.length);
 
     // Create OpenAI provider
-    console.log('🔧 API: Creating OpenAI provider...');
+    logger.debug('API', '🔧 API: Creating OpenAI provider...');
     const provider = createOpenAIProvider();
     const model = provider.chat('gpt-4.1-nano');
-    console.log('🤖 API: OpenAI model initialized');
+    logger.debug('API', '🤖 API: OpenAI model initialized');
 
     const result = await generateObject({
       model,
@@ -106,19 +107,19 @@ Examples of good tasks:
       ],
     });
 
-    console.log('✅ API: OpenAI response received');
-    console.log('📋 API: Raw result:', JSON.stringify(result.object, null, 2));
+    logger.info('API', '✅ API: OpenAI response received');
+    logger.debug('API', '📋 API: Raw result:', JSON.stringify(result.object, null, 2));
 
     // Check confidence threshold
     if (result.object.confidence < 0.1) {
-      console.log(`⚠️ API: Low confidence: ${result.object.confidence}`);
+      logger.warn('API', `⚠️ API: Low confidence: ${result.object.confidence}`);
       return Response.json({
         success: false,
         error: 'Could not identify a clear household task in this image. Try capturing an area that needs cleaning or organizing.',
       });
     }
 
-    console.log(`✅ API: High confidence task identified: "${result.object.title}" (${result.object.confidence})`);
+    logger.info('API', `✅ API: High confidence task identified: "${result.object.title}" (${result.object.confidence})`);
 
     return Response.json({
       success: true,
@@ -129,11 +130,11 @@ Examples of good tasks:
     });
 
   } catch (error) {
-    console.error('❌ API: Analysis Error:', error);
+    logger.error('API', '❌ API: Analysis Error:', error);
 
     if (error instanceof Error) {
-      console.error('API Error name:', error.name);
-      console.error('API Error message:', error.message);
+      logger.error('API', 'API Error name:', error.name);
+      logger.error('API', 'API Error message:', error.message);
 
       // Check for specific error types
       if (error.message.includes('API key') || error.message.includes('401')) {

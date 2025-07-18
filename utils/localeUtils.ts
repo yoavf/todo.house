@@ -7,7 +7,8 @@ import * as Localization from 'expo-localization';
  * Get the current locale with fallback to en-US
  */
 export const getCurrentLocale = (): string => {
-  const locale = Localization.getLocales()[0];
+  const locales = Localization.getLocales();
+  const locale = locales?.[0];
   return locale?.languageTag || 'en-US';
 };
 
@@ -15,6 +16,7 @@ export const getCurrentLocale = (): string => {
  * Get the current locale region with fallback
  */
 export const getCurrentRegion = (): string => {
-  const locale = Localization.getLocales()[0];
+  const locales = Localization.getLocales();
+  const locale = locales?.[0];
   return locale?.regionCode || 'US';
 };
