@@ -2,8 +2,8 @@ const { chromium } = require('playwright')
 const fs = require('node:fs')
 const path = require('node:path')
 
-// Import the CI setup script content
-const { ciSetupScript } = require('./ci-setup.js')
+// Import the CI setup script getter
+const { getCiSetupScript } = require('./ci-setup.js')
 
 async function takeScreenshots() {
   const browser = await chromium.launch({ headless: true })
@@ -21,8 +21,8 @@ async function takeScreenshots() {
   }
 
   try {
-    // Inject CI setup script directly before navigation
-    await page.addInitScript(ciSetupScript)
+    // Inject CI setup script directly before navigation (lazy load)
+    await page.addInitScript(getCiSetupScript())
 
     // Navigate to the Expo web app
     await page.goto('http://localhost:8081', {

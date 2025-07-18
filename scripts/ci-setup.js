@@ -2,21 +2,23 @@
 const fs = require('node:fs')
 const path = require('node:path')
 
-// Read and parse seed data safely
-const seedDataPath = path.join(process.cwd(), 'seed-data.json')
-let seedDataJSON = '{}'
+// Function to generate CI setup script lazily
+function getCiSetupScript() {
+  // Read and parse seed data safely
+  const seedDataPath = path.join(process.cwd(), 'seed-data.json')
+  let seedDataJSON = '{}'
 
-try {
-  const seedDataContent = fs.readFileSync(seedDataPath, 'utf8')
-  // Parse to validate JSON, then re-stringify to ensure it's safe
-  const seedData = JSON.parse(seedDataContent)
-  seedDataJSON = JSON.stringify(seedData)
-} catch (e) {
-  console.error('Failed to read or parse seed data:', e)
-}
+  try {
+    const seedDataContent = fs.readFileSync(seedDataPath, 'utf8')
+    // Parse to validate JSON, then re-stringify to ensure it's safe
+    const seedData = JSON.parse(seedDataContent)
+    seedDataJSON = JSON.stringify(seedData)
+  } catch (e) {
+    console.error('Failed to read or parse seed data:', e)
+  }
 
-// Create CI setup script content that will be injected directly
-const ciSetupScript = `
+  // Create CI setup script content that will be injected directly
+  const ciSetupScript = `
 // CI Environment Setup
 window.__CI_MODE__ = true
 
@@ -55,7 +57,14 @@ if (window.__CI_MODE__) {
 }
 `
 
-// Export the script content so it can be used by take-screenshots-enhanced.js
-module.exports = { ciSetupScript }
+  return ciSetupScript
+}
 
-console.log('CI setup script generated successfully')
+// Export the getter function so it can be used by take-screenshots-enhanced.js
+module.exports = { getCiSetupScript }
+
+// If run directly, generate and log the script
+if (require.main === module) {
+  const script = getCiSetupScript()
+  console.log('CI setup script generated successfully')
+}
