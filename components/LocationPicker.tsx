@@ -8,9 +8,10 @@ interface LocationPickerProps {
   currentLocation?: string;
   onSelect: (location: string) => void;
   onClose: () => void;
+  testID?: string;
 }
 
-export function LocationPicker({ visible, currentLocation, onSelect, onClose }: LocationPickerProps) {
+export function LocationPicker({ visible, currentLocation, onSelect, onClose, testID }: LocationPickerProps) {
   const [inputValue, setInputValue] = useState(currentLocation || '');
   const tasks = useTaskStore((state) => state.tasks);
 
@@ -52,6 +53,7 @@ export function LocationPicker({ visible, currentLocation, onSelect, onClose }: 
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      testID={testID}
     >
       <View style={styles.container}>
         <View style={styles.header}>

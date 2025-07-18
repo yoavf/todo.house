@@ -4,7 +4,7 @@ module.exports = {
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
-    '^react-native$': 'react-native-web',
+    '^react-native$': '<rootDir>/__mocks__/react-native.js',
     '^expo-localization$': '<rootDir>/__mocks__/expo-localization.js',
   },
   collectCoverageFrom: [
