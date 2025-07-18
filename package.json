@@ -27,10 +27,12 @@
     "@react-navigation/material-top-tabs": "^7.3.2",
     "@react-navigation/native": "^7.1.6",
     "ai": "5.0.0-beta.18",
+    "biome": "^0.3.3",
     "expo": "~53.0.17",
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.10",
     "expo-constants": "~17.1.7",
+    "expo-dev-client": "~5.2.4",
     "expo-font": "~13.3.2",
     "expo-haptics": "~14.1.4",
     "expo-image": "~2.3.2",
@@ -62,8 +64,7 @@
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
     "zod": "^3.25.76",
-    "zustand": "^5.0.6",
-    "expo-dev-client": "~5.2.4"
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -76,9 +77,9 @@
     "husky": "^9.1.7",
     "jest": "^30.0.4",
     "jest-expo": "^53.0.9",
+    "playwright": "^1.49.1",
     "react-test-renderer": "^19.0.0",
-    "typescript": "~5.8.3",
-    "playwright": "^1.49.1"
+    "typescript": "~5.8.3"
   },
   "private": true
 }
