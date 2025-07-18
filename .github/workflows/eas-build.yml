@@ -67,11 +67,7 @@ jobs:
             PROFILE="development"
           fi
 
-          if [ "$PLATFORM" == "all" ]; then
-            eas build --profile $PROFILE --non-interactive
-          else
-            eas build --platform $PLATFORM --profile $PROFILE --non-interactive
-          fi
+          eas build --platform $PLATFORM --profile $PROFILE --non-interactive
 
       - name: 📱 Get build URLs
         run: |
