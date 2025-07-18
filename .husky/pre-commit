@@ -1,0 +1,21 @@
+#!/bin/sh
+
+echo "🔍 Running pre-commit checks..."
+
+# Run linting
+echo "📝 Running lint..."
+pnpm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ Linting failed. Please fix the errors before committing."
+  exit 1
+fi
+
+# Run tests
+echo "🧪 Running tests..."
+pnpm test
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Please fix the failing tests before committing."
+  exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"
