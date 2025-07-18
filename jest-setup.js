@@ -1,6 +1,23 @@
 // Global setup
 global.__DEV__ = true;
 
+// Set NODE_ENV to test to ensure logger is disabled
+process.env.NODE_ENV = 'test';
+
+// Mock logger to ensure complete silence during tests
+jest.mock('./utils/logger', () => ({
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    group: jest.fn(),
+    groupEnd: jest.fn(),
+    setEnabled: jest.fn(),
+    setLevel: jest.fn(),
+  }
+}));
+
 // Mock expo-haptics
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
