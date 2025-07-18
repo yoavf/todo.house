@@ -15,8 +15,8 @@ try {
   console.error('Failed to read or parse seed data:', e)
 }
 
-// Create a temporary environment file for CI
-const envContent = `
+// Create CI setup script content that will be injected directly
+const ciSetupScript = `
 // CI Environment Setup
 window.__CI_MODE__ = true
 
@@ -55,13 +55,7 @@ if (window.__CI_MODE__) {
 }
 `
 
-// Write to a temporary file that can be included in the web build
-const ciSetupPath = path.join(process.cwd(), 'public', 'ci-setup.js')
-const publicDir = path.join(process.cwd(), 'public')
+// Export the script content so it can be used by take-screenshots-enhanced.js
+module.exports = { ciSetupScript }
 
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir, { recursive: true })
-}
-
-fs.writeFileSync(ciSetupPath, envContent)
-console.log('CI setup file created at:', ciSetupPath)
+console.log('CI setup script generated successfully')

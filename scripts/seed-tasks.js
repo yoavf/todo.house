@@ -35,7 +35,7 @@ AsyncStorage.setItem = (key, value) => mockLocalStorage.setItem(key, value)
 async function seedTasks() {
   try {
     // Import after polyfills are set up
-    const { TaskFactory } = require('../utils/taskFactory')
+    const { TaskFactory } = require('./taskFactory')
 
     // Generate diverse test tasks
     const tasks = TaskFactory.generateTasks({
