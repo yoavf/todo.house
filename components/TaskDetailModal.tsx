@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useEffect, useRef } from 'react'
 import {
   Animated,
@@ -67,16 +68,16 @@ export function TaskDetailModal({
     onClose()
   }
 
-  const getEffortColor = (effort?: string) => {
+  const getEffortStyle = (effort?: string) => {
     switch (effort) {
       case 'Easy':
-        return '#28a745'
+        return { bg: 'rgba(16, 185, 129, 0.2)', text: '#047857' }
       case 'Medium':
-        return '#ffc107'
+        return { bg: 'rgba(251, 191, 36, 0.2)', text: '#92400e' }
       case 'Hard':
-        return '#dc3545'
+        return { bg: 'rgba(239, 68, 68, 0.2)', text: '#991b1b' }
       default:
-        return '#6c757d'
+        return { bg: 'rgba(107, 114, 128, 0.2)', text: '#374151' }
     }
   }
 
@@ -103,15 +104,8 @@ export function TaskDetailModal({
             },
           ]}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="arrow-back" size={24} color="#2c3e50" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Image */}
+          {/* Image with Header Overlay */}
+          <View style={styles.imageSection}>
             <View style={styles.imageContainer}>
               {task.imageUri ? (
                 <Image
@@ -124,8 +118,61 @@ export function TaskDetailModal({
                   <TaskPlaceholderImage size={150} />
                 </View>
               )}
+              {/* Gradient Overlay */}
+              <LinearGradient
+                colors={[
+                  'rgba(0, 0, 0, 0.3)',
+                  'transparent',
+                  'transparent',
+                  'rgba(0, 0, 0, 0.4)',
+                ]}
+                locations={[0, 0.3, 0.7, 1]}
+                style={styles.imageGradient}
+              />
             </View>
 
+            {/* Header with Back Button */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Ionicons name="arrow-back" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Title Overlay on Image */}
+            <View style={styles.imageOverlay}>
+              <Text style={styles.overlayTitle}>{task.title}</Text>
+              <View style={styles.overlayTags}>
+                {task.estimatedTime && (
+                  <View style={styles.overlayTag}>
+                    <Ionicons name="time-outline" size={14} color="white" />
+                    <Text style={styles.overlayTagText}>
+                      {task.estimatedTime}
+                    </Text>
+                  </View>
+                )}
+                {task.effort && (
+                  <View style={styles.overlayTag}>
+                    <Ionicons
+                      name="speedometer-outline"
+                      size={14}
+                      color="white"
+                    />
+                    <Text style={styles.overlayTagText}>{task.effort}</Text>
+                  </View>
+                )}
+                {task.location && (
+                  <View style={styles.overlayTag}>
+                    <Text style={styles.overlayTagText}>{task.location}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={styles.scrollView}
+          >
             {/* Title and tags */}
             <View style={styles.content}>
               <Text style={styles.title}>{task.title}</Text>
@@ -143,19 +190,19 @@ export function TaskDetailModal({
                     style={[
                       styles.tag,
                       {
-                        backgroundColor: `${getEffortColor(task.effort)}15`,
+                        backgroundColor: `${getEffortStyle(task.effort).bg}`,
                       },
                     ]}
                   >
                     <Ionicons
                       name="speedometer-outline"
                       size={16}
-                      color={getEffortColor(task.effort)}
+                      color={getEffortStyle(task.effort).text}
                     />
                     <Text
                       style={[
                         styles.tagText,
-                        { color: getEffortColor(task.effort) },
+                        { color: getEffortStyle(task.effort).text },
                       ]}
                     >
                       {task.effort}
@@ -224,33 +271,84 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  imageSection: {
+    height: SCREEN_HEIGHT * 0.5,
+    position: 'relative',
+  },
+  imageContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  imageGradient: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: SCREEN_HEIGHT * 0.9,
+    top: 0,
+    bottom: 0,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    zIndex: 1,
   },
   closeButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backdropFilter: 'blur(10px)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  imageContainer: {
-    width: '100%',
-    height: 300,
-    backgroundColor: '#f8f9fa',
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+  },
+  overlayTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  overlayTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  overlayTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backdropFilter: 'blur(10px)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  overlayTagText: {
+    fontSize: 14,
+    color: 'white',
+    fontWeight: '500',
+  },
+  scrollView: {
+    flex: 1,
   },
   image: {
     width: '100%',
@@ -260,34 +358,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f3f4f6',
   },
   content: {
     padding: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 16,
-  },
-  tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 24,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  tagText: {
-    fontSize: 14,
-    color: '#6c757d',
   },
   details: {
     marginTop: 16,
@@ -319,12 +393,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   completeButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#10b981',
   },
   snoozeButton: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#e5e7eb',
   },
   actionButtonText: {
     fontSize: 18,

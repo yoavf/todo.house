@@ -67,8 +67,24 @@ export function TaskFilters({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="filter" size={20} color="#6c757d" />
-        <Text style={styles.title}>Filters</Text>
+        <View style={styles.headerLeft}>
+          <Ionicons name="filter" size={16} color="#6b7280" />
+          <Text style={styles.title}>Filters</Text>
+        </View>
+        {localFilters.time?.length ||
+        localFilters.room?.length ||
+        localFilters.effort?.length ? (
+          <TouchableOpacity
+            onPress={() => {
+              setLocalFilters({})
+              onFiltersChange({})
+            }}
+            style={styles.clearButton}
+          >
+            <Ionicons name="close-circle" size={16} color="#6b7280" />
+            <Text style={styles.clearText}>Clear</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {/* Time filters */}
@@ -84,7 +100,8 @@ export function TaskFilters({
               key={option}
               style={[
                 styles.filterChip,
-                localFilters.time?.includes(option) && styles.filterChipActive,
+                localFilters.time?.includes(option) &&
+                  styles.filterChipTimeActive,
               ]}
               onPress={() => toggleFilter('time', option)}
             >
@@ -92,7 +109,7 @@ export function TaskFilters({
                 style={[
                   styles.filterChipText,
                   localFilters.time?.includes(option) &&
-                    styles.filterChipTextActive,
+                    styles.filterChipTextTimeActive,
                 ]}
               >
                 {option}
@@ -115,7 +132,8 @@ export function TaskFilters({
               key={option}
               style={[
                 styles.filterChip,
-                localFilters.room?.includes(option) && styles.filterChipActive,
+                localFilters.room?.includes(option) &&
+                  styles.filterChipRoomActive,
               ]}
               onPress={() => toggleFilter('room', option)}
             >
@@ -123,7 +141,7 @@ export function TaskFilters({
                 style={[
                   styles.filterChipText,
                   localFilters.room?.includes(option) &&
-                    styles.filterChipTextActive,
+                    styles.filterChipTextRoomActive,
                 ]}
               >
                 {option}
@@ -143,7 +161,11 @@ export function TaskFilters({
               style={[
                 styles.filterChip,
                 localFilters.effort?.includes(option) &&
-                  styles.filterChipActive,
+                  (option === 'Easy'
+                    ? styles.filterChipEasyActive
+                    : option === 'Medium'
+                      ? styles.filterChipMediumActive
+                      : styles.filterChipHardActive),
               ]}
               onPress={() => toggleFilter('effort', option)}
             >
@@ -151,7 +173,11 @@ export function TaskFilters({
                 style={[
                   styles.filterChipText,
                   localFilters.effort?.includes(option) &&
-                    styles.filterChipTextActive,
+                    (option === 'Easy'
+                      ? styles.filterChipTextEasyActive
+                      : option === 'Medium'
+                        ? styles.filterChipTextMediumActive
+                        : styles.filterChipTextHardActive),
                 ]}
               >
                 {option}
@@ -166,57 +192,105 @@ export function TaskFilters({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#f8f9fa',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
     paddingBottom: 16,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 12,
-    gap: 8,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#2c3e50',
+    color: '#374151',
+  },
+  clearButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  clearText: {
+    fontSize: 12,
+    color: '#6b7280',
   },
   section: {
     paddingHorizontal: 24,
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    color: '#6c757d',
+    color: '#6b7280',
     marginBottom: 8,
     letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   optionsRow: {
     flexDirection: 'row',
   },
   filterChip: {
-    backgroundColor: 'white',
+    backgroundColor: '#f3f4f6',
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#e5e7eb',
   },
-  filterChipActive: {
-    backgroundColor: '#007bff',
-    borderColor: '#007bff',
+  filterChipTimeActive: {
+    backgroundColor: '#dbeafe',
+    borderColor: '#93c5fd',
+  },
+  filterChipRoomActive: {
+    backgroundColor: '#e9d5ff',
+    borderColor: '#c084fc',
+  },
+  filterChipEasyActive: {
+    backgroundColor: '#d1fae5',
+    borderColor: '#6ee7b7',
+  },
+  filterChipMediumActive: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#fcd34d',
+  },
+  filterChipHardActive: {
+    backgroundColor: '#fee2e2',
+    borderColor: '#fca5a5',
   },
   filterChipText: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  filterChipTextActive: {
-    color: 'white',
+    fontSize: 12,
+    color: '#6b7280',
     fontWeight: '500',
+  },
+  filterChipTextTimeActive: {
+    color: '#1e40af',
+    fontWeight: '600',
+  },
+  filterChipTextRoomActive: {
+    color: '#6b21a8',
+    fontWeight: '600',
+  },
+  filterChipTextEasyActive: {
+    color: '#047857',
+    fontWeight: '600',
+  },
+  filterChipTextMediumActive: {
+    color: '#92400e',
+    fontWeight: '600',
+  },
+  filterChipTextHardActive: {
+    color: '#991b1b',
+    fontWeight: '600',
   },
 })
