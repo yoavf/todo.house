@@ -200,7 +200,7 @@ jobs:
               const snoozeUrl = `${latestUrl}/${snoozeScreenshot}`;
               comment += `<a href="${snoozeUrl}" target="_blank">`;
               comment += `<img src="${snoozeUrl}" alt="Snooze Action Sheet" width="300">`;
-              comment += `</a>\n\n';
+              comment += `</a>\n\n`;
             }
 
             // Check if we already have a comment to get history

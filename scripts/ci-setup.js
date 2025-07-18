@@ -23,15 +23,14 @@ window.__CI_MODE__ = true
 // Load seed data if available
 if (window.__CI_MODE__) {
   try {
-    // Safely parse the validated JSON data
-    const seedData = JSON.parse('${seedDataJSON.replace(/'/g, "\\'")}')
-    window.__SEED_DATA__ = seedData
+    // Assign the validated JSON data directly
+    window.__SEED_DATA__ = ${seedDataJSON};
     
     // Override AsyncStorage for web in CI
     if (typeof window !== 'undefined' && !window.AsyncStorage) {
       window.AsyncStorage = {
         data: {
-          '@todo_house_tasks': JSON.stringify(seedData.tasks)
+          '@todo_house_tasks': JSON.stringify(window.__SEED_DATA__.tasks)
         },
         getItem(key) {
           return Promise.resolve(this.data[key] || null)

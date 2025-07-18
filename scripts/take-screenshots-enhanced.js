@@ -33,7 +33,10 @@ async function takeScreenshots() {
     // In a real app, we would wait for specific elements like:
     // await page.waitForSelector('[data-testid="task-list"]', { timeout: 30000 })
     // However, in CI with Expo web, we need to ensure React hydration completes
-    const APP_HYDRATION_TIMEOUT = 8000
+    const APP_HYDRATION_TIMEOUT = parseInt(
+      process.env.APP_HYDRATION_TIMEOUT || '8000',
+      10,
+    )
     await page.waitForTimeout(APP_HYDRATION_TIMEOUT)
 
     // 1. Take screenshot of home screen with seeded tasks
