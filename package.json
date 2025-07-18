@@ -26,7 +26,6 @@
     "@react-navigation/material-top-tabs": "^7.3.2",
     "@react-navigation/native": "^7.1.6",
     "ai": "5.0.0-beta.18",
-    "biome": "^0.3.3",
     "expo": "~53.0.17",
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.10",

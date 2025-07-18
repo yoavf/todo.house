@@ -46,7 +46,7 @@ async function takeScreenshots() {
 
       // Additional wait to ensure content is fully rendered
       await page.waitForTimeout(3000)
-    } catch (error) {
+    } catch (_error) {
       console.log(
         'Warning: Could not detect app content, proceeding with fallback timeout',
       )
