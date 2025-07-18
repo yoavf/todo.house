@@ -1,70 +1,92 @@
-import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Schedule, ScheduleFrequency } from '../types/Task';
+import { Ionicons } from '@expo/vector-icons'
+import { useState } from 'react'
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+import { type Schedule, ScheduleFrequency } from '../types/Task'
 
 interface SchedulePickerProps {
-  visible: boolean;
-  onClose: () => void;
-  onSave: (schedule: Schedule | undefined) => void;
-  initialSchedule?: Schedule;
+  visible: boolean
+  onClose: () => void
+  onSave: (schedule: Schedule | undefined) => void
+  initialSchedule?: Schedule
 }
 
-export function SchedulePicker({ visible, onClose, onSave, initialSchedule }: SchedulePickerProps) {
+export function SchedulePicker({
+  visible,
+  onClose,
+  onSave,
+  initialSchedule,
+}: SchedulePickerProps) {
   const [frequency, setFrequency] = useState<ScheduleFrequency>(
-    initialSchedule?.frequency || ScheduleFrequency.WEEKLY
-  );
-  const [interval, setInterval] = useState<number>(initialSchedule?.interval || 1);
+    initialSchedule?.frequency || ScheduleFrequency.WEEKLY,
+  )
+  const [interval, setInterval] = useState<number>(
+    initialSchedule?.interval || 1,
+  )
 
   const handleSave = () => {
     const schedule: Schedule = {
       frequency,
       interval,
-    };
-    onSave(schedule);
-    onClose();
-  };
+    }
+    onSave(schedule)
+    onClose()
+  }
 
   const handleClear = () => {
-    onSave(undefined);
-    onClose();
-  };
+    onSave(undefined)
+    onClose()
+  }
 
   const renderIntervalOptions = () => {
-    const options = [];
-    const maxInterval = frequency === ScheduleFrequency.YEARLY ? 5 : 12;
-    
+    const options = []
+    const maxInterval = frequency === ScheduleFrequency.YEARLY ? 5 : 12
+
     for (let i = 1; i <= maxInterval; i++) {
       options.push(
         <TouchableOpacity
           key={i}
-          style={[styles.intervalOption, interval === i && styles.selectedIntervalOption]}
+          style={[
+            styles.intervalOption,
+            interval === i && styles.selectedIntervalOption,
+          ]}
           onPress={() => setInterval(i)}
         >
-          <Text style={[styles.intervalText, interval === i && styles.selectedIntervalText]}>
+          <Text
+            style={[
+              styles.intervalText,
+              interval === i && styles.selectedIntervalText,
+            ]}
+          >
             {i}
           </Text>
-        </TouchableOpacity>
-      );
+        </TouchableOpacity>,
+      )
     }
-    
-    return options;
-  };
+
+    return options
+  }
 
   const getIntervalLabel = () => {
     switch (frequency) {
       case ScheduleFrequency.DAILY:
-        return interval === 1 ? 'day' : 'days';
+        return interval === 1 ? 'day' : 'days'
       case ScheduleFrequency.WEEKLY:
-        return interval === 1 ? 'week' : 'weeks';
+        return interval === 1 ? 'week' : 'weeks'
       case ScheduleFrequency.MONTHLY:
-        return interval === 1 ? 'month' : 'months';
+        return interval === 1 ? 'month' : 'months'
       case ScheduleFrequency.YEARLY:
-        return interval === 1 ? 'year' : 'years';
+        return interval === 1 ? 'year' : 'years'
       default:
-        return '';
+        return ''
     }
-  };
+  }
 
   return (
     <Modal
@@ -83,7 +105,7 @@ export function SchedulePicker({ visible, onClose, onSave, initialSchedule }: Sc
           </View>
 
           <Text style={styles.sectionTitle}>Repeat every</Text>
-          
+
           <View style={styles.intervalContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.intervalOptions}>
@@ -94,67 +116,138 @@ export function SchedulePicker({ visible, onClose, onSave, initialSchedule }: Sc
           </View>
 
           <Text style={styles.sectionTitle}>Frequency</Text>
-          
+
           <View style={styles.frequencyOptions}>
             <TouchableOpacity
-              style={[styles.frequencyOption, frequency === ScheduleFrequency.DAILY && styles.selectedFrequencyOption]}
+              style={[
+                styles.frequencyOption,
+                frequency === ScheduleFrequency.DAILY &&
+                  styles.selectedFrequencyOption,
+              ]}
               onPress={() => setFrequency(ScheduleFrequency.DAILY)}
             >
               <Ionicons
-                name={frequency === ScheduleFrequency.DAILY ? "sunny" : "sunny-outline"}
+                name={
+                  frequency === ScheduleFrequency.DAILY
+                    ? 'sunny'
+                    : 'sunny-outline'
+                }
                 size={24}
-                color={frequency === ScheduleFrequency.DAILY ? "#007bff" : "#6c757d"}
+                color={
+                  frequency === ScheduleFrequency.DAILY ? '#007bff' : '#6c757d'
+                }
               />
-              <Text style={[styles.frequencyText, frequency === ScheduleFrequency.DAILY && styles.selectedFrequencyText]}>
+              <Text
+                style={[
+                  styles.frequencyText,
+                  frequency === ScheduleFrequency.DAILY &&
+                    styles.selectedFrequencyText,
+                ]}
+              >
                 Daily
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
-              style={[styles.frequencyOption, frequency === ScheduleFrequency.WEEKLY && styles.selectedFrequencyOption]}
+              style={[
+                styles.frequencyOption,
+                frequency === ScheduleFrequency.WEEKLY &&
+                  styles.selectedFrequencyOption,
+              ]}
               onPress={() => setFrequency(ScheduleFrequency.WEEKLY)}
             >
               <Ionicons
-                name={frequency === ScheduleFrequency.WEEKLY ? "calendar" : "calendar-outline"}
+                name={
+                  frequency === ScheduleFrequency.WEEKLY
+                    ? 'calendar'
+                    : 'calendar-outline'
+                }
                 size={24}
-                color={frequency === ScheduleFrequency.WEEKLY ? "#007bff" : "#6c757d"}
+                color={
+                  frequency === ScheduleFrequency.WEEKLY ? '#007bff' : '#6c757d'
+                }
               />
-              <Text style={[styles.frequencyText, frequency === ScheduleFrequency.WEEKLY && styles.selectedFrequencyText]}>
+              <Text
+                style={[
+                  styles.frequencyText,
+                  frequency === ScheduleFrequency.WEEKLY &&
+                    styles.selectedFrequencyText,
+                ]}
+              >
                 Weekly
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
-              style={[styles.frequencyOption, frequency === ScheduleFrequency.MONTHLY && styles.selectedFrequencyOption]}
+              style={[
+                styles.frequencyOption,
+                frequency === ScheduleFrequency.MONTHLY &&
+                  styles.selectedFrequencyOption,
+              ]}
               onPress={() => setFrequency(ScheduleFrequency.MONTHLY)}
             >
               <Ionicons
-                name={frequency === ScheduleFrequency.MONTHLY ? "calendar" : "calendar-outline"}
+                name={
+                  frequency === ScheduleFrequency.MONTHLY
+                    ? 'calendar'
+                    : 'calendar-outline'
+                }
                 size={24}
-                color={frequency === ScheduleFrequency.MONTHLY ? "#007bff" : "#6c757d"}
+                color={
+                  frequency === ScheduleFrequency.MONTHLY
+                    ? '#007bff'
+                    : '#6c757d'
+                }
               />
-              <Text style={[styles.frequencyText, frequency === ScheduleFrequency.MONTHLY && styles.selectedFrequencyText]}>
+              <Text
+                style={[
+                  styles.frequencyText,
+                  frequency === ScheduleFrequency.MONTHLY &&
+                    styles.selectedFrequencyText,
+                ]}
+              >
                 Monthly
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
-              style={[styles.frequencyOption, frequency === ScheduleFrequency.YEARLY && styles.selectedFrequencyOption]}
+              style={[
+                styles.frequencyOption,
+                frequency === ScheduleFrequency.YEARLY &&
+                  styles.selectedFrequencyOption,
+              ]}
               onPress={() => setFrequency(ScheduleFrequency.YEARLY)}
             >
               <Ionicons
-                name={frequency === ScheduleFrequency.YEARLY ? "calendar" : "calendar-outline"}
+                name={
+                  frequency === ScheduleFrequency.YEARLY
+                    ? 'calendar'
+                    : 'calendar-outline'
+                }
                 size={24}
-                color={frequency === ScheduleFrequency.YEARLY ? "#007bff" : "#6c757d"}
+                color={
+                  frequency === ScheduleFrequency.YEARLY ? '#007bff' : '#6c757d'
+                }
               />
-              <Text style={[styles.frequencyText, frequency === ScheduleFrequency.YEARLY && styles.selectedFrequencyText]}>
+              <Text
+                style={[
+                  styles.frequencyText,
+                  frequency === ScheduleFrequency.YEARLY &&
+                    styles.selectedFrequencyText,
+                ]}
+              >
                 Yearly
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.summary}>
-            <Ionicons name="repeat" size={20} color="#28a745" style={styles.summaryIcon} />
+            <Ionicons
+              name="repeat"
+              size={20}
+              color="#28a745"
+              style={styles.summaryIcon}
+            />
             <Text style={styles.summaryText}>
               This task will repeat every {interval} {getIntervalLabel()}
             </Text>
@@ -171,7 +264,7 @@ export function SchedulePicker({ visible, onClose, onSave, initialSchedule }: Sc
         </View>
       </View>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -317,4 +410,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})

@@ -1,51 +1,68 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useTaskStore } from '../store/taskStore';
+import { Ionicons } from '@expo/vector-icons'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+import { useTaskStore } from '../store/taskStore'
 
 interface LocationPickerProps {
-  visible: boolean;
-  currentLocation?: string;
-  onSelect: (location: string) => void;
-  onClose: () => void;
-  testID?: string;
+  visible: boolean
+  currentLocation?: string
+  onSelect: (location: string) => void
+  onClose: () => void
+  testID?: string
 }
 
-export function LocationPicker({ visible, currentLocation, onSelect, onClose, testID }: LocationPickerProps) {
-  const [inputValue, setInputValue] = useState(currentLocation || '');
-  const tasks = useTaskStore((state) => state.tasks);
+export function LocationPicker({
+  visible,
+  currentLocation,
+  onSelect,
+  onClose,
+  testID,
+}: LocationPickerProps) {
+  const [inputValue, setInputValue] = useState(currentLocation || '')
+  const tasks = useTaskStore((state) => state.tasks)
 
   // Get unique existing locations
   const existingLocations = useMemo(() => {
     const locations = tasks
-      .map(task => task.location)
+      .map((task) => task.location)
       .filter((location): location is string => Boolean(location))
       .filter((location, index, arr) => arr.indexOf(location) === index)
-      .sort();
-    return locations;
-  }, [tasks]);
+      .sort()
+    return locations
+  }, [tasks])
 
   // Filter locations based on input
   const filteredLocations = useMemo(() => {
-    if (!inputValue.trim()) return existingLocations;
-    return existingLocations.filter(location =>
-      location.toLowerCase().includes(inputValue.toLowerCase())
-    );
-  }, [existingLocations, inputValue]);
+    if (!inputValue.trim()) return existingLocations
+    return existingLocations.filter((location) =>
+      location.toLowerCase().includes(inputValue.toLowerCase()),
+    )
+  }, [existingLocations, inputValue])
 
-  const handleSelectLocation = useCallback((location: string) => {
-    onSelect(location);
-  }, [onSelect]);
+  const handleSelectLocation = useCallback(
+    (location: string) => {
+      onSelect(location)
+    },
+    [onSelect],
+  )
 
   const handleSubmitInput = useCallback(() => {
     if (inputValue.trim()) {
-      onSelect(inputValue.trim());
+      onSelect(inputValue.trim())
     }
-  }, [inputValue, onSelect]);
+  }, [inputValue, onSelect])
 
   const handleRemoveLocation = useCallback(() => {
-    onSelect('');
-  }, [onSelect]);
+    onSelect('')
+  }, [onSelect])
 
   return (
     <Modal
@@ -116,7 +133,7 @@ export function LocationPicker({ visible, currentLocation, onSelect, onClose, te
         />
       </View>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -196,4 +213,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 20,
   },
-});
+})

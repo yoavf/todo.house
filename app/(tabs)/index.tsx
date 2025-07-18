@@ -1,12 +1,12 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { FAB, TaskList } from '../../components';
-import { useTaskStore, getActiveTasks } from '../../store/taskStore';
+import { useMemo } from 'react'
+import { StyleSheet, Text, View } from 'react-native'
+import { FAB, TaskList } from '../../components'
+import { getActiveTasks, useTaskStore } from '../../store/taskStore'
 
 export default function ActiveTasksScreen() {
-  const tasks = useTaskStore((state) => state.tasks);
-  
-  const sortedTasks = useMemo(() => getActiveTasks(tasks), [tasks]);
+  const tasks = useTaskStore((state) => state.tasks)
+
+  const sortedTasks = useMemo(() => getActiveTasks(tasks), [tasks])
 
   return (
     <View style={styles.container}>
@@ -23,7 +23,7 @@ export default function ActiveTasksScreen() {
       {/* Floating Action Button */}
       <FAB />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -47,4 +47,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2c3e50',
   },
-});
+})
