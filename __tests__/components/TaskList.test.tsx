@@ -10,12 +10,17 @@ jest.mock('../../store/taskStore');
 // Mock DraggableFlatList
 jest.mock('react-native-draggable-flatlist', () => ({
   __esModule: true,
-  default: ({ data, renderItem, onDragEnd, contentContainerStyle }) => {
+  default: ({ data, renderItem, onDragEnd, contentContainerStyle }: { 
+    data: any[], 
+    renderItem: any, 
+    onDragEnd: any, 
+    contentContainerStyle: any 
+  }) => {
     const React = require('react');
     const { View } = require('react-native');
     return (
       <View testID="draggable-list" style={contentContainerStyle}>
-        {data.map((item, index) => (
+        {data.map((item: any, index: number) => (
           <View key={item.id}>
             {renderItem({ item, drag: jest.fn(), isActive: false, getIndex: () => index })}
           </View>
@@ -27,7 +32,7 @@ jest.mock('react-native-draggable-flatlist', () => ({
 
 // Mock DraggableTaskItem
 jest.mock('../../components/DraggableTaskItem', () => ({
-  DraggableTaskItem: ({ task }) => {
+  DraggableTaskItem: ({ task }: { task: any }) => {
     const View = require('react-native').View;
     const Text = require('react-native').Text;
     return (
@@ -47,18 +52,21 @@ describe('TaskList', () => {
       title: 'Task 1',
       completed: false,
       createdAt: new Date('2024-01-01'),
+      order: 0,
     },
     {
       id: 'task-2',
       title: 'Task 2',
       completed: true,
       createdAt: new Date('2024-01-02'),
+      order: 1,
     },
     {
       id: 'task-3',
       title: 'Task 3',
       completed: false,
       createdAt: new Date('2024-01-03'),
+      order: 2,
     },
   ];
 
