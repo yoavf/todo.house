@@ -1,65 +1,99 @@
-import { Ionicons } from '@expo/vector-icons';
-import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useTaskStore } from '../store/taskStore';
-import { apiClient } from '../utils/apiClient';
-import { logger } from '../utils/logger';
+import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+import { useTaskStore } from '../store/taskStore'
+import { apiClient } from '../utils/apiClient'
+import { logger } from '../utils/logger'
 
 // Constants
-const SILENCE_TIMEOUT_MS = 2000; // Stop recording after 2 seconds of silence
+const SILENCE_TIMEOUT_MS = 2000 // Stop recording after 2 seconds of silence
 
 export default function VoiceScreen() {
-  const router = useRouter();
-  const { add } = useTaskStore();
-  const [isListening, setIsListening] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const hasStartedRef = useRef(false);
-  const isListeningRef = useRef(false);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter()
+  const { add } = useTaskStore()
+  const [isListening, setIsListening] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [transcript, setTranscript] = useState('')
+  const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null)
+  const pulseAnim = useRef(new Animated.Value(1)).current
+  const hasStartedRef = useRef(false)
+  const isListeningRef = useRef(false)
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Update refs when state changes
   useEffect(() => {
-    silenceTimerRef.current = silenceTimer;
-  }, [silenceTimer]);
+    silenceTimerRef.current = silenceTimer
+  }, [silenceTimer])
 
   useEffect(() => {
-    isListeningRef.current = isListening;
-  }, [isListening]);
+    isListeningRef.current = isListening
+  }, [isListening])
+
+  const startListening = useCallback(async () => {
+    try {
+      logger.info('Voice', '🎤 Starting speech recognition...')
+      setTranscript('')
+      setIsListening(true)
+
+      await ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        continuous: true,
+        interimResults: true,
+        maxAlternatives: 1,
+      })
+      logger.info('Voice', '✅ Speech recognition started')
+    } catch (err) {
+      logger.error('Voice', '❌ Error starting speech recognition:', err)
+      Alert.alert('Error', 'Failed to start voice recognition')
+      router.back()
+    }
+  }, [router])
 
   useEffect(() => {
     // Request permissions and start recording immediately
-    (async () => {
-      const status = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    ;(async () => {
+      const status = await ExpoSpeechRecognitionModule.requestPermissionsAsync()
       if (!status.granted) {
-        Alert.alert('Permission Denied', 'Microphone permission is required to use voice input.');
-        router.back();
-        return;
+        Alert.alert(
+          'Permission Denied',
+          'Microphone permission is required to use voice input.',
+        )
+        router.back()
+        return
       }
-      
+
       // Start recording immediately on mount
       if (!hasStartedRef.current) {
-        hasStartedRef.current = true;
-        startListening();
+        hasStartedRef.current = true
+        startListening()
       }
-    })();
+    })()
 
     return () => {
       // Use refs in cleanup to avoid dependency warnings
       if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current);
+        clearTimeout(silenceTimerRef.current)
       }
       // Stop recording when unmounting
       if (isListeningRef.current) {
-        ExpoSpeechRecognitionModule.stop();
+        ExpoSpeechRecognitionModule.stop()
       }
-    };
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [router.back, startListening])
 
   useEffect(() => {
     if (isListening) {
@@ -76,139 +110,125 @@ export default function VoiceScreen() {
             duration: 1000,
             useNativeDriver: true,
           }),
-        ])
-      ).start();
+        ]),
+      ).start()
     } else {
       // Stop animation
-      pulseAnim.stopAnimation();
+      pulseAnim.stopAnimation()
     }
-  }, [isListening, pulseAnim]);
+  }, [isListening, pulseAnim])
 
   // Handle speech recognition results
   useSpeechRecognitionEvent('result', (event) => {
-    setTranscript(event.results[0]?.transcript || '');
-    
+    setTranscript(event.results[0]?.transcript || '')
+
     // Reset silence timer whenever we get new speech
     if (silenceTimer) {
-      clearTimeout(silenceTimer);
+      clearTimeout(silenceTimer)
     }
-    
+
     // Set a new timer to stop after silence timeout
     const timer = setTimeout(() => {
-      stopListening();
-    }, SILENCE_TIMEOUT_MS);
-    
-    setSilenceTimer(timer);
-  });
+      stopListening()
+    }, SILENCE_TIMEOUT_MS)
+
+    setSilenceTimer(timer)
+  })
 
   // Handle errors
   useSpeechRecognitionEvent('error', (event) => {
-    logger.error('Voice', '❌ Speech recognition error:', event.error);
-    setIsListening(false);
+    logger.error('Voice', '❌ Speech recognition error:', event.error)
+    setIsListening(false)
     if (event.error !== 'no-speech') {
-      Alert.alert('Error', 'Failed to recognize speech. Please try again.');
+      Alert.alert('Error', 'Failed to recognize speech. Please try again.')
     }
-  });
+  })
 
   // Handle when recognition ends
   useSpeechRecognitionEvent('end', () => {
-    setIsListening(false);
+    setIsListening(false)
     if (silenceTimer) {
-      clearTimeout(silenceTimer);
-      setSilenceTimer(null);
+      clearTimeout(silenceTimer)
+      setSilenceTimer(null)
     }
-  });
+  })
 
-  const startListening = useCallback(async () => {
-    try {
-      logger.info('Voice', '🎤 Starting speech recognition...');
-      setTranscript('');
-      setIsListening(true);
-      
-      await ExpoSpeechRecognitionModule.start({
-        lang: 'en-US',
-        continuous: true,
-        interimResults: true,
-        maxAlternatives: 1,
-      });
-      logger.info('Voice', '✅ Speech recognition started');
-    } catch (err) {
-      logger.error('Voice', '❌ Failed to start speech recognition:', err);
-      setIsListening(false);
-      Alert.alert('Error', 'Failed to start voice recognition. Please try again.');
-    }
-  }, []);
+  const processTranscript = useCallback(
+    async (text: string) => {
+      setIsProcessing(true)
+      try {
+        logger.info('Voice', '📝 Processing transcript:', text)
+        const result = await apiClient.extractTasks(text)
 
-  const processTranscript = useCallback(async (text: string) => {
-    setIsProcessing(true);
-    try {
-      logger.info('Voice', '📝 Processing transcript:', text);
-      const result = await apiClient.extractTasks(text);
-      
-      if (result.tasks && result.tasks.length > 0) {
-        logger.info('Voice', `✅ Extracted ${result.tasks.length} task(s)`);
-        // Add tasks to store
-        result.tasks.forEach((task) => {
-          add({
-            title: task.title,
-            location: task.location || undefined,
-            completed: false,
-            dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-          });
-        });
+        if (result.tasks && result.tasks.length > 0) {
+          logger.info('Voice', `✅ Extracted ${result.tasks.length} task(s)`)
+          // Add tasks to store
+          result.tasks.forEach((task) => {
+            add({
+              title: task.title,
+              location: task.location || undefined,
+              completed: false,
+              dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+            })
+          })
 
-        // Navigate back to home
-        router.replace('/');
-      } else {
-        Alert.alert('No Tasks Found', 'Could not extract any tasks from your speech. Please try again.');
+          // Navigate back to home
+          router.replace('/')
+        } else {
+          Alert.alert(
+            'No Tasks Found',
+            'Could not extract any tasks from your speech. Please try again.',
+          )
+        }
+      } catch (err) {
+        logger.error('Voice', '❌ Failed to process transcript:', err)
+        Alert.alert('Error', 'Failed to process your speech. Please try again.')
+      } finally {
+        setIsProcessing(false)
       }
-    } catch (err) {
-      logger.error('Voice', '❌ Failed to process transcript:', err);
-      Alert.alert('Error', 'Failed to process your speech. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [add, router]);
+    },
+    [add, router],
+  )
 
   const stopListening = useCallback(async () => {
-    if (!isListening) return;
-    
+    if (!isListening) return
+
     try {
-      await ExpoSpeechRecognitionModule.stop();
-      setIsListening(false);
-      
+      await ExpoSpeechRecognitionModule.stop()
+      setIsListening(false)
+
       if (silenceTimer) {
-        clearTimeout(silenceTimer);
-        setSilenceTimer(null);
+        clearTimeout(silenceTimer)
+        setSilenceTimer(null)
       }
-      
+
       // Process the transcript if we have one
       if (transcript.trim()) {
-        processTranscript(transcript);
+        processTranscript(transcript)
       } else {
-        Alert.alert('No Speech Detected', 'Please try again and speak clearly.');
+        Alert.alert('No Speech Detected', 'Please try again and speak clearly.')
       }
     } catch (err) {
-      logger.error('Voice', '❌ Failed to stop speech recognition:', err);
-      setIsListening(false);
+      logger.error('Voice', '❌ Failed to stop speech recognition:', err)
+      setIsListening(false)
     }
-  }, [isListening, transcript, silenceTimer, processTranscript]);
+  }, [isListening, transcript, silenceTimer, processTranscript])
 
   const handleCancel = useCallback(() => {
     if (isListening) {
-      ExpoSpeechRecognitionModule.stop();
+      ExpoSpeechRecognitionModule.stop()
     }
-    router.back();
-  }, [isListening, router]);
+    router.back()
+  }, [isListening, router])
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.overlay} 
+      <TouchableOpacity
+        style={styles.overlay}
         activeOpacity={1}
         onPress={handleCancel}
       />
-      
+
       <View style={styles.modalContent}>
         {isProcessing ? (
           <View style={styles.processingContainer}>
@@ -218,14 +238,19 @@ export default function VoiceScreen() {
         ) : (
           <>
             <View style={styles.micContainer}>
-              <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulseAnim }] }]} />
+              <Animated.View
+                style={[
+                  styles.pulseCircle,
+                  { transform: [{ scale: pulseAnim }] },
+                ]}
+              />
               <View style={styles.micCircle}>
                 <Ionicons name="mic" size={40} color="white" />
               </View>
             </View>
 
             <Text style={styles.listeningText}>Listening...</Text>
-            
+
             <View style={styles.transcriptContainer}>
               {transcript ? (
                 <Text style={styles.transcriptText}>{transcript}</Text>
@@ -238,19 +263,25 @@ export default function VoiceScreen() {
               <Text style={styles.hintTitle}>Tips for best results:</Text>
               <View style={styles.hintRow}>
                 <Text style={styles.hintIcon}>📝</Text>
-                <Text style={styles.hintText}>What: &quot;Clean the kitchen&quot;</Text>
+                <Text style={styles.hintText}>
+                  What: &quot;Clean the kitchen&quot;
+                </Text>
               </View>
               <View style={styles.hintRow}>
                 <Text style={styles.hintIcon}>📍</Text>
-                <Text style={styles.hintText}>Where: &quot;...in the garage&quot;</Text>
+                <Text style={styles.hintText}>
+                  Where: &quot;...in the garage&quot;
+                </Text>
               </View>
               <View style={styles.hintRow}>
                 <Text style={styles.hintIcon}>📅</Text>
-                <Text style={styles.hintText}>When: &quot;...tomorrow at 3pm&quot;</Text>
+                <Text style={styles.hintText}>
+                  When: &quot;...tomorrow at 3pm&quot;
+                </Text>
               </View>
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.cancelButton}
               onPress={handleCancel}
             >
@@ -260,7 +291,7 @@ export default function VoiceScreen() {
         )}
       </View>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -383,4 +414,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'white',
   },
-});
+})

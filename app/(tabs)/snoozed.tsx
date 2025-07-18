@@ -1,41 +1,46 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTaskStore, getSnoozedTasks } from '../../store/taskStore';
-import { TaskCard } from '../../components/TaskCard';
-import { getRandomWheneverLabel } from '../../utils/dateUtils';
-import { MILLISECONDS_PER_HOUR, MILLISECONDS_PER_MINUTE } from '../../utils/constants';
+import { Ionicons } from '@expo/vector-icons'
+import { useMemo } from 'react'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { TaskCard } from '../../components/TaskCard'
+import { getSnoozedTasks, useTaskStore } from '../../store/taskStore'
+import {
+  MILLISECONDS_PER_HOUR,
+  MILLISECONDS_PER_MINUTE,
+} from '../../utils/constants'
+import { getRandomWheneverLabel } from '../../utils/dateUtils'
 
 export default function SnoozedScreen() {
-  const tasks = useTaskStore((state) => state.tasks);
-  const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask);
-  
-  const snoozedTasks = useMemo(() => getSnoozedTasks(tasks), [tasks]);
+  const tasks = useTaskStore((state) => state.tasks)
+  const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask)
+
+  const snoozedTasks = useMemo(() => getSnoozedTasks(tasks), [tasks])
 
   const formatTimeRemaining = (snoozeUntil?: Date): string => {
-    if (!snoozeUntil) return getRandomWheneverLabel();
-    
-    const now = new Date();
-    const diff = snoozeUntil.getTime() - now.getTime();
-    
-    if (diff <= 0) return 'Ready to unsnooze';
-    
-    const hours = Math.floor(diff / MILLISECONDS_PER_HOUR);
-    const minutes = Math.floor((diff % MILLISECONDS_PER_HOUR) / MILLISECONDS_PER_MINUTE);
-    const days = Math.floor(hours / 24);
-    
+    if (!snoozeUntil) return getRandomWheneverLabel()
+
+    const now = new Date()
+    const diff = snoozeUntil.getTime() - now.getTime()
+
+    if (diff <= 0) return 'Ready to unsnooze'
+
+    const hours = Math.floor(diff / MILLISECONDS_PER_HOUR)
+    const minutes = Math.floor(
+      (diff % MILLISECONDS_PER_HOUR) / MILLISECONDS_PER_MINUTE,
+    )
+    const days = Math.floor(hours / 24)
+
     if (days > 0) {
-      return `${days}d ${hours % 24}h remaining`;
+      return `${days}d ${hours % 24}h remaining`
     } else if (hours > 0) {
-      return `${hours}h ${minutes}m remaining`;
+      return `${hours}h ${minutes}m remaining`
     } else {
-      return `${minutes}m remaining`;
+      return `${minutes}m remaining`
     }
-  };
+  }
 
   const handleUnsnooze = (taskId: string) => {
-    unsnoozeTask(taskId);
-  };
+    unsnoozeTask(taskId)
+  }
 
   if (snoozedTasks.length === 0) {
     return (
@@ -48,7 +53,7 @@ export default function SnoozedScreen() {
           </Text>
         </View>
       </View>
-    );
+    )
   }
 
   return (
@@ -57,7 +62,9 @@ export default function SnoozedScreen() {
         {/* Tasks Section Header */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Snoozed Tasks</Text>
-          <Text style={styles.count}>{snoozedTasks.length} task{snoozedTasks.length === 1 ? '' : 's'}</Text>
+          <Text style={styles.count}>
+            {snoozedTasks.length} task{snoozedTasks.length === 1 ? '' : 's'}
+          </Text>
         </View>
 
         <View style={styles.taskList}>
@@ -66,7 +73,7 @@ export default function SnoozedScreen() {
               <View style={styles.taskCard}>
                 <TaskCard task={task} />
               </View>
-              
+
               <View style={styles.snoozeInfo}>
                 <Text style={styles.timeRemaining}>
                   {formatTimeRemaining(task.snoozeUntil)}
@@ -84,7 +91,7 @@ export default function SnoozedScreen() {
         </View>
       </View>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -173,4 +180,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 4,
   },
-});
+})

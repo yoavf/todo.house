@@ -1,12 +1,12 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { TaskList } from '../../components';
-import { useTaskStore, getFutureTasks } from '../../store/taskStore';
+import { useMemo } from 'react'
+import { StyleSheet, Text, View } from 'react-native'
+import { TaskList } from '../../components'
+import { getFutureTasks, useTaskStore } from '../../store/taskStore'
 
 export default function FutureTasksScreen() {
-  const tasks = useTaskStore((state) => state.tasks);
-  
-  const futureTasks = useMemo(() => getFutureTasks(tasks), [tasks]);
+  const tasks = useTaskStore((state) => state.tasks)
+
+  const futureTasks = useMemo(() => getFutureTasks(tasks), [tasks])
 
   return (
     <View style={styles.container}>
@@ -18,18 +18,19 @@ export default function FutureTasksScreen() {
 
         {/* Task List */}
         <TaskList tasks={futureTasks} />
-        
+
         {/* Empty state */}
         {futureTasks.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              No future tasks yet. Complete a scheduled task to see future occurrences here.
+              No future tasks yet. Complete a scheduled task to see future
+              occurrences here.
             </Text>
           </View>
         )}
       </View>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -65,4 +66,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-});
+})

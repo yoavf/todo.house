@@ -1,46 +1,50 @@
-import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetModal, BottomSheetTextInput, BottomSheetView } from '@gorhom/bottom-sheet';
-import { useRouter, useSegments } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { FAB as PaperFAB, Portal } from 'react-native-paper';
-import { useTaskStore } from '../store/taskStore';
-import { LocationPicker } from './LocationPicker';
+import { Ionicons } from '@expo/vector-icons'
+import {
+  BottomSheetModal,
+  BottomSheetTextInput,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet'
+import { useRouter, useSegments } from 'expo-router'
+import { useCallback, useRef, useState } from 'react'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { FAB as PaperFAB, Portal } from 'react-native-paper'
+import { useTaskStore } from '../store/taskStore'
+import { LocationPicker } from './LocationPicker'
 
 export function FAB() {
-  const router = useRouter();
-  const segments = useSegments();
-  const [isOpen, setIsOpen] = useState(false);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskLocation, setNewTaskLocation] = useState('');
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const { add } = useTaskStore();
+  const router = useRouter()
+  const segments = useSegments()
+  const [isOpen, setIsOpen] = useState(false)
+  const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskLocation, setNewTaskLocation] = useState('')
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null)
+  const { add } = useTaskStore()
 
   // Check if camera is open
-  const isCameraOpen = segments.includes('camera');
+  const isCameraOpen = segments.includes('camera')
 
   // Check if bottom sheet is open
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
 
   // Hide FAB when camera or bottom sheet is open
-  const shouldHideFAB = isCameraOpen || isBottomSheetOpen;
+  const shouldHideFAB = isCameraOpen || isBottomSheetOpen
 
   const handleCamera = useCallback(() => {
-    setIsOpen(false);
-    router.push('/camera');
-  }, [router]);
+    setIsOpen(false)
+    router.push('/camera')
+  }, [router])
 
   const handleVoice = useCallback(() => {
-    setIsOpen(false);
-    router.push('/voice');
-  }, [router]);
+    setIsOpen(false)
+    router.push('/voice')
+  }, [router])
 
   const handleType = useCallback(() => {
-    setIsOpen(false);
-    setIsBottomSheetOpen(true);
-    bottomSheetModalRef.current?.present();
-  }, []);
+    setIsOpen(false)
+    setIsBottomSheetOpen(true)
+    bottomSheetModalRef.current?.present()
+  }, [])
 
   const handleCreateTask = useCallback(() => {
     if (newTaskTitle.trim()) {
@@ -48,16 +52,16 @@ export function FAB() {
         title: newTaskTitle.trim(),
         location: newTaskLocation || undefined,
         completed: false,
-      });
-      setNewTaskTitle('');
-      setNewTaskLocation('');
-      bottomSheetModalRef.current?.dismiss();
+      })
+      setNewTaskTitle('')
+      setNewTaskLocation('')
+      bottomSheetModalRef.current?.dismiss()
     }
-  }, [newTaskTitle, newTaskLocation, add]);
+  }, [newTaskTitle, newTaskLocation, add])
 
   const handleBottomSheetChange = useCallback((index: number) => {
-    setIsBottomSheetOpen(index >= 0);
-  }, []);
+    setIsBottomSheetOpen(index >= 0)
+  }, [])
 
   return (
     <>
@@ -89,7 +93,7 @@ export function FAB() {
           onStateChange={({ open }) => setIsOpen(open)}
           onPress={() => {
             if (!isOpen) {
-              setIsOpen(true);
+              setIsOpen(true)
             }
           }}
           style={styles.fab}
@@ -142,10 +146,12 @@ export function FAB() {
                   size={20}
                   color={newTaskLocation ? '#2c3e50' : '#adb5bd'}
                 />
-                <Text style={[
-                  styles.locationText,
-                  !newTaskLocation && styles.placeholderText
-                ]}>
+                <Text
+                  style={[
+                    styles.locationText,
+                    !newTaskLocation && styles.placeholderText,
+                  ]}
+                >
                   {newTaskLocation || 'Select a location (optional)'}
                 </Text>
                 <Ionicons name="chevron-forward" size={20} color="#adb5bd" />
@@ -153,7 +159,10 @@ export function FAB() {
             </View>
 
             <TouchableOpacity
-              style={[styles.createButton, !newTaskTitle.trim() && styles.createButtonDisabled]}
+              style={[
+                styles.createButton,
+                !newTaskTitle.trim() && styles.createButtonDisabled,
+              ]}
               onPress={handleCreateTask}
               disabled={!newTaskTitle.trim()}
             >
@@ -168,13 +177,13 @@ export function FAB() {
         visible={showLocationPicker}
         currentLocation={newTaskLocation}
         onSelect={(location) => {
-          setNewTaskLocation(location);
-          setShowLocationPicker(false);
+          setNewTaskLocation(location)
+          setShowLocationPicker(false)
         }}
         onClose={() => setShowLocationPicker(false)}
       />
     </>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -276,4 +285,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})

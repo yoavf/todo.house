@@ -1,49 +1,52 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons'
+import { useEffect, useRef, useState } from 'react'
+import { StyleSheet, View } from 'react-native'
 
 interface SuccessAnimationProps {
-  visible: boolean;
-  onComplete?: () => void;
+  visible: boolean
+  onComplete?: () => void
 }
 
-export function SuccessAnimation({ visible, onComplete }: SuccessAnimationProps) {
-  const [showIcon, setShowIcon] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+export function SuccessAnimation({
+  visible,
+  onComplete,
+}: SuccessAnimationProps) {
+  const [showIcon, setShowIcon] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (visible) {
       // Clear any existing timeout
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+        clearTimeout(timeoutRef.current)
       }
 
       // Show the icon immediately
-      setShowIcon(true);
+      setShowIcon(true)
 
       // Hide after 1.5 seconds and call onComplete
       timeoutRef.current = setTimeout(() => {
-        setShowIcon(false);
+        setShowIcon(false)
         if (onComplete) {
-          onComplete();
+          onComplete()
         }
-      }, 1500);
+      }, 1500)
     } else {
-      setShowIcon(false);
+      setShowIcon(false)
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+        clearTimeout(timeoutRef.current)
       }
     }
 
     // Cleanup function
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+        clearTimeout(timeoutRef.current)
       }
-    };
-  }, [visible, onComplete]);
+    }
+  }, [visible, onComplete])
 
-  if (!visible || !showIcon) return null;
+  if (!visible || !showIcon) return null
 
   return (
     <View style={styles.container}>
@@ -51,7 +54,7 @@ export function SuccessAnimation({ visible, onComplete }: SuccessAnimationProps)
         <Ionicons name="checkmark-circle" size={80} color="#28a745" />
       </View>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -76,4 +79,4 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-});
+})

@@ -1,16 +1,17 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import { useTaskStore } from '../store/taskStore';
-import { SnoozeDuration } from '../types/Task';
-import { getSnoozeOptions } from '../utils/dateUtils';
-import { getCurrentLocale } from '../utils/localeUtils';
+import { Ionicons } from '@expo/vector-icons'
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet'
+import type React from 'react'
+import { useCallback, useMemo } from 'react'
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useTaskStore } from '../store/taskStore'
+import type { SnoozeDuration } from '../types/Task'
+import { getSnoozeOptions } from '../utils/dateUtils'
+import { getCurrentLocale } from '../utils/localeUtils'
 
 interface SnoozeActionSheetProps {
-  bottomSheetRef: React.RefObject<BottomSheetModal | null>;
-  taskId: string;
-  onClose: () => void;
+  bottomSheetRef: React.RefObject<BottomSheetModal | null>
+  taskId: string
+  onClose: () => void
 }
 
 export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
@@ -18,22 +19,24 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
   taskId,
   onClose,
 }) => {
-  const { snoozeTask } = useTaskStore();
-  
-  const snoozeOptions = useMemo(() => {
-    const locale = getCurrentLocale();
-    return getSnoozeOptions(locale);
-  }, []);
+  const { snoozeTask } = useTaskStore()
 
-  const handleSnooze = useCallback((duration: SnoozeDuration) => {
-    try {
-      snoozeTask(taskId, duration);
-      onClose();
-      
-    } catch {
-      Alert.alert('Error', 'Failed to snooze task');
-    }
-  }, [snoozeTask, taskId, onClose, snoozeOptions]);
+  const snoozeOptions = useMemo(() => {
+    const locale = getCurrentLocale()
+    return getSnoozeOptions(locale)
+  }, [])
+
+  const handleSnooze = useCallback(
+    (duration: SnoozeDuration) => {
+      try {
+        snoozeTask(taskId, duration)
+        onClose()
+      } catch {
+        Alert.alert('Error', 'Failed to snooze task')
+      }
+    },
+    [snoozeTask, taskId, onClose],
+  )
 
   return (
     <BottomSheetModal
@@ -51,7 +54,9 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.subtitle}>Choose when to be reminded about this task</Text>
+        <Text style={styles.subtitle}>
+          Choose when to be reminded about this task
+        </Text>
 
         <View style={styles.optionsContainer}>
           {snoozeOptions.map((option) => (
@@ -61,19 +66,25 @@ export const SnoozeActionSheet: React.FC<SnoozeActionSheetProps> = ({
               onPress={() => handleSnooze(option.duration)}
             >
               <View style={styles.optionIcon}>
-                <Ionicons name={option.icon as any} size={24} color="#007bff" />
+                <Ionicons
+                  name={option.icon as keyof typeof Ionicons.glyphMap}
+                  size={24}
+                  color="#007bff"
+                />
               </View>
               <View style={styles.optionContent}>
                 <Text style={styles.optionLabel}>{option.label}</Text>
-                <Text style={styles.optionDescription}>{option.description}</Text>
+                <Text style={styles.optionDescription}>
+                  {option.description}
+                </Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
       </BottomSheetView>
     </BottomSheetModal>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   bottomSheet: {
@@ -148,4 +159,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6c757d',
   },
-});
+})
