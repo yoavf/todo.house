@@ -1,41 +1,38 @@
-import { openai } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
-import { z } from 'zod';
-import { logger } from '../../utils/logger';
+import { openai } from '@ai-sdk/openai'
+import { generateObject } from 'ai'
+import { z } from 'zod'
+import { logger } from '../../utils/logger'
 
 const TaskSchema = z.object({
   title: z.string(),
   location: z.string().optional().nullable(),
   dueDate: z.string().optional().nullable(),
-});
+})
 
 const TasksResponseSchema = z.object({
   tasks: z.array(TaskSchema),
-});
+})
 
 export async function POST(request: Request): Promise<Response> {
-  logger.info('API', '📝 API: Starting task extraction from text...');
+  logger.info('API', '📝 API: Starting task extraction from text...')
 
   try {
     if (!process.env.OPENAI_API_KEY) {
-      logger.error('API', '❌ API: No OpenAI API key found');
+      logger.error('API', '❌ API: No OpenAI API key found')
       return Response.json(
         { error: 'OpenAI API key not configured' },
-        { status: 500 }
-      );
+        { status: 500 },
+      )
     }
 
-    const body = await request.json();
-    const { text } = body;
+    const body = await request.json()
+    const { text } = body
 
     if (!text || typeof text !== 'string') {
-      return Response.json(
-        { error: 'No text provided' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'No text provided' }, { status: 400 })
     }
 
-    logger.debug('API', '📊 API: Text length:', text.length);
+    logger.debug('API', '📊 API: Text length:', text.length)
 
     // Extract tasks from the text using GPT
     const { object: result } = await generateObject({
@@ -62,24 +59,21 @@ Examples:
     { "title": "Vacuum the living room", "location": "Living room", "dueDate": "2025-07-25T00:00:00Z" },
     { "title": "Do laundry", "dueDate": "2025-07-25T00:00:00Z" }
   ] }`,
-    });
+    })
 
-    logger.info('API', '✅ API: Tasks extracted:', result);
+    logger.info('API', '✅ API: Tasks extracted:', result)
 
-    return Response.json(result);
+    return Response.json(result)
   } catch (error) {
-    logger.error('API', '❌ API: Task extraction error:', error);
+    logger.error('API', '❌ API: Task extraction error:', error)
 
     if (error instanceof z.ZodError) {
       return Response.json(
         { error: 'Invalid response format', details: error.errors },
-        { status: 500 }
-      );
+        { status: 500 },
+      )
     }
 
-    return Response.json(
-      { error: 'Failed to extract tasks' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Failed to extract tasks' }, { status: 500 })
   }
 }

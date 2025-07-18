@@ -1,39 +1,50 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, TextStyle, TouchableOpacity } from 'react-native';
+import { useEffect, useRef, useState } from 'react'
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  type TextStyle,
+  TouchableOpacity,
+} from 'react-native'
 
 interface InlineTextEditProps {
-  value: string;
-  onUpdate: (newValue: string) => void;
-  style?: TextStyle | TextStyle[];
-  placeholder?: string;
-  testID?: string;
+  value: string
+  onUpdate: (newValue: string) => void
+  style?: TextStyle | TextStyle[]
+  placeholder?: string
+  testID?: string
 }
 
-export function InlineTextEdit({ value, onUpdate, style, placeholder, testID }: InlineTextEditProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value);
-  const inputRef = useRef<TextInput>(null);
+export function InlineTextEdit({
+  value,
+  onUpdate,
+  style,
+  placeholder,
+  testID,
+}: InlineTextEditProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(value)
+  const inputRef = useRef<TextInput>(null)
 
   useEffect(() => {
-    setEditValue(value);
-  }, [value]);
+    setEditValue(value)
+  }, [value])
 
   const handleStartEdit = () => {
-    setIsEditing(true);
-    setEditValue(value);
-  };
+    setIsEditing(true)
+    setEditValue(value)
+  }
 
   const handleFinishEdit = () => {
-    setIsEditing(false);
-    onUpdate(editValue);
-  };
-
+    setIsEditing(false)
+    onUpdate(editValue)
+  }
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      inputRef.current.focus();
+      inputRef.current.focus()
     }
-  }, [isEditing]);
+  }, [isEditing])
 
   if (isEditing) {
     return (
@@ -49,16 +60,14 @@ export function InlineTextEdit({ value, onUpdate, style, placeholder, testID }: 
         returnKeyType="done"
         blurOnSubmit
       />
-    );
+    )
   }
 
   return (
     <TouchableOpacity onPress={handleStartEdit} testID={testID}>
-      <Text style={style}>
-        {value || placeholder}
-      </Text>
+      <Text style={style}>{value || placeholder}</Text>
     </TouchableOpacity>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -69,4 +78,4 @@ const styles = StyleSheet.create({
     padding: 4,
     backgroundColor: 'white',
   },
-});
+})

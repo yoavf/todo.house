@@ -1,97 +1,115 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View, Image, Modal } from 'react-native';
-import { useTaskStore } from '../store/taskStore';
-import { Task, Schedule } from '../types/Task';
-import { InlineTextEdit } from './InlineTextEdit';
-import { LocationPicker } from './LocationPicker';
-import { SchedulePicker } from './SchedulePicker';
+import { Ionicons } from '@expo/vector-icons'
+import { useEffect, useState } from 'react'
+import {
+  Alert,
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
+import { useTaskStore } from '../store/taskStore'
+import type { Schedule, Task } from '../types/Task'
+import { InlineTextEdit } from './InlineTextEdit'
+import { LocationPicker } from './LocationPicker'
+import { SchedulePicker } from './SchedulePicker'
+import { TaskPlaceholderImage } from './TaskPlaceholderImage'
 
 interface TaskCardProps {
-  task: Task;
+  task: Task
 }
 
 export function TaskCard({ task }: TaskCardProps) {
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
-  const { toggle, remove, update, setSchedule, recentlyAddedId, clearRecentlyAdded } = useTaskStore();
-  const isRecentlyAdded = recentlyAddedId === task.id;
+  const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false)
+  const {
+    toggle,
+    remove,
+    update,
+    setSchedule,
+    recentlyAddedId,
+    clearRecentlyAdded,
+  } = useTaskStore()
+  const isRecentlyAdded = recentlyAddedId === task.id
 
   // Clear the recently added highlight after a delay
   useEffect(() => {
     if (isRecentlyAdded) {
       const timer = setTimeout(() => {
-        clearRecentlyAdded();
-      }, 3000); // Show highlight for 3 seconds
+        clearRecentlyAdded()
+      }, 3000) // Show highlight for 3 seconds
 
-      return () => clearTimeout(timer);
+      return () => clearTimeout(timer)
     }
-  }, [isRecentlyAdded, clearRecentlyAdded]);
+  }, [isRecentlyAdded, clearRecentlyAdded])
 
   const handleToggleComplete = () => {
-    toggle(task.id);
-  };
+    toggle(task.id)
+  }
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Task',
-      'Are you sure you want to delete this task?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => remove(task.id) },
-      ]
-    );
-  };
+    Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => remove(task.id) },
+    ])
+  }
 
   const handleTitleUpdate = (newTitle: string) => {
     if (newTitle.trim() !== task.title) {
-      update(task.id, { title: newTitle.trim() });
+      update(task.id, { title: newTitle.trim() })
     }
-  };
+  }
 
   const handleLocationUpdate = (newLocation: string) => {
-    update(task.id, { location: newLocation || undefined });
-    setShowLocationPicker(false);
-  };
-  
+    update(task.id, { location: newLocation || undefined })
+    setShowLocationPicker(false)
+  }
+
   const handleScheduleUpdate = (schedule: Schedule | undefined) => {
-    setSchedule(task.id, schedule);
-    setShowSchedulePicker(false);
-  };
+    setSchedule(task.id, schedule)
+    setShowSchedulePicker(false)
+  }
 
   const formatDate = (date: Date) => {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Today';
+      return 'Today'
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
+      return 'Yesterday'
     } else {
       return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
-        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-      });
+        year:
+          date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+      })
     }
-  };
+  }
 
   return (
     <>
-      <View style={[
-        styles.card,
-        task.completed && styles.completedCard,
-        isRecentlyAdded && styles.recentlyAddedCard
-      ]} testID="task-card">
+      <View
+        style={[
+          styles.card,
+          task.completed && styles.completedCard,
+          isRecentlyAdded && styles.recentlyAddedCard,
+        ]}
+        testID="task-card"
+      >
         {/* Completion Checkbox */}
         <TouchableOpacity
           onPress={handleToggleComplete}
           style={styles.checkboxContainer}
           testID="task-checkbox"
         >
-          <View style={[styles.checkbox, task.completed && styles.checkedCheckbox]}>
+          <View
+            style={[styles.checkbox, task.completed && styles.checkedCheckbox]}
+          >
             {task.completed && (
               <Ionicons name="checkmark" size={16} color="white" />
             )}
@@ -104,7 +122,11 @@ export function TaskCard({ task }: TaskCardProps) {
           <InlineTextEdit
             value={task.title}
             onUpdate={handleTitleUpdate}
-            style={task.completed ? [styles.title, styles.completedTitle] : styles.title}
+            style={
+              task.completed
+                ? [styles.title, styles.completedTitle]
+                : styles.title
+            }
             placeholder="Task title"
             testID="title-edit"
           />
@@ -116,14 +138,19 @@ export function TaskCard({ task }: TaskCardProps) {
             testID="location-button"
           >
             {task.location ? (
-              <Text style={[styles.location, task.completed && styles.completedText]}>
+              <Text
+                style={[
+                  styles.location,
+                  task.completed && styles.completedText,
+                ]}
+              >
                 in {task.location}
               </Text>
             ) : (
               <Text style={styles.addLocation}>Add location</Text>
             )}
           </TouchableOpacity>
-          
+
           {/* Schedule Button */}
           <TouchableOpacity
             onPress={() => setShowSchedulePicker(true)}
@@ -132,28 +159,38 @@ export function TaskCard({ task }: TaskCardProps) {
           >
             {task.schedule ? (
               <View style={styles.scheduleButtonContent}>
-                <Ionicons name="repeat" size={16} color="#28a745" style={styles.scheduleButtonIcon} />
+                <Ionicons
+                  name="repeat"
+                  size={16}
+                  color="#28a745"
+                  style={styles.scheduleButtonIcon}
+                />
                 <Text style={styles.scheduleButtonTextActive}>
                   Every {task.schedule.interval} {task.schedule.frequency}
                 </Text>
               </View>
             ) : (
               <View style={styles.scheduleButtonContent}>
-                <Ionicons name="repeat-outline" size={16} color="#adb5bd" style={styles.scheduleButtonIcon} />
+                <Ionicons
+                  name="repeat-outline"
+                  size={16}
+                  color="#adb5bd"
+                  style={styles.scheduleButtonIcon}
+                />
                 <Text style={styles.scheduleButtonText}>Add schedule</Text>
               </View>
             )}
           </TouchableOpacity>
 
-          {/* Image thumbnail if available */}
-          {task.imageUri && (
-            <TouchableOpacity 
+          {/* Image thumbnail or placeholder */}
+          {task.imageUri ? (
+            <TouchableOpacity
               onPress={() => setShowImageModal(true)}
               style={styles.imageContainer}
               testID="image-preview"
             >
-              <Image 
-                source={{ uri: task.imageUri }} 
+              <Image
+                source={{ uri: task.imageUri }}
                 style={styles.imageThumbnail}
                 resizeMode="cover"
               />
@@ -161,6 +198,10 @@ export function TaskCard({ task }: TaskCardProps) {
                 <Ionicons name="expand-outline" size={16} color="white" />
               </View>
             </TouchableOpacity>
+          ) : (
+            <View style={styles.imageContainer}>
+              <TaskPlaceholderImage size={60} />
+            </View>
           )}
 
           {/* Date */}
@@ -171,7 +212,12 @@ export function TaskCard({ task }: TaskCardProps) {
           {/* Schedule Indicator */}
           {task.isScheduled && (
             <View style={styles.scheduleIndicator}>
-              <Ionicons name="repeat" size={14} color="#28a745" style={styles.scheduleIcon} />
+              <Ionicons
+                name="repeat"
+                size={14}
+                color="#28a745"
+                style={styles.scheduleIcon}
+              />
               <Text style={styles.scheduleText}>Scheduled</Text>
             </View>
           )}
@@ -179,14 +225,23 @@ export function TaskCard({ task }: TaskCardProps) {
           {/* Future Task Indicator */}
           {task.isFutureTask && (
             <View style={styles.scheduleIndicator}>
-              <Ionicons name="calendar" size={14} color="#6f42c1" style={styles.scheduleIcon} />
+              <Ionicons
+                name="calendar"
+                size={14}
+                color="#6f42c1"
+                style={styles.scheduleIcon}
+              />
               <Text style={styles.scheduleText}>Future</Text>
             </View>
           )}
         </View>
 
         {/* Delete Button */}
-        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton} testID="delete-button">
+        <TouchableOpacity
+          onPress={handleDelete}
+          style={styles.deleteButton}
+          testID="delete-button"
+        >
           <Ionicons name="trash-outline" size={20} color="#dc3545" />
         </TouchableOpacity>
 
@@ -206,7 +261,7 @@ export function TaskCard({ task }: TaskCardProps) {
         onClose={() => setShowLocationPicker(false)}
         testID="location-picker"
       />
-      
+
       {/* Schedule Picker Modal */}
       <SchedulePicker
         visible={showSchedulePicker}
@@ -224,17 +279,17 @@ export function TaskCard({ task }: TaskCardProps) {
           onRequestClose={() => setShowImageModal(false)}
         >
           <View style={styles.imageModalContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.imageModalBackdrop}
               onPress={() => setShowImageModal(false)}
             >
               <View style={styles.imageModalContent}>
-                <Image 
-                  source={{ uri: task.imageUri }} 
+                <Image
+                  source={{ uri: task.imageUri }}
                   style={styles.imageModalImage}
                   resizeMode="contain"
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.imageModalClose}
                   onPress={() => setShowImageModal(false)}
                 >
@@ -246,7 +301,7 @@ export function TaskCard({ task }: TaskCardProps) {
         </Modal>
       )}
     </>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -429,4 +484,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-});
+})
