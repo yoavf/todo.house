@@ -16,6 +16,7 @@ This is a React Native mobile app called "todo.house" built with Expo that allow
 - **React Hook Form** for form handling
 - **Zod** for schema validation
 - **AsyncStorage** for local data persistence
+- **Jest** with React Native Testing Library for testing
 
 ## Development Commands
 
@@ -30,6 +31,11 @@ pnpm run web
 
 # Linting
 pnpm run lint
+
+# Testing
+pnpm test                # Run all tests
+pnpm test:watch          # Run tests in watch mode
+pnpm test:coverage       # Run tests with coverage
 
 ```
 
@@ -66,6 +72,19 @@ utils/
 ├── apiClient.ts     # API client for image analysis
 ├── demoData.ts      # Demo task data
 └── testAI.ts        # AI testing utilities
+
+__tests__/               # Test files
+├── basic.test.ts        # Basic Jest functionality tests
+├── components/          # Component tests
+├── store/               # Store tests
+│   └── taskStore-simple.test.ts
+├── utils/               # Utility tests
+│   └── dateUtils-simple.test.ts
+└── README.md           # Testing documentation
+
+.github/workflows/       # CI/CD workflows
+├── claude.yml          # Claude Code integration
+└── test.yml           # Automated testing on PRs
 ```
 
 ## Architecture Notes
@@ -116,8 +135,16 @@ The app requires OpenAI API configuration:
 
 ## Testing
 
-The app includes debug utilities:
+The project includes comprehensive testing setup:
 
+- **Jest** as the test runner with TypeScript support
+- **React Native Testing Library** for component testing
+- **Unit tests** for store functionality and utilities
+- **Mocking** for Expo modules and external dependencies
+- **Coverage reporting** with lcov output
+- **Automated testing** via GitHub Actions CI/CD
+
+Debug utilities:
 - Test AI button in header for OpenAI integration testing
 - Test Env button for environment diagnostics
 - Demo data generation for development
@@ -147,7 +174,40 @@ The app includes debug utilities:
 
 - Always opt to use well-known stable up-to-date packages rather than reinventing the wheel
 
+## CI/CD & Quality Assurance
+
+### GitHub Actions Workflows
+
+The project uses automated workflows for quality assurance:
+
+1. **Test Workflow** (`.github/workflows/test.yml`)
+   - Triggers on PRs to `main` and pushes to `main`
+   - Runs Jest tests, linting, and coverage reporting
+   - Uses latest GitHub Actions (v4) with pnpm caching
+   - Node.js 20 with pnpm 10 for fast, reliable builds
+
+2. **Claude Code Integration** (`.github/workflows/claude.yml`)
+   - AI-assisted code review and development
+   - Triggered by `@claude` mentions in issues/PRs
+
+### Quality Gates
+
+All PRs must pass:
+- ✅ Jest test suite (16+ tests covering utilities and store)
+- ✅ Expo linting (TypeScript + React hooks rules)
+- ✅ Coverage reporting (tracked but non-blocking)
+
+### Testing Requirements
+
+When adding new features:
+- Write unit tests for utility functions
+- Add store tests for Zustand state changes
+- Mock external dependencies (Expo modules, AsyncStorage)
+- Update test documentation in `__tests__/README.md`
+
 ## Workflow Guidelines
 
 - Always start work on a new issue in a new branch from `main`
 - Keep pull requests concise with a maximum of 10 atomic commits (if more than that, suggest creating more than one PR)
+- Ensure all tests pass before requesting review
+- All PRs are automatically tested via GitHub Actions
