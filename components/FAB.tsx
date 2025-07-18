@@ -33,9 +33,8 @@ export function FAB() {
 
   const handleVoice = useCallback(() => {
     setIsOpen(false);
-    // Voice feature to be implemented
-    console.log('Voice feature to be implemented');
-  }, []);
+    router.push('/voice');
+  }, [router]);
 
   const handleType = useCallback(() => {
     setIsOpen(false);

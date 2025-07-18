@@ -1,6 +1,19 @@
 import type { TaskAnalysisResult } from "../types/TaskAnalysisResult";
 import { logger } from './logger';
 
+interface ExtractTasksResult {
+	tasks: Array<{
+		title: string;
+		location?: string | null;
+		dueDate?: string | null;
+	}>;
+}
+
+export const apiClient = {
+	analyzeImage: analyzeImageForTask,
+	extractTasks,
+};
+
 export async function analyzeImageForTask(
 	base64Image: string,
 ): Promise<TaskAnalysisResult> {
@@ -75,5 +88,37 @@ export async function analyzeImageForTask(
 			success: false,
 			error: "Failed to analyze image. Please try again.",
 		};
+	}
+}
+
+export async function extractTasks(text: string): Promise<ExtractTasksResult> {
+	logger.info('APIClient', '📝 Client: Starting task extraction...');
+
+	try {
+		logger.debug('APIClient', '📝 Client: Preparing extract-tasks request...');
+
+		const response = await fetch("/api/extract-tasks", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ text }),
+		});
+
+		logger.debug('APIClient', '📡 Client: Extract-tasks response status:', response.status);
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			logger.error('APIClient', '❌ Client: Extract-tasks error response:', errorData);
+			throw new Error(errorData.error || `Server error: ${response.status}`);
+		}
+
+		const result = await response.json();
+		logger.info('APIClient', '✅ Client: Extract-tasks response received:', result);
+
+		return result;
+	} catch (error) {
+		logger.error('APIClient', '❌ Client: Extract-tasks request error:', error);
+		throw error;
 	}
 }

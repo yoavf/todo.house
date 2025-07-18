@@ -1,5 +1,6 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
+import * as Linking from 'expo-linking';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -27,6 +28,45 @@ function HydrationWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function DeepLinkHandler({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    const handleDeepLink = async (url: string) => {
+      const { hostname, path } = Linking.parse(url);
+      
+      // Handle voice route
+      if (path === 'voice' || hostname === 'voice') {
+        // Navigate to home first if not already on the root screen
+        if (segments.length > 0 && segments[0] !== 'index') {
+          await router.replace('/');
+        }
+        // Then open voice modal
+        router.push('/voice');
+      }
+    };
+
+    // Handle initial URL
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink(url);
+      }
+    });
+
+    // Listen for URL changes
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [router, segments]);
+
+  return <>{children}</>;
+}
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
@@ -34,17 +74,26 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <BottomSheetModalProvider>
             <HydrationWrapper>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="camera"
-                  options={{
-                    presentation: 'modal',
-                    headerShown: false,
-                  }}
-                />
-              </Stack>
+              <DeepLinkHandler>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="camera"
+                    options={{
+                      presentation: 'modal',
+                      headerShown: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="voice"
+                    options={{
+                      presentation: 'modal',
+                      headerShown: false,
+                    }}
+                  />
+                </Stack>
+              </DeepLinkHandler>
             </HydrationWrapper>
           </BottomSheetModalProvider>
         </GestureHandlerRootView>
