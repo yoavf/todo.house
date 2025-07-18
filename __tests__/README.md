@@ -43,7 +43,7 @@ __tests__/
 
 - `jest.config.js` - Main Jest configuration
 - `jest-setup.js` - Test environment setup
-- `babel.config.js` - Babel configuration for test transformation
+- `babel.config.js` - Babel configuration with TypeScript support
 - `__mocks__/expo-localization.js` - Mock for Expo localization module
 
 ## Writing Tests
