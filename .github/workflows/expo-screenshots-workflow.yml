@@ -72,6 +72,9 @@ jobs:
           PR_FOLDER="pr-${{ github.event.pull_request.number }}"
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           SCREENSHOT_FOLDER="${PR_FOLDER}/${TIMESTAMP}"
+          
+          # Save timestamp for use in comment step
+          echo "SCREENSHOT_TIMESTAMP=${TIMESTAMP}" >> $GITHUB_ENV
 
           # Fetch or create the screenshots branch
           git fetch origin gh-screenshots 2>/dev/null || true
@@ -124,15 +127,13 @@ jobs:
               return;
             }
 
-            // Get current timestamp
-            const timestamp = new Date().toISOString();
-            const timestampFolder = timestamp.replace(/[:.]/g, '-').split('T')[0] + '-' +
-                                   timestamp.split('T')[1].split('.')[0].replace(/[:.]/g, '');
-
+            // Get the timestamp that was used in the upload step
+            const timestamp = process.env.SCREENSHOT_TIMESTAMP || new Date().toISOString();
+            
             // Base URLs for screenshots
             const prNumber = context.issue.number;
-            const baseUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/gh-screenshots/pr-${prNumber}`;
-            const latestUrl = `${baseUrl}/latest`;
+            const baseUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/refs/heads/gh-screenshots/pr-${prNumber}`;
+            const latestUrl = `${baseUrl}/${timestamp}`;
 
             // Create comment body for latest screenshots
             let comment = '## 📱 Expo App Screenshots\n\n';
