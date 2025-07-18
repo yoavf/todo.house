@@ -23,7 +23,7 @@
     "@react-navigation/native": "^7.1.6",
     "ai": "5.0.0-beta.18",
     "expo": "~53.0.17",
-    "expo-av": "^15.1.7",
+    "expo-audio": "^0.4.8",
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.10",
     "expo-constants": "~17.1.7",

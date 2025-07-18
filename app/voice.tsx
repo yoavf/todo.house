@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+import { useAudioRecorder, RecordingPresets, AudioModule, setAudioModeAsync, useAudioRecorderState } from 'expo-audio';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -9,20 +9,27 @@ import { apiClient } from '../utils/apiClient';
 export default function VoiceScreen() {
   const router = useRouter();
   const { add } = useTaskStore();
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(audioRecorder);
   const [isProcessing, setIsProcessing] = useState(false);
   const [duration, setDuration] = useState(0);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Request audio permissions
+    // Request audio permissions and configure audio mode
     (async () => {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') {
+      const status = await AudioModule.requestRecordingPermissionsAsync();
+      if (!status.granted) {
         Alert.alert('Permission Denied', 'Audio permission is required to use voice input.');
         router.back();
+        return;
       }
+
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        allowsRecording: true,
+      });
     })();
 
     return () => {
@@ -33,7 +40,7 @@ export default function VoiceScreen() {
   }, [router]);
 
   useEffect(() => {
-    if (recording) {
+    if (recorderState.isRecording) {
       // Start pulse animation
       Animated.loop(
         Animated.sequence([
@@ -62,34 +69,26 @@ export default function VoiceScreen() {
         timerRef.current = null;
       }
     }
-  }, [recording, pulseAnim]);
+  }, [recorderState.isRecording, pulseAnim]);
 
   const startRecording = useCallback(async () => {
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-      
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      
-      setRecording(recording);
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
       setDuration(0);
     } catch (err) {
       console.error('Failed to start recording', err);
       Alert.alert('Error', 'Failed to start recording. Please try again.');
     }
-  }, []);
+  }, [audioRecorder]);
 
   const stopRecording = useCallback(async () => {
-    if (!recording) return;
+    if (!recorderState.isRecording) return;
 
     setIsProcessing(true);
     try {
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri;
       
       if (uri) {
         // Read audio file as base64
@@ -138,18 +137,16 @@ export default function VoiceScreen() {
       console.error('Failed to process recording', err);
       Alert.alert('Error', 'Failed to process the recording. Please try again.');
     } finally {
-      setRecording(null);
       setIsProcessing(false);
     }
-  }, [recording, add, router]);
+  }, [recorderState.isRecording, audioRecorder, add, router]);
 
   const handleCancel = useCallback(() => {
-    if (recording) {
-      recording.stopAndUnloadAsync();
-      setRecording(null);
+    if (recorderState.isRecording) {
+      audioRecorder.stop();
     }
     router.back();
-  }, [recording, router]);
+  }, [recorderState.isRecording, audioRecorder, router]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -177,30 +174,30 @@ export default function VoiceScreen() {
           <>
             <View style={styles.instructionContainer}>
               <Text style={styles.instructionText}>
-                {recording 
+                {recorderState.isRecording 
                   ? 'Recording... Speak your tasks clearly'
                   : 'Tap the microphone to start recording'}
               </Text>
-              {recording && (
+              {recorderState.isRecording && (
                 <Text style={styles.durationText}>{formatDuration(duration)}</Text>
               )}
             </View>
 
             <View style={styles.recordButtonContainer}>
               <TouchableOpacity
-                style={[styles.recordButton, recording && styles.recordingButton]}
-                onPress={recording ? stopRecording : startRecording}
+                style={[styles.recordButton, recorderState.isRecording && styles.recordingButton]}
+                onPress={recorderState.isRecording ? stopRecording : startRecording}
                 activeOpacity={0.8}
               >
-                <Animated.View style={{ transform: [{ scale: recording ? pulseAnim : 1 }] }}>
+                <Animated.View style={{ transform: [{ scale: recorderState.isRecording ? pulseAnim : 1 }] }}>
                   <Ionicons 
-                    name={recording ? "stop" : "mic"} 
+                    name={recorderState.isRecording ? "stop" : "mic"} 
                     size={60} 
                     color="white" 
                   />
                 </Animated.View>
               </TouchableOpacity>
-              {recording && (
+              {recorderState.isRecording && (
                 <View style={styles.recordingIndicator}>
                   <View style={styles.recordingDot} />
                   <Text style={styles.recordingText}>Recording</Text>

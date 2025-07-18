@@ -188,8 +188,7 @@ describe('FAB', () => {
     expect(mockAdd).not.toHaveBeenCalled();
   });
 
-  it('logs message when voice option is pressed', () => {
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+  it('navigates to voice screen when voice option is pressed', () => {
     const { getByTestId } = render(<FAB />);
 
     // Open speed dial first
@@ -200,7 +199,7 @@ describe('FAB', () => {
     const voiceAction = getByTestId('fab-action-microphone');
     fireEvent(voiceAction, 'onTouchEnd');
 
-    expect(consoleSpy).toHaveBeenCalledWith('Voice feature to be implemented');
-    consoleSpy.mockRestore();
+    expect(mockPush).toHaveBeenCalledWith('/voice');
+    expect(mockPush).toHaveBeenCalledTimes(1);
   });
 });
