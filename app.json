@@ -8,9 +8,6 @@
     "scheme": "todohouse",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "cli": {
-      "appVersionSource": "remote"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yoavfr.todo.house"
