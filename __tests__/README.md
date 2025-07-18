@@ -15,16 +15,16 @@ The testing setup includes:
 
 ```bash
 # Run all tests
-pnpm test
+npm test
 
 # Run tests in watch mode (re-runs on file changes)
-pnpm test:watch
+npm run test:watch
 
 # Run tests with coverage report
-pnpm test:coverage
+npm run test:coverage
 
 # Run specific test file
-pnpm test -- __tests__/basic.test.ts
+npm test -- __tests__/basic.test.ts
 ```
 
 ## Test Structure
@@ -89,7 +89,7 @@ To add more mocks, create files in the `__mocks__` directory or use `jest.mock()
 
 ## Test Coverage
 
-Coverage reports are generated in the `coverage/` directory when running `pnpm test:coverage`. The coverage includes:
+Coverage reports are generated in the `coverage/` directory when running `npm run test:coverage`. The coverage includes:
 - Line coverage
 - Function coverage
 - Branch coverage
@@ -134,7 +134,7 @@ The CI workflow includes:
 - **Test execution** with Jest
 - **Linting** with Expo lint
 - **Coverage reporting** (on PRs only)
-- **Caching** for faster builds with pnpm
+- **Caching** for faster builds with npm
 
 ## Next Steps
 

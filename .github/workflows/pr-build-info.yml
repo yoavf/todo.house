@@ -1,0 +1,36 @@
+name: PR Build Info
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  build-info:
+    name: Add Build Instructions
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    
+    steps:
+      - name: 💬 Add build instructions comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📱 EAS Build Information
+
+            This PR does not automatically trigger EAS builds to save resources.
+
+            **To trigger a build:**
+            1. Add the \`build\` label to this PR
+            2. Or manually trigger a build using the [workflow dispatch](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/eas-build.yml)
+
+            **Available build profiles:**
+            - \`development\` - Development builds with debugging enabled
+            - \`preview\` - Preview builds for testing
+            - \`production\` - Production-ready builds
+
+            The build will run for all platforms by default, or you can specify a specific platform when using workflow dispatch.`
+            })

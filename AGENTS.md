@@ -22,20 +22,20 @@ This is a React Native mobile app called "todo.house" built with Expo that allow
 
 ```bash
 # Start development server
-pnpm start
+npm start
 
 # Run on specific platforms
-pnpm run android
-pnpm run ios
-pnpm run web
+npm run android
+npm run ios
+npm run web
 
 # Linting
-pnpm run lint
+npm run lint
 
 # Testing
-pnpm test                # Run all tests
-pnpm test:watch          # Run tests in watch mode
-pnpm test:coverage       # Run tests with coverage
+npm test                # Run all tests
+npm run test:watch      # Run tests in watch mode
+npm run test:coverage   # Run tests with coverage
 
 ```
 
@@ -149,15 +149,15 @@ The project includes comprehensive testing setup:
 
 - Uses `jest-expo` preset for proper React Native/Expo support
 - Custom mocks for Expo winter runtime globals
-- Comprehensive `transformIgnorePatterns` for pnpm compatibility
+- Comprehensive `transformIgnorePatterns` for package compatibility
 - Logger automatically disabled in test environment via `NODE_ENV=test`
 
 ### Running Tests
 
 ```bash
-pnpm test              # Run all tests
-pnpm test:watch        # Run tests in watch mode
-pnpm test:coverage     # Run tests with coverage report
+npm test               # Run all tests
+npm run test:watch     # Run tests in watch mode
+npm run test:coverage  # Run tests with coverage report
 ```
 
 Debug utilities:
@@ -199,8 +199,8 @@ The project uses automated workflows for quality assurance:
 1. **Test Workflow** (`.github/workflows/test.yml`)
    - Triggers on PRs to `main` and pushes to `main`
    - Runs Jest tests, linting, and coverage reporting
-   - Uses latest GitHub Actions (v4) with pnpm caching
-   - Node.js 20 with pnpm 10 for fast, reliable builds
+   - Uses latest GitHub Actions (v4) with npm caching
+   - Node.js 20 with npm for fast, reliable builds
 
 2. **Claude Code Integration** (`.github/workflows/claude.yml`)
    - AI-assisted code review and development

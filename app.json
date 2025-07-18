@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "todo.house",
-    "slug": "todo.house",
+    "slug": "todohouse",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -51,6 +51,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bd8c60a6-32d2-432e-9cc8-cb360a97ba57"
+      }
+    },
+    "owner": "yoavfr"
   }
 }
