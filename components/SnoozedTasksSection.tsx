@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTaskStore } from '../store/taskStore';
+import { useTaskStore, getSnoozedTasks } from '../store/taskStore';
 import { TaskCard } from './TaskCard';
+import { Task } from '../types/Task';
 import { getRandomWheneverLabel } from '../utils/dateUtils';
 
 interface SnoozedTasksSectionProps {
@@ -14,7 +15,8 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
   isExpanded = false,
   onToggleExpanded,
 }) => {
-  const snoozedTasks = useTaskStore((state) => state.getSnoozedTasks());
+  const allTasks = useTaskStore((state) => state.tasks);
+  const snoozedTasks = getSnoozedTasks(allTasks);
   const unsnoozeTask = useTaskStore((state) => state.unsnoozeTask);
 
   const formatTimeRemaining = (snoozeUntil?: Date): string => {
@@ -73,7 +75,7 @@ export const SnoozedTasksSection: React.FC<SnoozedTasksSectionProps> = ({
 
       {isExpanded && (
         <View style={styles.tasksContainer}>
-          {snoozedTasks.map((task) => (
+          {snoozedTasks.map((task: Task) => (
             <View key={task.id} style={styles.taskContainer}>
               <View style={styles.taskCard}>
                 <TaskCard task={task} />
