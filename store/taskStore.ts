@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { create } from 'zustand'
-import webAsyncStorage from '../utils/webAsyncStorage'
 import {
   type Schedule,
   ScheduleFrequency,
@@ -25,11 +24,13 @@ import {
 } from '../utils/dateUtils'
 import { getCurrentLocale } from '../utils/localeUtils'
 import { logger } from '../utils/logger'
+import webAsyncStorage from '../utils/webAsyncStorage'
 
 // Use web storage in web environment or CI
-const storage = (typeof window !== 'undefined' && (window as any).__CI_MODE__) 
-  ? webAsyncStorage 
-  : AsyncStorage
+const storage =
+  typeof window !== 'undefined' && window.__CI_MODE__
+    ? webAsyncStorage
+    : AsyncStorage
 
 interface TaskStore {
   tasks: Task[]
@@ -273,7 +274,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const stored = await storage.getItem(STORAGE_KEY)
       if (stored) {
-        const tasks = JSON.parse(stored).map((task: any) => ({
+        const tasks = JSON.parse(stored).map((task: unknown) => ({
           ...task,
           createdAt: parseRequiredDateField(task.createdAt),
           dueDate: parseDateField(task.dueDate),
@@ -379,9 +380,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     if (!task) return
 
     // Generate a seriesId if adding a schedule and there isn't one already
-    const seriesId = schedule
-      ? task.seriesId || `series-${task.id}`
-      : undefined
+    const seriesId = schedule ? task.seriesId || `series-${task.id}` : undefined
 
     // If removing a schedule, we need to clean up any future tasks in this series
     if (task.schedule && !schedule && task.seriesId) {

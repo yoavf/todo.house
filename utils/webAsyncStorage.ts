@@ -21,8 +21,8 @@ let storage: AsyncStorageWeb = {
 
 if (typeof window !== 'undefined') {
   // Check if we're in CI mode with seed data
-  if ((window as any).__CI_MODE__ && (window as any).AsyncStorage) {
-    storage = (window as any).AsyncStorage
+  if (window.__CI_MODE__ && window.AsyncStorage) {
+    storage = window.AsyncStorage
   } else {
     // Use localStorage for web
     storage = {

@@ -52,4 +52,3 @@ if (!fs.existsSync(publicDir)) {
 
 fs.writeFileSync(ciSetupPath, envContent)
 console.log('CI setup file created at:', ciSetupPath)
-
