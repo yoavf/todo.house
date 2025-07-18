@@ -91,7 +91,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 	);
 
 	return (
-		<View style={[styles.container, { opacity: isActive ? 0.8 : 1 }]}>
+		<View style={[styles.container, { opacity: isActive ? 0.8 : 1 }]} testID="swipeable-container">
 			<SwipeableItem
 				item={task}
 				renderUnderlayLeft={renderUnderlayLeft}
@@ -112,6 +112,7 @@ export const SwipeableTaskCard: React.FC<SwipeableTaskCardProps> = ({
 							disabled={isActive}
 							style={styles.dragHandle}
 							activeOpacity={0.6}
+							testID="drag-handle"
 						>
 							<Ionicons name="reorder-three" size={20} color="#999" />
 						</TouchableOpacity>

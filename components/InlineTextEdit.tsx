@@ -6,9 +6,10 @@ interface InlineTextEditProps {
   onUpdate: (newValue: string) => void;
   style?: TextStyle | TextStyle[];
   placeholder?: string;
+  testID?: string;
 }
 
-export function InlineTextEdit({ value, onUpdate, style, placeholder }: InlineTextEditProps) {
+export function InlineTextEdit({ value, onUpdate, style, placeholder, testID }: InlineTextEditProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const inputRef = useRef<TextInput>(null);
@@ -52,7 +53,7 @@ export function InlineTextEdit({ value, onUpdate, style, placeholder }: InlineTe
   }
 
   return (
-    <TouchableOpacity onPress={handleStartEdit}>
+    <TouchableOpacity onPress={handleStartEdit} testID={testID}>
       <Text style={style}>
         {value || placeholder}
       </Text>

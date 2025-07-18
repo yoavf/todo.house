@@ -1,5 +1,6 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { Image } from 'react-native';
+import { logger } from './logger';
 
 /**
  * Default image quality for camera capture and image processing
@@ -18,8 +19,8 @@ export const AI_TARGET_SIZE = 448;
  * @returns Promise containing the processed image with base64 data
  */
 export async function resizeImageForAI(imageUri: string) {
-  console.log('🖼️  Processing image for AI analysis...');
-  console.log('📊 Input image URI:', imageUri);
+  logger.info('ImageProcessing', '🖼️  Processing image for AI analysis...');
+  logger.debug('ImageProcessing', '📊 Input image URI:', imageUri);
 
   try {
     // Get image dimensions using React Native's Image.getSize
@@ -31,7 +32,7 @@ export async function resizeImageForAI(imageUri: string) {
       );
     });
 
-    console.log('📐 Original image dimensions:', {
+    logger.debug('ImageProcessing', '📐 Original image dimensions:', {
       width: originalWidth,
       height: originalHeight,
     });
@@ -45,7 +46,7 @@ export async function resizeImageForAI(imageUri: string) {
     const scaledWidth = Math.round(originalWidth * scale);
     const scaledHeight = Math.round(originalHeight * scale);
 
-    console.log('🔍 Calculated scaling:', {
+    logger.debug('ImageProcessing', '🔍 Calculated scaling:', {
       scale,
       scaledWidth,
       scaledHeight,
@@ -55,7 +56,7 @@ export async function resizeImageForAI(imageUri: string) {
     const cropX = Math.max(0, Math.round((scaledWidth - AI_TARGET_SIZE) / 2));
     const cropY = Math.max(0, Math.round((scaledHeight - AI_TARGET_SIZE) / 2));
 
-    console.log('✂️  Calculated crop position:', {
+    logger.debug('ImageProcessing', '✂️  Calculated crop position:', {
       cropX,
       cropY,
       cropWidth: AI_TARGET_SIZE,
@@ -90,7 +91,7 @@ export async function resizeImageForAI(imageUri: string) {
       }
     );
 
-    console.log('✅ Image processing complete:', {
+    logger.info('ImageProcessing', '✅ Image processing complete:', {
       finalWidth: processedImage.width,
       finalHeight: processedImage.height,
       base64Length: processedImage.base64?.length || 0,
@@ -103,7 +104,7 @@ export async function resizeImageForAI(imageUri: string) {
       base64: processedImage.base64 || '',
     };
   } catch (error) {
-    console.error('❌ Image processing error:', error);
+    logger.error('ImageProcessing', '❌ Image processing error:', error);
     throw new Error(`Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
