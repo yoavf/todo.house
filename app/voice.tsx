@@ -1,46 +1,50 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioRecorder, RecordingPresets, AudioModule, setAudioModeAsync, useAudioRecorderState } from 'expo-audio';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTaskStore } from '../store/taskStore';
-import { apiClient } from '../utils/apiClient';
 
 export default function VoiceScreen() {
   const router = useRouter();
   const { add } = useTaskStore();
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recorderState = useAudioRecorderState(audioRecorder);
+  const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [duration, setDuration] = useState(0);
+  const [transcript, setTranscript] = useState('');
+  const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
-    // Request audio permissions and configure audio mode
+    // Request permissions and start recording immediately
     (async () => {
-      const status = await AudioModule.requestRecordingPermissionsAsync();
+      const status = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (!status.granted) {
-        Alert.alert('Permission Denied', 'Audio permission is required to use voice input.');
+        Alert.alert('Permission Denied', 'Microphone permission is required to use voice input.');
         router.back();
         return;
       }
-
-      await setAudioModeAsync({
-        playsInSilentMode: true,
-        allowsRecording: true,
-      });
+      
+      // Start recording immediately on mount
+      if (!hasStartedRef.current) {
+        hasStartedRef.current = true;
+        startListening();
+      }
     })();
 
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+      }
+      // Stop recording when unmounting
+      if (isListening) {
+        ExpoSpeechRecognitionModule.stop();
       }
     };
-  }, [router]);
+  }, []);
 
   useEffect(() => {
-    if (recorderState.isRecording) {
+    if (isListening) {
       // Start pulse animation
       Animated.loop(
         Animated.sequence([
@@ -56,161 +60,194 @@ export default function VoiceScreen() {
           }),
         ])
       ).start();
-
-      // Start duration timer
-      timerRef.current = setInterval(() => {
-        setDuration(prev => prev + 1);
-      }, 1000);
     } else {
-      // Stop animation and timer
+      // Stop animation
       pulseAnim.stopAnimation();
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
     }
-  }, [recorderState.isRecording, pulseAnim]);
+  }, [isListening, pulseAnim]);
 
-  const startRecording = useCallback(async () => {
+  // Handle speech recognition results
+  useSpeechRecognitionEvent('result', (event) => {
+    setTranscript(event.results[0]?.transcript || '');
+    
+    // Reset silence timer whenever we get new speech
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+    }
+    
+    // Set a new timer to stop after 2 seconds of silence
+    const timer = setTimeout(() => {
+      stopListening();
+    }, 2000);
+    
+    setSilenceTimer(timer);
+  });
+
+  // Handle errors
+  useSpeechRecognitionEvent('error', (event) => {
+    console.error('Speech recognition error:', event.error);
+    setIsListening(false);
+    if (event.error !== 'no-speech') {
+      Alert.alert('Error', 'Failed to recognize speech. Please try again.');
+    }
+  });
+
+  // Handle when recognition ends
+  useSpeechRecognitionEvent('end', () => {
+    setIsListening(false);
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      setSilenceTimer(null);
+    }
+  });
+
+  const startListening = useCallback(async () => {
     try {
-      await audioRecorder.prepareToRecordAsync();
-      audioRecorder.record();
-      setDuration(0);
+      setTranscript('');
+      setIsListening(true);
+      
+      await ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        continuous: true,
+        interimResults: true,
+        maxAlternatives: 1,
+      });
     } catch (err) {
-      console.error('Failed to start recording', err);
-      Alert.alert('Error', 'Failed to start recording. Please try again.');
+      console.error('Failed to start speech recognition', err);
+      setIsListening(false);
+      Alert.alert('Error', 'Failed to start voice recognition. Please try again.');
     }
-  }, [audioRecorder]);
+  }, []);
 
-  const stopRecording = useCallback(async () => {
-    if (!recorderState.isRecording) return;
-
+  const processTranscript = useCallback(async (text: string) => {
     setIsProcessing(true);
     try {
-      await audioRecorder.stop();
-      const uri = audioRecorder.uri;
+      // Since we already have the transcript, we'll send it directly to a simplified API
+      // that just extracts tasks from text (not audio)
+      const response = await fetch('/api/extract-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process transcript');
+      }
+
+      const result = await response.json();
       
-      if (uri) {
-        // Read audio file as base64
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        const reader = new FileReader();
-        
-        const audioBase64 = await new Promise<string>((resolve, reject) => {
-          reader.onloadend = () => {
-            if (reader.result && typeof reader.result === 'string') {
-              // Remove data URL prefix to get just the base64 content
-              const base64 = reader.result.split(',')[1];
-              resolve(base64);
-            } else {
-              reject(new Error('Failed to read audio file'));
-            }
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-
-        // Send to transcription API
-        const transcriptionResponse = await apiClient.transcribeAudio({
-          audioBase64,
-          audioType: 'audio/m4a',
-        });
-        
-        if (transcriptionResponse.tasks && transcriptionResponse.tasks.length > 0) {
-          // Add tasks to store
-          transcriptionResponse.tasks.forEach(task => {
-            add({
-              title: task.title,
-              location: task.location,
-              completed: false,
-              dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-            });
+      if (result.tasks && result.tasks.length > 0) {
+        // Add tasks to store
+        result.tasks.forEach((task: any) => {
+          add({
+            title: task.title,
+            location: task.location,
+            completed: false,
+            dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
           });
+        });
 
-          // Navigate back to home
-          router.replace('/');
-        } else {
-          Alert.alert('No Tasks Found', 'Could not extract any tasks from the audio. Please try again.');
-        }
+        // Navigate back to home
+        router.replace('/');
+      } else {
+        Alert.alert('No Tasks Found', 'Could not extract any tasks from your speech. Please try again.');
       }
     } catch (err) {
-      console.error('Failed to process recording', err);
-      Alert.alert('Error', 'Failed to process the recording. Please try again.');
+      console.error('Failed to process transcript', err);
+      Alert.alert('Error', 'Failed to process your speech. Please try again.');
     } finally {
       setIsProcessing(false);
     }
-  }, [recorderState.isRecording, audioRecorder, add, router]);
+  }, [add, router]);
+
+  const stopListening = useCallback(async () => {
+    if (!isListening) return;
+    
+    try {
+      await ExpoSpeechRecognitionModule.stop();
+      setIsListening(false);
+      
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        setSilenceTimer(null);
+      }
+      
+      // Process the transcript if we have one
+      if (transcript.trim()) {
+        processTranscript(transcript);
+      } else {
+        Alert.alert('No Speech Detected', 'Please try again and speak clearly.');
+      }
+    } catch (err) {
+      console.error('Failed to stop speech recognition', err);
+      setIsListening(false);
+    }
+  }, [isListening, transcript, silenceTimer, processTranscript]);
 
   const handleCancel = useCallback(() => {
-    if (recorderState.isRecording) {
-      audioRecorder.stop();
+    if (isListening) {
+      ExpoSpeechRecognitionModule.stop();
     }
     router.back();
-  }, [recorderState.isRecording, audioRecorder, router]);
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, [isListening, router]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.closeButton}>
-          <Ionicons name="close" size={30} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Voice Input</Text>
-        <View style={{ width: 30 }} />
-      </View>
-
-      <View style={styles.content}>
+      <TouchableOpacity 
+        style={styles.overlay} 
+        activeOpacity={1}
+        onPress={handleCancel}
+      />
+      
+      <View style={styles.modalContent}>
         {isProcessing ? (
           <View style={styles.processingContainer}>
             <ActivityIndicator size="large" color="#8b5cf6" />
-            <Text style={styles.processingText}>Processing your voice...</Text>
+            <Text style={styles.processingText}>Processing your speech...</Text>
           </View>
         ) : (
           <>
-            <View style={styles.instructionContainer}>
-              <Text style={styles.instructionText}>
-                {recorderState.isRecording 
-                  ? 'Recording... Speak your tasks clearly'
-                  : 'Tap the microphone to start recording'}
-              </Text>
-              {recorderState.isRecording && (
-                <Text style={styles.durationText}>{formatDuration(duration)}</Text>
+            <View style={styles.micContainer}>
+              <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulseAnim }] }]} />
+              <View style={styles.micCircle}>
+                <Ionicons name="mic" size={40} color="white" />
+              </View>
+            </View>
+
+            <Text style={styles.listeningText}>Listening...</Text>
+            
+            <View style={styles.transcriptContainer}>
+              {transcript ? (
+                <Text style={styles.transcriptText}>{transcript}</Text>
+              ) : (
+                <Text style={styles.hintText}>Start speaking your task...</Text>
               )}
             </View>
 
-            <View style={styles.recordButtonContainer}>
-              <TouchableOpacity
-                style={[styles.recordButton, recorderState.isRecording && styles.recordingButton]}
-                onPress={recorderState.isRecording ? stopRecording : startRecording}
-                activeOpacity={0.8}
-              >
-                <Animated.View style={{ transform: [{ scale: recorderState.isRecording ? pulseAnim : 1 }] }}>
-                  <Ionicons 
-                    name={recorderState.isRecording ? "stop" : "mic"} 
-                    size={60} 
-                    color="white" 
-                  />
-                </Animated.View>
-              </TouchableOpacity>
-              {recorderState.isRecording && (
-                <View style={styles.recordingIndicator}>
-                  <View style={styles.recordingDot} />
-                  <Text style={styles.recordingText}>Recording</Text>
-                </View>
-              )}
+            <View style={styles.hintsContainer}>
+              <Text style={styles.hintTitle}>Tips for best results:</Text>
+              <View style={styles.hintRow}>
+                <Text style={styles.hintIcon}>📝</Text>
+                <Text style={styles.hintText}>What: &quot;Clean the kitchen&quot;</Text>
+              </View>
+              <View style={styles.hintRow}>
+                <Text style={styles.hintIcon}>📍</Text>
+                <Text style={styles.hintText}>Where: &quot;...in the garage&quot;</Text>
+              </View>
+              <View style={styles.hintRow}>
+                <Text style={styles.hintIcon}>📅</Text>
+                <Text style={styles.hintText}>When: &quot;...tomorrow at 3pm&quot;</Text>
+              </View>
             </View>
 
-            <View style={styles.tipsContainer}>
-              <Text style={styles.tipsTitle}>Tips:</Text>
-              <Text style={styles.tipText}>• Say your task clearly</Text>
-              <Text style={styles.tipText}>• Mention location if needed (e.g., &quot;in the kitchen&quot;)</Text>
-              <Text style={styles.tipText}>• Add timing (e.g., &quot;tomorrow&quot;, &quot;next week&quot;)</Text>
-            </View>
+            <TouchableOpacity 
+              style={styles.cancelButton}
+              onPress={handleCancel}
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
           </>
         )}
       </View>
@@ -221,101 +258,117 @@ export default function VoiceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  closeButton: {
-    padding: 5,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: 'white',
-  },
-  content: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
-  instructionContainer: {
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+  },
+  modalContent: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 24,
+    padding: 30,
+    width: '90%',
+    maxWidth: 400,
     alignItems: 'center',
-    marginBottom: 60,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 30,
+    elevation: 20,
   },
-  instructionText: {
-    fontSize: 18,
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  durationText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#8b5cf6',
-  },
-  recordButtonContainer: {
+  micContainer: {
+    width: 100,
+    height: 100,
+    marginBottom: 30,
     alignItems: 'center',
-    marginBottom: 60,
+    justifyContent: 'center',
   },
-  recordButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#8b5cf6',
+  pulseCircle: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  micCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#ef4444',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#8b5cf6',
+    shadowColor: '#ef4444',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 10,
   },
-  recordingButton: {
-    backgroundColor: '#ef4444',
+  listeningText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 20,
   },
-  recordingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  recordingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ef4444',
-    marginRight: 8,
-  },
-  recordingText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  tipsContainer: {
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+  transcriptContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     padding: 20,
     width: '100%',
+    minHeight: 80,
+    marginBottom: 30,
   },
-  tipsTitle: {
+  transcriptText: {
     fontSize: 16,
+    color: 'white',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  hintText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.5)',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  hintsContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+  },
+  hintTitle: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#8b5cf6',
-    marginBottom: 10,
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  tipText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 5,
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  hintIcon: {
+    fontSize: 16,
+    marginRight: 10,
+    width: 24,
+  },
+  cancelButton: {
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  cancelText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
   },
   processingContainer: {
     alignItems: 'center',
+    paddingVertical: 40,
   },
   processingText: {
     marginTop: 20,
