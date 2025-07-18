@@ -6,12 +6,9 @@
   "build": {
     "base": {
       "node": "20.11.1",
-      "pnpm": "10.9.0",
       "env": {
-        "EAS_BUILD_RUNNER": "eas-build",
-        "EXPO_USE_PNPM": "true"
-      },
-      "prebuildCommand": "npm install -g pnpm@10.9.0"
+        "EAS_BUILD_RUNNER": "eas-build"
+      }
     },
     "development": {
       "extends": "base",

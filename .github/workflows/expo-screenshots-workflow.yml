@@ -122,7 +122,7 @@ jobs:
 
             // Create comment body
             let comment = '## 📱 Expo App Screenshots\n\n';
-            comment += 'Generated screenshots from the latest changes (click to view full size):\n\n';
+            comment += 'Generated screenshots from the latest changes:\n\n';
 
             // Add each screenshot with direct GitHub URL as thumbnail
             screenshots.forEach((screenshot, index) => {

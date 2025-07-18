@@ -1,7 +1,7 @@
 {
   "name": "todo.house",
   "main": "expo-router/entry",
-  "packageManager": "pnpm@10.9.0",
+  "packageManager": "pnpm@10.13.1",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",

@@ -57,6 +57,16 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install
 
+      - name: 🔄 Generate npm lockfile for EAS
+        run: |
+          # Remove pnpm artifacts that confuse EAS
+          rm -f pnpm-lock.yaml
+          rm -f .npmrc
+          # Generate npm lockfile
+          npm install --package-lock-only
+          git add package-lock.json
+          echo "Generated package-lock.json for EAS Build"
+
       - name: 🚀 Build on EAS
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
