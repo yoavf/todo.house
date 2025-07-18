@@ -9,6 +9,7 @@ The testing setup includes:
 - **React Native Testing Library** for component testing
 - **TypeScript** support for tests
 - **Mocking utilities** for Expo modules and external dependencies
+- **GitHub Actions CI/CD** for automated testing on PRs and main branch
 
 ## Running Tests
 
@@ -45,6 +46,7 @@ __tests__/
 - `jest-setup.js` - Test environment setup
 - `babel.config.js` - Babel configuration with TypeScript support
 - `__mocks__/expo-localization.js` - Mock for Expo localization module
+- `.github/workflows/test.yml` - GitHub Actions CI workflow
 
 ## Writing Tests
 
@@ -122,10 +124,22 @@ For complex component testing that requires React Native components, consider:
 2. Using integration tests for user interactions
 3. Mocking complex dependencies like cameras, gesture handlers, etc.
 
+## Continuous Integration
+
+Tests automatically run on:
+- **Pull Requests** to main branch
+- **Pushes** to main branch
+
+The CI workflow includes:
+- **Test execution** with Jest
+- **Linting** with Expo lint
+- **Coverage reporting** (on PRs only)
+- **Caching** for faster builds with pnpm
+
 ## Next Steps
 
 The current setup provides a solid foundation for testing. You can extend it by:
 1. Adding more component tests with proper React Native mocking
 2. Creating integration tests for complex user flows
 3. Adding snapshot testing for UI components
-4. Setting up continuous integration to run tests automatically
+4. Setting up code coverage thresholds in CI
