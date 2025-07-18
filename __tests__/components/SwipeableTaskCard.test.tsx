@@ -9,7 +9,7 @@ jest.mock('../../store/taskStore', () => ({
 }));
 jest.mock('react-native-swipeable-item', () => ({
   __esModule: true,
-  default: ({ children }) => children,
+  default: ({ children }: { children: React.ReactNode }) => children,
 }));
 // Bottom sheet mock is in jest-setup.js
 
@@ -24,13 +24,14 @@ describe('SwipeableTaskCard', () => {
     completed: false,
     location: 'Kitchen',
     createdAt: new Date('2024-01-01'),
+    order: 0,
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     
     // Mock useTaskStore to handle both direct usage and selector usage
-    (useTaskStore as jest.Mock).mockImplementation((selector?: any) => {
+    (useTaskStore as unknown as jest.Mock).mockImplementation((selector?: any) => {
       const state = {
         toggle: mockToggle,
         remove: mockRemove,

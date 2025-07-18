@@ -199,7 +199,7 @@ describe("TaskCard", () => {
 			? title.props.style
 			: [title.props.style];
 		const hasStrikethrough = styles.some(
-			(style) => style && style.textDecorationLine === "line-through",
+			(style: any) => style && style.textDecorationLine === "line-through",
 		);
 		expect(hasStrikethrough).toBe(true);
 	});
