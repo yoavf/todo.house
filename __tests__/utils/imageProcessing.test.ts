@@ -12,12 +12,14 @@ jest.mock('expo-image-manipulator', () => ({
 }));
 
 // Mock React Native Image
-jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
-  Image: {
-    getSize: jest.fn(),
-  },
-}));
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  return {
+    Image: {
+      getSize: jest.fn(),
+    },
+  };
+});
 
 describe('imageProcessing', () => {
   beforeEach(() => {

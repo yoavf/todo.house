@@ -90,3 +90,25 @@ jest.mock('@gorhom/bottom-sheet', () => {
     BottomSheetModalProvider: ({ children }) => children,
   };
 });
+
+// Mock all the Expo winter runtime globals
+global.__ExpoImportMetaRegistry = {};
+global.__expo_import_default = (module) => module?.default || module;
+global.__expo_import_star = (module) => module;
+
+// Mock defineLazyObjectProperty which is causing the issue
+const mockDefineLazyObjectProperty = {
+  getValue: () => ({})
+};
+
+// Override the problematic React Native utility
+jest.mock('react-native/Libraries/Utilities/defineLazyObjectProperty', () => ({
+  __esModule: true,
+  default: mockDefineLazyObjectProperty,
+  getValue: () => ({})
+}));
+
+// Mock the entire winter runtime module at the Jest level
+jest.mock('expo/src/winter/runtime.native', () => ({
+  __ExpoImportMetaRegistry: {}
+}));

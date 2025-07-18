@@ -1,12 +1,6 @@
 module.exports = {
+  preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest-setup.js'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$',
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-    '^react-native$': '<rootDir>/__mocks__/react-native.js',
-    '^expo-localization$': '<rootDir>/__mocks__/expo-localization.js',
-  },
   collectCoverageFrom: [
     'app/**/*.{ts,tsx}',
     'components/**/*.{ts,tsx}',
@@ -16,11 +10,10 @@ module.exports = {
     '!**/node_modules/**',
   ],
   coverageReporters: ['text', 'lcov', 'html'],
-  testEnvironment: 'jsdom',
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
-  },
   transformIgnorePatterns: [
-    'node_modules/(?!(zustand)/)',
+    "node_modules/(?!(?:.pnpm/)?((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|zustand|react-native-svg))"
   ],
+  globals: {
+    __ExpoImportMetaRegistry: {}
+  }
 };
