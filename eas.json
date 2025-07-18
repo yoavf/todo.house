@@ -1,8 +1,12 @@
 {
   "cli": {
-    "version": ">= 12.6.2"
+    "version": ">= 12.6.2",
+    "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "pnpm": "10.9.0"
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
@@ -10,7 +14,8 @@
         "simulator": true
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "credentialsSource": "remote"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.todo.house"
@@ -22,7 +27,8 @@
         "simulator": true
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "credentialsSource": "remote"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.todo.house"
@@ -33,7 +39,8 @@
         "autoIncrement": true
       },
       "android": {
-        "autoIncrement": true
+        "autoIncrement": true,
+        "credentialsSource": "remote"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.todo.house"
