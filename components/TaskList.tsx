@@ -1,5 +1,5 @@
-import React, { useCallback } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useRef, useEffect } from "react";
+import { StyleSheet, Text, View, DeviceEventEmitter } from "react-native";
 import DraggableFlatList, {
   type RenderItemParams,
 } from "react-native-draggable-flatlist";
@@ -15,6 +15,7 @@ interface TaskListProps {
 
 export function TaskList({ tasks }: TaskListProps) {
 	const { reorderTasks } = useTaskStore();
+	const scrollTimeout = useRef<NodeJS.Timeout>();
 
 	const handleDragEnd = useCallback(
 		({ data }: { data: Task[] }) => {
@@ -22,6 +23,30 @@ export function TaskList({ tasks }: TaskListProps) {
 		},
 		[reorderTasks],
 	);
+
+	const handleScroll = useCallback(() => {
+		// Emit scroll event to FAB
+		DeviceEventEmitter.emit('taskListScroll');
+		
+		// Clear existing timeout
+		if (scrollTimeout.current) {
+			clearTimeout(scrollTimeout.current);
+		}
+		
+		// Set timeout to emit scroll end
+		scrollTimeout.current = setTimeout(() => {
+			DeviceEventEmitter.emit('taskListScrollEnd');
+		}, 2000);
+	}, []);
+
+	// Cleanup on unmount
+	useEffect(() => {
+		return () => {
+			if (scrollTimeout.current) {
+				clearTimeout(scrollTimeout.current);
+			}
+		};
+	}, []);
 
 	const renderItem = useCallback(({ item, drag, isActive }: RenderItemParams<Task>) => {
 		return (
@@ -50,6 +75,8 @@ export function TaskList({ tasks }: TaskListProps) {
 			keyExtractor={(item) => item.id}
 			renderItem={renderItem}
 			onDragEnd={handleDragEnd}
+			onScroll={handleScroll}
+			scrollEventThrottle={16}
 			showsVerticalScrollIndicator={false}
 			contentContainerStyle={styles.listContainer}
 			      getItemLayout={(_data, index) => ({
