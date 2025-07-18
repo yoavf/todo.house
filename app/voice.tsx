@@ -4,6 +4,10 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTaskStore } from '../store/taskStore';
+import { apiClient } from '../utils/apiClient';
+
+// Constants
+const SILENCE_TIMEOUT_MS = 2000; // Stop recording after 2 seconds of silence
 
 export default function VoiceScreen() {
   const router = useRouter();
@@ -14,6 +18,17 @@ export default function VoiceScreen() {
   const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const hasStartedRef = useRef(false);
+  const isListeningRef = useRef(false);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Update refs when state changes
+  useEffect(() => {
+    silenceTimerRef.current = silenceTimer;
+  }, [silenceTimer]);
+
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   useEffect(() => {
     // Request permissions and start recording immediately
@@ -33,14 +48,16 @@ export default function VoiceScreen() {
     })();
 
     return () => {
-      if (silenceTimer) {
-        clearTimeout(silenceTimer);
+      // Use refs in cleanup to avoid dependency warnings
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
       }
       // Stop recording when unmounting
-      if (isListening) {
+      if (isListeningRef.current) {
         ExpoSpeechRecognitionModule.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -75,10 +92,10 @@ export default function VoiceScreen() {
       clearTimeout(silenceTimer);
     }
     
-    // Set a new timer to stop after 2 seconds of silence
+    // Set a new timer to stop after silence timeout
     const timer = setTimeout(() => {
       stopListening();
-    }, 2000);
+    }, SILENCE_TIMEOUT_MS);
     
     setSilenceTimer(timer);
   });
@@ -122,28 +139,14 @@ export default function VoiceScreen() {
   const processTranscript = useCallback(async (text: string) => {
     setIsProcessing(true);
     try {
-      // Since we already have the transcript, we'll send it directly to a simplified API
-      // that just extracts tasks from text (not audio)
-      const response = await fetch('/api/extract-tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process transcript');
-      }
-
-      const result = await response.json();
+      const result = await apiClient.extractTasks(text);
       
       if (result.tasks && result.tasks.length > 0) {
         // Add tasks to store
-        result.tasks.forEach((task: any) => {
+        result.tasks.forEach((task) => {
           add({
             title: task.title,
-            location: task.location,
+            location: task.location || undefined,
             completed: false,
             dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
           });

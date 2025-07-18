@@ -33,19 +33,17 @@ function DeepLinkHandler({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
 
   useEffect(() => {
-    const handleDeepLink = (url: string) => {
+    const handleDeepLink = async (url: string) => {
       const { hostname, path } = Linking.parse(url);
       
       // Handle voice route
       if (path === 'voice' || hostname === 'voice') {
-        // Navigate to home first if not already there
-        if (segments[0] !== undefined) {
-          router.replace('/');
+        // Navigate to home first if not already on the root screen
+        if (segments.length > 0 && segments[0] !== 'index') {
+          await router.replace('/');
         }
         // Then open voice modal
-        setTimeout(() => {
-          router.push('/voice');
-        }, 100);
+        router.push('/voice');
       }
     };
 
