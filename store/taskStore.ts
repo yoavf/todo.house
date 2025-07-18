@@ -8,10 +8,18 @@ import {
   getNextWeekday,
   getFirstWorkday,
   isWeekend,
-  isLastDayOfWeekend
+  isLastDayOfWeekend,
+  getLastDayOfMonth
 } from '../utils/dateUtils';
 import { getCurrentLocale } from '../utils/localeUtils';
 import { logger } from '../utils/logger';
+import { 
+  DEFAULT_MORNING_HOUR, 
+  DEFAULT_MORNING_MINUTE, 
+  DEFAULT_MORNING_SECOND,
+  DAYS_IN_WEEK,
+  DAYS_TO_NEXT_WEEK
+} from '../utils/constants';
 
 interface TaskStore {
   tasks: Task[];
@@ -42,7 +50,7 @@ const calculateSnoozeDate = (duration: SnoozeDuration): Date | undefined => {
     case SnoozeDuration.TOMORROW:
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(9, 0, 0, 0); // 9 AM tomorrow
+      tomorrow.setHours(DEFAULT_MORNING_HOUR, DEFAULT_MORNING_MINUTE, DEFAULT_MORNING_SECOND, 0);
       return tomorrow;
       
     case SnoozeDuration.THIS_WEEKEND:
@@ -55,7 +63,7 @@ const calculateSnoozeDate = (duration: SnoozeDuration): Date | undefined => {
       // If today is the last day of weekend, go to next week's first workday
       if (isLastDayOfWeekend(now, locale)) {
         const nextWeekStart = new Date(now);
-        nextWeekStart.setDate(nextWeekStart.getDate() + 8);
+        nextWeekStart.setDate(nextWeekStart.getDate() + DAYS_TO_NEXT_WEEK);
         return getNextWeekday(firstWorkday, nextWeekStart);
       }
       
@@ -83,7 +91,7 @@ const calculateNextDueDate = (schedule: Schedule, currentDueDate?: Date): Date |
       nextDate.setDate(nextDate.getDate() + schedule.interval);
       break;
     case ScheduleFrequency.WEEKLY:
-      nextDate.setDate(nextDate.getDate() + (7 * schedule.interval));
+      nextDate.setDate(nextDate.getDate() + (DAYS_IN_WEEK * schedule.interval));
       break;
     case ScheduleFrequency.MONTHLY:
       // Handle month calculation with proper month-end handling
@@ -95,7 +103,7 @@ const calculateNextDueDate = (schedule: Schedule, currentDueDate?: Date): Date |
       nextDate.setMonth(currentMonth + schedule.interval);
       
       // Then set the date, clamping to the last day of the month if needed
-      const lastDayOfMonth = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+      const lastDayOfMonth = getLastDayOfMonth(nextDate);
       nextDate.setDate(Math.min(currentDate, lastDayOfMonth));
       break;
     case ScheduleFrequency.YEARLY:
@@ -156,7 +164,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   toggle: (id) => {
-    const task = get().tasks.find(task => task.id === id);
+    const currentTasks = get().tasks;
+    const task = currentTasks.find(task => task.id === id);
     if (!task) return;
     
     const isCompleting = !task.completed;
@@ -188,7 +197,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         
         if (nextDueDate) {
           // First, check if there's already a future task in this series
-          const existingFutureTask = get().tasks.find(t => 
+          const existingFutureTask = currentTasks.find(t => 
             t.seriesId === seriesId && t.isFutureTask && !t.completed
           );
           
@@ -416,7 +425,6 @@ export const getSnoozedTasks = (tasks: Task[]): Task[] => {
     });
 };
 
-// New helper function to get future tasks
 export const getFutureTasks = (tasks: Task[]): Task[] => {
   return tasks
     .filter(task => task.isFutureTask)
