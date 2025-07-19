@@ -1,0 +1,44 @@
+{
+  "tasks": [
+    {
+      "title": "Clean kitchen counters",
+      "description": "Wipe down all surfaces and organize items",
+      "location": "Kitchen",
+      "effort": "Easy",
+      "estimatedTime": "15 mins",
+      "imageUri": null
+    },
+    {
+      "title": "Organize living room",
+      "description": "Put away clutter and vacuum the carpet",
+      "location": "Living Room",
+      "effort": "Medium",
+      "estimatedTime": "30 mins",
+      "imageUri": null
+    },
+    {
+      "title": "Deep clean bathroom",
+      "description": "Scrub tiles, clean mirror, and mop floor",
+      "location": "Bathroom",
+      "effort": "Hard",
+      "estimatedTime": "45 mins",
+      "imageUri": null
+    },
+    {
+      "title": "Make the bed",
+      "description": "Change sheets and fluff pillows",
+      "location": "Bedroom",
+      "effort": "Easy",
+      "estimatedTime": "10 mins",
+      "imageUri": null
+    },
+    {
+      "title": "Organize home office",
+      "description": "File paperwork and clean desk surface",
+      "location": "Office",
+      "effort": "Medium",
+      "estimatedTime": "20 mins",
+      "imageUri": null
+    }
+  ]
+}
