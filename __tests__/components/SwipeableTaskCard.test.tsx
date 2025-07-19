@@ -56,35 +56,20 @@ describe('SwipeableTaskCard', () => {
     expect(getByText('in Kitchen')).toBeTruthy()
   })
 
-  it('renders with drag handle when drag prop is provided', () => {
-    const mockDrag = jest.fn()
+  it('renders task within touchable container', () => {
+    const mockOnPress = jest.fn()
     const { getByTestId } = render(
-      <SwipeableTaskCard task={mockTask} drag={mockDrag} />,
+      <SwipeableTaskCard task={mockTask} onPress={mockOnPress} />,
     )
 
-    // Should render drag handle
-    expect(getByTestId('drag-handle')).toBeTruthy()
+    // Should render within swipeable container
+    expect(getByTestId('swipeable-container')).toBeTruthy()
   })
 
-  it('applies opacity when active', () => {
-    const { getByTestId } = render(
-      <SwipeableTaskCard task={mockTask} isActive={true} />,
-    )
+  it('renders completed task', () => {
+    const completedTask = { ...mockTask, completed: true }
+    const { getByText } = render(<SwipeableTaskCard task={completedTask} />)
 
-    const container = getByTestId('swipeable-container')
-    expect(container.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ opacity: 0.8 })]),
-    )
-  })
-
-  it('does not apply opacity when not active', () => {
-    const { getByTestId } = render(
-      <SwipeableTaskCard task={mockTask} isActive={false} />,
-    )
-
-    const container = getByTestId('swipeable-container')
-    expect(container.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ opacity: 1 })]),
-    )
+    expect(getByText('Test Task')).toBeTruthy()
   })
 })

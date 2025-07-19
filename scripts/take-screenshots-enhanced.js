@@ -38,7 +38,7 @@ async function takeScreenshots() {
     try {
       // Wait for tasks or empty state (whichever appears first)
       await Promise.race([
-        page.waitForSelector('text="Your Tasks"', { timeout: 15000 }),
+        page.waitForSelector('text="Home Tasks"', { timeout: 15000 }),
         page.waitForSelector('[data-testid="empty-container"]', {
           timeout: 15000,
         }),
@@ -53,32 +53,101 @@ async function takeScreenshots() {
       await page.waitForTimeout(10000)
     }
 
-    // 1. Take screenshot of home screen with seeded tasks
+    // 1. Take screenshot of home screen with large view (default)
     await page.screenshot({
-      path: path.join(screenshotsDir, '01-home-screen-with-tasks.png'),
+      path: path.join(screenshotsDir, '01-home-screen-large-view.png'),
       fullPage: false,
     })
 
-    // 2. Scroll down to show more tasks
-    await page.evaluate(() => {
-      const scrollView =
-        document.querySelector('[data-testid="task-list-scroll"]') ||
-        document.querySelector('.css-view-175oi2r') ||
-        document.querySelector('div[style*="overflow"]')
-      if (scrollView) {
-        scrollView.scrollTop = 300
-      } else {
-        window.scrollTo(0, 300)
+    // 2. Switch to compact/list view
+    console.log('Looking for list view button...')
+    const listViewButton = await page.$('[data-testid="list-view-button"]')
+
+    if (listViewButton) {
+      console.log('Found list view button, clicking...')
+      await listViewButton.click()
+      await page.waitForTimeout(1500)
+
+      await page.screenshot({
+        path: path.join(screenshotsDir, '02-home-screen-compact-view.png'),
+        fullPage: false,
+      })
+
+      // Switch back to large view
+      const gridViewButton = await page.$('[data-testid="grid-view-button"]')
+
+      if (gridViewButton) {
+        await gridViewButton.click()
+        await page.waitForTimeout(1500)
       }
-    })
-    await page.waitForTimeout(1000)
+    }
 
-    await page.screenshot({
-      path: path.join(screenshotsDir, '02-home-screen-scrolled.png'),
-      fullPage: false,
-    })
+    // 3. Open filters
+    console.log('Looking for filter button...')
+    const filterButton = await page.$('[data-testid="filter-button"]')
 
-    // 3. Click on FAB if exists
+    if (filterButton) {
+      console.log('Found filter button, clicking...')
+      await filterButton.click()
+      await page.waitForTimeout(1500)
+
+      await page.screenshot({
+        path: path.join(screenshotsDir, '03-home-screen-filters-open.png'),
+        fullPage: false,
+      })
+
+      // Close filters
+      await filterButton.click()
+      await page.waitForTimeout(1000)
+    }
+
+    // 4. Scroll to show more tasks (meaningful scrolling)
+    // First, ensure we have enough tasks to scroll
+    const taskCount =
+      (await page.$$eval(
+        '[data-testid*="task-card"]',
+        (tasks) => tasks.length,
+      )) || (await page.$$eval('[class*="card"]', (cards) => cards.length))
+
+    if (taskCount > 3) {
+      // Scroll to approximately the 4th task
+      await page.evaluate(() => {
+        const scrollContainer =
+          document.querySelector('[data-testid="task-list-scroll"]') ||
+          document.querySelector('[class*="FlatList"]') ||
+          document.querySelector('div[style*="overflow"]')
+
+        if (scrollContainer) {
+          // Scroll to show tasks 4-6
+          scrollContainer.scrollTop = 380 * 3 // Assuming ~380px per card
+        } else {
+          window.scrollTo(0, 380 * 3)
+        }
+      })
+      await page.waitForTimeout(1000)
+
+      await page.screenshot({
+        path: path.join(screenshotsDir, '04-home-screen-scrolled.png'),
+        fullPage: false,
+      })
+
+      // Scroll back to top
+      await page.evaluate(() => {
+        const scrollContainer =
+          document.querySelector('[data-testid="task-list-scroll"]') ||
+          document.querySelector('[class*="FlatList"]') ||
+          document.querySelector('div[style*="overflow"]')
+
+        if (scrollContainer) {
+          scrollContainer.scrollTop = 0
+        } else {
+          window.scrollTo(0, 0)
+        }
+      })
+      await page.waitForTimeout(1000)
+    }
+
+    // 5. Click on FAB if exists
     const fabButton =
       (await page.$('[aria-label="Add task"]')) ||
       (await page.$('button:has-text("Add")')) ||
@@ -88,7 +157,7 @@ async function takeScreenshots() {
       await fabButton.click()
       await page.waitForTimeout(2000)
       await page.screenshot({
-        path: path.join(screenshotsDir, '03-add-task-menu.png'),
+        path: path.join(screenshotsDir, '05-add-task-menu.png'),
         fullPage: false,
       })
 
@@ -97,10 +166,11 @@ async function takeScreenshots() {
       await page.waitForTimeout(1000)
     }
 
-    // 4. Try to trigger swipe action on a task
+    // 6. Try to trigger swipe action on a task
     const firstTask =
       (await page.$('[data-testid="task-card-0"]')) ||
-      (await page.$('.css-view-175oi2r > div:first-child'))
+      (await page.$('[class*="SwipeableTaskCard"]:first-child')) ||
+      (await page.$('[class*="card"]:first-child'))
 
     if (firstTask) {
       // Simulate swipe gesture
@@ -113,78 +183,42 @@ async function takeScreenshots() {
         await page.waitForTimeout(1000)
 
         await page.screenshot({
-          path: path.join(screenshotsDir, '04-task-swipe-actions.png'),
+          path: path.join(screenshotsDir, '06-task-swipe-actions.png'),
           fullPage: false,
         })
       }
     }
 
-    // 5. Take screenshot of snooze action sheet
-    // First, find a task with snooze button
-    const snoozeButton =
-      (await page.$('[aria-label*="Snooze"]')) ||
-      (await page.$('button:has-text("Snooze")')) ||
-      (await page.$('[data-testid="snooze-button"]'))
+    // 7. Take screenshot of task detail modal
+    const taskToClick =
+      (await page.$('[data-testid="task-card-0"]')) ||
+      (await page.$('[class*="card"]:first-child'))
 
-    if (snoozeButton) {
-      await snoozeButton.click()
+    if (taskToClick) {
+      await taskToClick.click()
       await page.waitForTimeout(2000)
 
-      // Take screenshot of snooze options
-      await page.screenshot({
-        path: path.join(screenshotsDir, '05-snooze-action-sheet.png'),
-        fullPage: false,
-      })
+      const modal =
+        (await page.$('[class*="Modal"]')) ||
+        (await page.$('[class*="TaskDetailModal"]'))
 
-      // Close snooze sheet
-      await page.keyboard.press('Escape')
-      await page.waitForTimeout(1000)
-    } else {
-      // Alternative: Try to long press on a task to show options
-      const taskCard =
-        (await page.$('[data-testid="task-card-1"]')) ||
-        (await page.$('.css-view-175oi2r > div:nth-child(2)'))
+      if (modal) {
+        await page.screenshot({
+          path: path.join(screenshotsDir, '07-task-detail-modal.png'),
+          fullPage: false,
+        })
 
-      if (taskCard) {
-        const box = await taskCard.boundingBox()
-        if (box) {
-          // Simulate long press
-          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-          await page.mouse.down()
-          await page.waitForTimeout(800) // Long press duration
-          await page.mouse.up()
-          await page.waitForTimeout(1500)
+        // Close modal
+        const closeButton =
+          (await page.$('[aria-label="Close"]')) ||
+          (await page.$('button:has([name="arrow-back"])')) ||
+          (await page.$('[class*="closeButton"]'))
 
-          // Check if action sheet appeared
-          const actionSheet =
-            (await page.$('[data-testid="bottom-sheet"]')) ||
-            (await page.$('.css-view-175oi2r[style*="bottom: 0"]'))
-
-          if (actionSheet) {
-            await page.screenshot({
-              path: path.join(screenshotsDir, '05-snooze-action-sheet.png'),
-              fullPage: false,
-            })
-          }
+        if (closeButton) {
+          await closeButton.click()
+          await page.waitForTimeout(1000)
         }
       }
-    }
-
-    // 6. Take screenshot of completed tasks section if visible
-    await page.evaluate(() => {
-      window.scrollTo(0, document.body.scrollHeight)
-    })
-    await page.waitForTimeout(1000)
-
-    const completedSection =
-      (await page.$('text="Completed"')) ||
-      (await page.$('[data-testid="completed-section"]'))
-
-    if (completedSection) {
-      await page.screenshot({
-        path: path.join(screenshotsDir, '06-completed-tasks.png'),
-        fullPage: false,
-      })
     }
 
     console.log('Screenshots taken successfully')

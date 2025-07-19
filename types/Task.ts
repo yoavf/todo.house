@@ -33,6 +33,10 @@ export interface Task {
   isScheduled?: boolean // Flag to identify scheduled tasks
   isFutureTask?: boolean // Flag to identify future tasks generated from schedules
   seriesId?: string // Identifier for tasks that belong to the same recurring series
+  // New fields for filtering
+  estimatedTime?: string // e.g., "15-20 min"
+  effort?: 'Easy' | 'Medium' | 'Hard'
+  description?: string // For detailed task description shown in full view
 }
 
 export const SnoozeDuration = {

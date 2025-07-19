@@ -1,23 +1,37 @@
-import { useMemo } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
-import { FAB, TaskList } from '../../components'
+import { useMemo, useState } from 'react'
+import { StyleSheet, View } from 'react-native'
+import { FAB } from '../../components'
+import { useTabs } from '../../components/TabsContext'
+import {
+  TaskFilters,
+  type TaskFilters as TaskFiltersType,
+} from '../../components/TaskFilters'
+import { TaskListFiltered } from '../../components/TaskListFiltered'
 import { getActiveTasks, useTaskStore } from '../../store/taskStore'
 
 export default function ActiveTasksScreen() {
   const tasks = useTaskStore((state) => state.tasks)
+  const { viewMode, showFilters } = useTabs()
+  const [filters, setFilters] = useState<TaskFiltersType>({})
 
   const sortedTasks = useMemo(() => getActiveTasks(tasks), [tasks])
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Tasks Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Tasks</Text>
-        </View>
+        {/* Filters */}
+        <TaskFilters
+          visible={showFilters}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
 
         {/* Task List */}
-        <TaskList tasks={sortedTasks} />
+        <TaskListFiltered
+          tasks={sortedTasks}
+          viewMode={viewMode}
+          filters={filters}
+        />
       </View>
 
       {/* Floating Action Button */}
@@ -33,18 +47,5 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 16,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#2c3e50',
   },
 })
