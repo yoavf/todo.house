@@ -1,7 +1,7 @@
-import { useRoute } from '@react-navigation/native'
 import { useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { FAB } from '../../components'
+import { useTabs } from '../../components/TabsContext'
 import {
   TaskFilters,
   type TaskFilters as TaskFiltersType,
@@ -11,11 +11,7 @@ import { getActiveTasks, useTaskStore } from '../../store/taskStore'
 
 export default function ActiveTasksScreen() {
   const tasks = useTaskStore((state) => state.tasks)
-  const route = useRoute<{
-    params?: { viewMode?: 'large' | 'compact'; showFilters?: boolean }
-  }>()
-  const viewMode = route.params?.viewMode || 'compact'
-  const showFilters = route.params?.showFilters || false
+  const { viewMode, showFilters } = useTabs()
   const [filters, setFilters] = useState<TaskFiltersType>({})
 
   const sortedTasks = useMemo(() => getActiveTasks(tasks), [tasks])

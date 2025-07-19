@@ -60,12 +60,11 @@ async function takeScreenshots() {
     })
 
     // 2. Switch to compact/list view
-    const listViewButton =
-      (await page.$('[aria-label="List view"]')) ||
-      (await page.$('button:has([name="list"])')) ||
-      (await page.$('[class*="viewToggleButton"]:last-child'))
+    console.log('Looking for list view button...')
+    const listViewButton = await page.$('[data-testid="list-view-button"]')
 
     if (listViewButton) {
+      console.log('Found list view button, clicking...')
       await listViewButton.click()
       await page.waitForTimeout(1500)
 
@@ -75,10 +74,7 @@ async function takeScreenshots() {
       })
 
       // Switch back to large view
-      const gridViewButton =
-        (await page.$('[aria-label="Grid view"]')) ||
-        (await page.$('button:has([name="grid"])')) ||
-        (await page.$('[class*="viewToggleButton"]:first-child'))
+      const gridViewButton = await page.$('[data-testid="grid-view-button"]')
 
       if (gridViewButton) {
         await gridViewButton.click()
@@ -87,12 +83,11 @@ async function takeScreenshots() {
     }
 
     // 3. Open filters
-    const filterButton =
-      (await page.$('[aria-label="Filter"]')) ||
-      (await page.$('button:has([name="filter"])')) ||
-      (await page.$('[class*="filterButton"]'))
+    console.log('Looking for filter button...')
+    const filterButton = await page.$('[data-testid="filter-button"]')
 
     if (filterButton) {
+      console.log('Found filter button, clicking...')
       await filterButton.click()
       await page.waitForTimeout(1500)
 

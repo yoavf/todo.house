@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
 import { withLayoutContext } from 'expo-router'
-import { useState } from 'react'
 import {
   StatusBar,
   StyleSheet,
@@ -10,14 +9,14 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { TabsProvider, useTabs } from '../../components/TabsContext'
 
 const { Navigator } = createMaterialTopTabNavigator()
 
 const MaterialTopTabs = withLayoutContext(Navigator)
 
-export default function TabsLayout() {
-  const [viewMode, setViewMode] = useState<'large' | 'compact'>('compact')
-  const [showFilters, setShowFilters] = useState(false)
+function TabsLayoutContent() {
+  const { viewMode, setViewMode, showFilters, setShowFilters } = useTabs()
 
   return (
     <SafeAreaView style={styles.container}>
@@ -35,6 +34,7 @@ export default function TabsLayout() {
                 viewMode === 'large' && styles.viewToggleButtonActive,
               ]}
               onPress={() => setViewMode('large')}
+              testID="grid-view-button"
             >
               <Ionicons
                 name="grid"
@@ -48,6 +48,7 @@ export default function TabsLayout() {
                 viewMode === 'compact' && styles.viewToggleButtonActive,
               ]}
               onPress={() => setViewMode('compact')}
+              testID="list-view-button"
             >
               <Ionicons
                 name="list"
@@ -61,6 +62,7 @@ export default function TabsLayout() {
           <TouchableOpacity
             style={styles.filterButton}
             onPress={() => setShowFilters(!showFilters)}
+            testID="filter-button"
           >
             <Ionicons
               name="filter"
@@ -74,8 +76,6 @@ export default function TabsLayout() {
 
       <MaterialTopTabs
         screenOptions={{
-          viewMode,
-          showFilters,
           tabBarActiveTintColor: '#007bff',
           tabBarInactiveTintColor: '#6c757d',
           tabBarLabelStyle: {
@@ -158,6 +158,14 @@ export default function TabsLayout() {
         />
       </MaterialTopTabs>
     </SafeAreaView>
+  )
+}
+
+export default function TabsLayout() {
+  return (
+    <TabsProvider>
+      <TabsLayoutContent />
+    </TabsProvider>
   )
 }
 
