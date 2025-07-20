@@ -55,14 +55,12 @@ def mock_supabase():
 @pytest.fixture
 def sample_task_data():
     """Provide sample task data for tests."""
-    future_date = datetime.now(timezone.utc) + timedelta(days=30)
     return {
         "title": "Test Task",
         "description": "This is a test task",
+        "completed": False,
         "status": TaskStatus.ACTIVE,
-        "due_date": future_date.isoformat().replace("+00:00", "Z"),
-        "priority": 1,
-        "tags": ["test", "sample"]
+        "snoozed_until": None
     }
 
 
@@ -70,16 +68,13 @@ def sample_task_data():
 def sample_task():
     """Provide a sample Task instance."""
     now = datetime.now(timezone.utc)
-    future_date = now + timedelta(days=30)
     return Task(
-        id="123e4567-e89b-12d3-a456-426614174000",
+        id=1,
         user_id="test-user-123",
         title="Test Task",
         description="This is a test task",
+        completed=False,
         status=TaskStatus.ACTIVE,
-        due_date=future_date,
-        priority=1,
-        tags=["test", "sample"],
         created_at=now,
         updated_at=now,
         snoozed_until=None

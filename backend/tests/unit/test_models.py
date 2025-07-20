@@ -32,16 +32,15 @@ class TestTaskBase:
         task = TaskBase(
             title="Test Task",
             description="A test description",
+            completed=False,
             status=TaskStatus.ACTIVE,
-            due_date=datetime.now(timezone.utc),
-            priority=1,
-            tags=["test", "unit"]
+            snoozed_until=None
         )
         assert task.title == "Test Task"
         assert task.description == "A test description"
+        assert task.completed is False
         assert task.status == TaskStatus.ACTIVE
-        assert task.priority == 1
-        assert task.tags == ["test", "unit"]
+        assert task.snoozed_until is None
     
     @pytest.mark.unit
     def test_task_base_minimal(self):
@@ -49,10 +48,9 @@ class TestTaskBase:
         task = TaskBase(title="Minimal Task")
         assert task.title == "Minimal Task"
         assert task.description is None
+        assert task.completed is False
         assert task.status == TaskStatus.ACTIVE
-        assert task.due_date is None
-        assert task.priority == 0
-        assert task.tags == []
+        assert task.snoozed_until is None
     
     @pytest.mark.unit
     def test_task_base_invalid_title(self):
@@ -60,6 +58,18 @@ class TestTaskBase:
         with pytest.raises(ValidationError) as exc_info:
             TaskBase(title="")
         assert "String should have at least 1 character" in str(exc_info.value)
+    
+    @pytest.mark.unit
+    def test_task_base_title_too_long(self):
+        """Test that title over 200 chars raises validation error."""
+        with pytest.raises(ValidationError):
+            TaskBase(title="x" * 201)
+    
+    @pytest.mark.unit
+    def test_task_base_description_too_long(self):
+        """Test that description over 1000 chars raises validation error."""
+        with pytest.raises(ValidationError):
+            TaskBase(title="Test", description="x" * 1001)
 
 
 class TestTaskCreate:
@@ -71,11 +81,11 @@ class TestTaskCreate:
         task = TaskCreate(
             title="Create Task",
             description="Testing creation",
-            priority=2
+            completed=True
         )
         assert task.title == "Create Task"
         assert task.description == "Testing creation"
-        assert task.priority == 2
+        assert task.completed is True
         assert task.status == TaskStatus.ACTIVE
 
 
@@ -88,20 +98,19 @@ class TestTaskUpdate:
         task_update = TaskUpdate()
         assert task_update.title is None
         assert task_update.description is None
+        assert task_update.completed is None
         assert task_update.status is None
-        assert task_update.due_date is None
-        assert task_update.priority is None
-        assert task_update.tags is None
+        assert task_update.snoozed_until is None
     
     @pytest.mark.unit
     def test_task_update_partial(self):
         """Test updating only some fields."""
         task_update = TaskUpdate(
             title="Updated Title",
-            priority=5
+            completed=True
         )
         assert task_update.title == "Updated Title"
-        assert task_update.priority == 5
+        assert task_update.completed is True
         assert task_update.description is None
 
 
@@ -113,21 +122,20 @@ class TestTask:
         """Test creating a complete Task instance."""
         now = datetime.now(timezone.utc)
         task = Task(
-            id="123e4567-e89b-12d3-a456-426614174000",
+            id=1,
             user_id="user-123",
             title="Complete Task",
             description="A complete task with all fields",
+            completed=False,
             status=TaskStatus.ACTIVE,
-            due_date=now,
-            priority=3,
-            tags=["important", "urgent"],
             created_at=now,
             updated_at=now,
             snoozed_until=None
         )
-        assert task.id == "123e4567-e89b-12d3-a456-426614174000"
+        assert task.id == 1
         assert task.user_id == "user-123"
         assert task.title == "Complete Task"
+        assert task.completed is False
         assert task.created_at == now
         assert task.updated_at == now
         assert task.snoozed_until is None
@@ -138,9 +146,10 @@ class TestTask:
         now = datetime.now(timezone.utc)
         snooze_time = now + timedelta(days=30)
         task = Task(
-            id="123e4567-e89b-12d3-a456-426614174000",
+            id=2,
             user_id="user-123",
             title="Snoozed Task",
+            completed=False,
             status=TaskStatus.SNOOZED,
             created_at=now,
             updated_at=now,
@@ -157,12 +166,11 @@ class TestSnoozeRequest:
     def test_snooze_request_valid(self):
         """Test creating a valid SnoozeRequest."""
         snooze_time = datetime.now(timezone.utc) + timedelta(days=30)
-        request = SnoozeRequest(snoozed_until=snooze_time)
-        assert request.snoozed_until == snooze_time
+        request = SnoozeRequest(snooze_until=snooze_time)
+        assert request.snooze_until == snooze_time
     
     @pytest.mark.unit
-    def test_snooze_request_required_field(self):
-        """Test that snoozed_until is required."""
-        with pytest.raises(ValidationError) as exc_info:
-            SnoozeRequest()
-        assert "Field required" in str(exc_info.value)
+    def test_snooze_request_optional_field(self):
+        """Test that snooze_until is optional."""
+        request = SnoozeRequest()
+        assert request.snooze_until is None

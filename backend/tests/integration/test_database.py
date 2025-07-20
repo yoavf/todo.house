@@ -40,13 +40,15 @@ class TestSupabaseIntegration:
     def test_task_table_operations(self, mock_supabase):
         """Test basic table operations on the tasks table."""
         sample_task = {
-            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "id": 1,
             "user_id": "test-user",
             "title": "Test Task",
             "description": "Integration test task",
+            "completed": False,
             "status": TaskStatus.ACTIVE.value,
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "snoozed_until": None
         }
         
         mock_response = Mock(data=[sample_task], count=1)
@@ -67,14 +69,16 @@ class TestSupabaseIntegration:
         
         active_tasks = [
             {
-                "id": f"task-{i}",
+                "id": i,
                 "user_id": "test-user",
                 "title": f"Active Task {i}",
+                "completed": False,
                 "status": TaskStatus.ACTIVE.value,
                 "created_at": datetime.now(timezone.utc).isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat()
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "snoozed_until": None
             }
-            for i in range(3)
+            for i in range(1, 4)
         ]
         
         mock_table.execute.return_value = Mock(data=active_tasks, count=3)

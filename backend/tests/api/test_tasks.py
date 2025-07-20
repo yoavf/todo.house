@@ -10,10 +10,10 @@ class TestTasksAPI:
     
     @pytest.mark.asyncio
     async def test_get_tasks_no_auth(self, async_client):
-        """Test that accessing tasks without auth header returns 400."""
+        """Test that accessing tasks without auth header returns 422."""
         response = await async_client.get("/api/tasks/")
-        assert response.status_code == 400
-        assert response.json()["detail"] == "x-user-id header is required"
+        assert response.status_code == 422
+        assert "x-user-id" in str(response.json())
     
     @pytest.mark.asyncio
     async def test_get_tasks_empty(self, async_client, mock_user_headers, mock_supabase):
@@ -32,10 +32,8 @@ class TestTasksAPI:
             "user_id": sample_task.user_id,
             "title": sample_task.title,
             "description": sample_task.description,
+            "completed": sample_task.completed,
             "status": sample_task.status.value,
-            "due_date": sample_task.due_date.isoformat() if sample_task.due_date else None,
-            "priority": sample_task.priority,
-            "tags": sample_task.tags,
             "created_at": sample_task.created_at.isoformat(),
             "updated_at": sample_task.updated_at.isoformat(),
             "snoozed_until": None
@@ -66,7 +64,7 @@ class TestTasksAPI:
     async def test_create_task(self, async_client, mock_user_headers, mock_supabase, sample_task_data):
         """Test creating a new task."""
         created_task = {
-            "id": "new-task-id",
+            "id": 1,
             "user_id": "test-user-123",
             **sample_task_data,
             "status": sample_task_data["status"].value,
@@ -82,10 +80,10 @@ class TestTasksAPI:
             headers=mock_user_headers,
             json=sample_task_data
         )
-        assert response.status_code == 201
+        assert response.status_code == 200
         result = response.json()
         assert result["title"] == sample_task_data["title"]
-        assert result["id"] == "new-task-id"
+        assert result["id"] == 1
     
     @pytest.mark.asyncio
     async def test_create_task_invalid_data(self, async_client, mock_user_headers):
@@ -105,19 +103,17 @@ class TestTasksAPI:
             "user_id": sample_task.user_id,
             "title": sample_task.title,
             "description": sample_task.description,
+            "completed": sample_task.completed,
             "status": sample_task.status.value,
             "created_at": sample_task.created_at.isoformat(),
             "updated_at": sample_task.updated_at.isoformat(),
-            "snoozed_until": None,
-            "due_date": None,
-            "priority": sample_task.priority,
-            "tags": sample_task.tags
+            "snoozed_until": None
         }
         
         mock_table = mock_supabase.table.return_value
         mock_table.select.return_value = mock_table
         mock_table.eq.return_value = mock_table
-        mock_table.single.return_value.execute.return_value = Mock(data=task_dict)
+        mock_table.execute.return_value = Mock(data=[task_dict])
         
         response = await async_client.get(f"/api/tasks/{sample_task.id}", headers=mock_user_headers)
         assert response.status_code == 200
@@ -129,23 +125,23 @@ class TestTasksAPI:
         mock_table = mock_supabase.table.return_value
         mock_table.select.return_value = mock_table
         mock_table.eq.return_value = mock_table
-        mock_table.single.return_value.execute.side_effect = Exception("No rows found")
+        mock_table.execute.return_value = Mock(data=[])
         
-        response = await async_client.get("/api/tasks/non-existent-id", headers=mock_user_headers)
+        response = await async_client.get("/api/tasks/999", headers=mock_user_headers)
         assert response.status_code == 404
     
     @pytest.mark.asyncio
     async def test_update_task(self, async_client, mock_user_headers, mock_supabase):
         """Test updating a task."""
-        task_id = "123e4567-e89b-12d3-a456-426614174000"
-        update_data = {"title": "Updated Title", "priority": 5}
+        task_id = 1
+        update_data = {"title": "Updated Title", "completed": True}
         
         updated_task = {
             "id": task_id,
             "user_id": "test-user-123",
             "title": "Updated Title",
-            "priority": 5,
-            "status": "active",
+            "completed": True,
+            "status": "completed",
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "snoozed_until": None
@@ -167,7 +163,7 @@ class TestTasksAPI:
     @pytest.mark.asyncio
     async def test_delete_task(self, async_client, mock_user_headers, mock_supabase):
         """Test deleting a task."""
-        task_id = "123e4567-e89b-12d3-a456-426614174000"
+        task_id = 1
         
         mock_table = mock_supabase.table.return_value
         mock_table.delete.return_value = mock_table
@@ -175,22 +171,24 @@ class TestTasksAPI:
         mock_table.execute.return_value = Mock(data=[{"id": task_id}])
         
         response = await async_client.delete(f"/api/tasks/{task_id}", headers=mock_user_headers)
-        assert response.status_code == 204
+        assert response.status_code == 200
+        assert response.json()["message"] == "Task deleted successfully"
     
     @pytest.mark.asyncio
     async def test_get_active_tasks(self, async_client, mock_user_headers, mock_supabase):
         """Test getting only active tasks."""
         active_tasks = [
             {
-                "id": f"task-{i}",
+                "id": i,
                 "user_id": "test-user-123",
                 "title": f"Active Task {i}",
+                "completed": False,
                 "status": "active",
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "updated_at": datetime.now(timezone.utc).isoformat(),
                 "snoozed_until": None
             }
-            for i in range(2)
+            for i in range(1, 3)
         ]
         
         mock_table = mock_supabase.table.return_value
@@ -208,9 +206,10 @@ class TestTasksAPI:
     async def test_get_snoozed_tasks(self, async_client, mock_user_headers, mock_supabase):
         """Test getting only snoozed tasks."""
         snoozed_task = {
-            "id": "snoozed-task-1",
+            "id": 1,
             "user_id": "test-user-123",
             "title": "Snoozed Task",
+            "completed": False,
             "status": "snoozed",
             "snoozed_until": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat(),
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -232,13 +231,14 @@ class TestTasksAPI:
     @pytest.mark.asyncio
     async def test_snooze_task(self, async_client, mock_user_headers, mock_supabase):
         """Test snoozing a task."""
-        task_id = "123e4567-e89b-12d3-a456-426614174000"
+        task_id = 1
         snooze_until = datetime.now(timezone.utc) + timedelta(hours=1)
         
         snoozed_task = {
             "id": task_id,
             "user_id": "test-user-123",
             "title": "Task to Snooze",
+            "completed": False,
             "status": "snoozed",
             "snoozed_until": snooze_until.isoformat(),
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -253,7 +253,7 @@ class TestTasksAPI:
         response = await async_client.post(
             f"/api/tasks/{task_id}/snooze",
             headers=mock_user_headers,
-            json={"snoozed_until": snooze_until.isoformat()}
+            json={"snooze_until": snooze_until.isoformat()}
         )
         assert response.status_code == 200
         result = response.json()
@@ -261,14 +261,45 @@ class TestTasksAPI:
         assert result["snoozed_until"] is not None
     
     @pytest.mark.asyncio
+    async def test_snooze_task_indefinitely(self, async_client, mock_user_headers, mock_supabase):
+        """Test snoozing a task without a date (indefinite snooze)."""
+        task_id = 1
+        
+        snoozed_task = {
+            "id": task_id,
+            "user_id": "test-user-123",
+            "title": "Task to Snooze Indefinitely",
+            "completed": False,
+            "status": "snoozed",
+            "snoozed_until": datetime.max.isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        mock_table = mock_supabase.table.return_value
+        mock_table.update.return_value = mock_table
+        mock_table.eq.return_value = mock_table
+        mock_table.execute.return_value = Mock(data=[snoozed_task])
+        
+        response = await async_client.post(
+            f"/api/tasks/{task_id}/snooze",
+            headers=mock_user_headers,
+            json={}
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result["status"] == "snoozed"
+    
+    @pytest.mark.asyncio
     async def test_unsnooze_task(self, async_client, mock_user_headers, mock_supabase):
         """Test unsnoozing a task."""
-        task_id = "123e4567-e89b-12d3-a456-426614174000"
+        task_id = 1
         
         active_task = {
             "id": task_id,
             "user_id": "test-user-123",
             "title": "Task to Unsnooze",
+            "completed": False,
             "status": "active",
             "snoozed_until": None,
             "created_at": datetime.now(timezone.utc).isoformat(),
