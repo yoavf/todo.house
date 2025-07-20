@@ -1,0 +1,66 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: backend
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        cache: 'pip'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+        cache-dependency-glob: "backend/uv.lock"
+    
+    - name: Install dependencies
+      run: uv sync --dev
+    
+    - name: Run linting
+      run: uv run ruff check .
+    
+    - name: Run type checking
+      run: uv run mypy app/
+    
+    - name: Run unit tests
+      run: uv run pytest tests/test_*_unit.py -v --tb=short
+      env:
+        SUPABASE_URL: http://localhost:54321
+        SUPABASE_KEY: test-key-for-ci
+    
+    - name: Generate coverage report
+      run: |
+        uv run pytest tests/test_*_unit.py --cov=app --cov-report=xml --cov-report=html
+      env:
+        SUPABASE_URL: http://localhost:54321
+        SUPABASE_KEY: test-key-for-ci
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./backend/coverage.xml
+        flags: backend
+        name: backend-coverage
+      continue-on-error: true

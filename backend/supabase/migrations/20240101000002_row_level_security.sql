@@ -1,8 +1,11 @@
 -- Migration: 002_row_level_security.sql
 -- Description: Set up Row Level Security policies
 
--- For development/testing, we'll use permissive policies
--- In production, these would check against auth.uid()
+-- WARNING: These are DEVELOPMENT ONLY policies with permissive rules!
+-- For production, replace all instances of 'true' with proper auth checks:
+--   - USING (auth.uid() = user_id) for tasks
+--   - USING (auth.uid() = id) for users
+--   - USING (auth.role() = 'service_role') for service operations
 
 -- Tasks policies
 CREATE POLICY "Users can view their own tasks" ON tasks

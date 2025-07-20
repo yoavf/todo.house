@@ -33,8 +33,13 @@ async def setup_test_user(test_user_id):
         # Insert user (might need to adjust based on your users table structure)
         supabase.table("users").insert(user_data).execute()
     except Exception as e:
-        # User might already exist or table structure might be different
-        print(f"Could not create test user: {e}")
+        # Only continue if it's a duplicate key error (user already exists)
+        if "duplicate key value" in str(e).lower() or "unique constraint" in str(e).lower():
+            print(f"Test user already exists: {test_user_id}")
+        else:
+            # Re-raise unexpected errors
+            print(f"Unexpected error creating test user: {e}")
+            raise
     
     yield test_user_id
     
