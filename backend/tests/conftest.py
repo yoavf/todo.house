@@ -4,10 +4,18 @@ from typing import AsyncGenerator, Generator
 from unittest.mock import Mock, AsyncMock, patch
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
-os.environ["SUPABASE_URL"] = "https://test.supabase.co"
-os.environ["SUPABASE_ANON_KEY"] = "test-key"
+
+@pytest.fixture(scope="session", autouse=True)
+def set_test_environment():
+    """Set required environment variables for tests."""
+    os.environ["SUPABASE_URL"] = "https://test.supabase.co"
+    os.environ["SUPABASE_ANON_KEY"] = "test-key"
+    yield
+    os.environ.pop("SUPABASE_URL", None)
+    os.environ.pop("SUPABASE_ANON_KEY", None)
+
 
 from app.main import app
 from app.models import Task, TaskStatus
@@ -47,11 +55,12 @@ def mock_supabase():
 @pytest.fixture
 def sample_task_data():
     """Provide sample task data for tests."""
+    future_date = datetime.now(timezone.utc) + timedelta(days=30)
     return {
         "title": "Test Task",
         "description": "This is a test task",
         "status": TaskStatus.ACTIVE,
-        "due_date": "2024-12-31T23:59:59Z",
+        "due_date": future_date.isoformat().replace("+00:00", "Z"),
         "priority": 1,
         "tags": ["test", "sample"]
     }
@@ -60,17 +69,19 @@ def sample_task_data():
 @pytest.fixture
 def sample_task():
     """Provide a sample Task instance."""
+    now = datetime.now(timezone.utc)
+    future_date = now + timedelta(days=30)
     return Task(
         id="123e4567-e89b-12d3-a456-426614174000",
         user_id="test-user-123",
         title="Test Task",
         description="This is a test task",
         status=TaskStatus.ACTIVE,
-        due_date=datetime(2024, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+        due_date=future_date,
         priority=1,
         tags=["test", "sample"],
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=now,
+        updated_at=now,
         snoozed_until=None
     )
 

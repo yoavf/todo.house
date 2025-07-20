@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pydantic import ValidationError
 
 from app.models import TaskStatus, TaskBase, TaskCreate, TaskUpdate, Task, SnoozeRequest
@@ -136,7 +136,7 @@ class TestTask:
     def test_task_with_snooze(self):
         """Test Task with snoozed_until field."""
         now = datetime.now(timezone.utc)
-        snooze_time = datetime(2024, 12, 31, 12, 0, 0, tzinfo=timezone.utc)
+        snooze_time = now + timedelta(days=30)
         task = Task(
             id="123e4567-e89b-12d3-a456-426614174000",
             user_id="user-123",
@@ -156,7 +156,7 @@ class TestSnoozeRequest:
     @pytest.mark.unit
     def test_snooze_request_valid(self):
         """Test creating a valid SnoozeRequest."""
-        snooze_time = datetime(2024, 12, 31, 12, 0, 0, tzinfo=timezone.utc)
+        snooze_time = datetime.now(timezone.utc) + timedelta(days=30)
         request = SnoozeRequest(snoozed_until=snooze_time)
         assert request.snoozed_until == snooze_time
     
