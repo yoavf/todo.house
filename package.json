@@ -1,0 +1,14 @@
+{
+  "name": "todohouse",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:frontend\"",
+    "dev:frontend": "cd frontend && pnpm run dev",
+    "dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
+    "install:all": "pnpm install && cd backend && uv sync"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
