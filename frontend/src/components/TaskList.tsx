@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Task, TaskCreate, TaskUpdate, tasksAPI } from '@/lib/api';
+import { Task, TaskCreate, TaskUpdate, fetchTasks, createTask, updateTask, deleteTask } from '@/lib/api';
 import { TaskItem } from './TaskItem';
 import { TaskForm } from './TaskForm';
 
@@ -17,7 +17,7 @@ export function TaskList() {
   const loadTasks = async () => {
     try {
       setLoading(true);
-      const data = await tasksAPI.getTasks();
+      const data = await fetchTasks();
       setTasks(data);
       setError(null);
     } catch (err) {
@@ -30,7 +30,7 @@ export function TaskList() {
 
   const handleCreate = async (taskData: TaskCreate) => {
     try {
-      const newTask = await tasksAPI.createTask(taskData);
+      const newTask = await createTask(taskData);
       setTasks([...tasks, newTask]);
     } catch (err) {
       setError('Failed to create task');
@@ -40,7 +40,7 @@ export function TaskList() {
 
   const handleUpdate = async (id: number, update: TaskUpdate) => {
     try {
-      const updatedTask = await tasksAPI.updateTask(id, update);
+      const updatedTask = await updateTask(id, update);
       setTasks(tasks.map(task => task.id === id ? updatedTask : task));
     } catch (err) {
       setError('Failed to update task');
@@ -50,7 +50,7 @@ export function TaskList() {
 
   const handleDelete = async (id: number) => {
     try {
-      await tasksAPI.deleteTask(id);
+      await deleteTask(id);
       setTasks(tasks.filter(task => task.id !== id));
     } catch (err) {
       setError('Failed to delete task');

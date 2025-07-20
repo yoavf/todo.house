@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Task, TaskUpdate } from '@/lib/api';
+import { Task, TaskUpdate, TaskStatus } from '@/lib/api';
 
 interface TaskItemProps {
   task: Task;
@@ -26,7 +26,18 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
   };
 
   const toggleCompleted = () => {
-    onUpdate(task.id, { completed: !task.completed });
+    const newCompleted = !task.completed;
+    const newStatus = newCompleted ? TaskStatus.COMPLETED : TaskStatus.ACTIVE;
+    onUpdate(task.id, { 
+      completed: newCompleted,
+      status: newStatus,
+      snoozed_until: newStatus === TaskStatus.ACTIVE ? task.snoozed_until : null
+    });
+  };
+
+  const formatSnoozedDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
   };
 
   if (isEditing) {
@@ -78,6 +89,11 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
         </h3>
         {task.description && (
           <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+        )}
+        {task.status === TaskStatus.SNOOZED && task.snoozed_until && (
+          <p className="text-orange-600 text-sm mt-1">
+            Snoozed until: {formatSnoozedDate(task.snoozed_until)}
+          </p>
         )}
       </div>
       <div className="flex gap-2">
