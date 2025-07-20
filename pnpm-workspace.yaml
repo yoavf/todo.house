@@ -1,4 +1,8 @@
 packages:
-  - 'frontend'
-  - 'backend'
-  - 'shared'
+  - frontend
+  - backend
+  - shared
+
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - sharp
