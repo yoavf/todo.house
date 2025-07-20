@@ -166,11 +166,11 @@ class TestSnoozeRequest:
     def test_snooze_request_valid(self):
         """Test creating a valid SnoozeRequest."""
         snooze_time = datetime.now(timezone.utc) + timedelta(days=30)
-        request = SnoozeRequest(snooze_until=snooze_time)
-        assert request.snooze_until == snooze_time
+        request = SnoozeRequest(snoozed_until=snooze_time)
+        assert request.snoozed_until == snooze_time
     
     @pytest.mark.unit
     def test_snooze_request_optional_field(self):
-        """Test that snooze_until is optional."""
+        """Test that snoozed_until is optional."""
         request = SnoozeRequest()
-        assert request.snooze_until is None
+        assert request.snoozed_until is None

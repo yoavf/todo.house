@@ -41,4 +41,4 @@ class Task(TaskBase):
 
 
 class SnoozeRequest(BaseModel):
-    snooze_until: Optional[datetime] = None
+    snoozed_until: Optional[datetime] = None

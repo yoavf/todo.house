@@ -76,7 +76,7 @@ async def snooze_task(
     user_id: str = Header(..., alias="x-user-id")
 ):
     # If no date provided, snooze indefinitely (year 9999)
-    snooze_until = snooze_request.snooze_until or datetime.max
+    snooze_until = snooze_request.snoozed_until or datetime.max
     
     update_data = {
         'status': TaskStatus.SNOOZED.value,

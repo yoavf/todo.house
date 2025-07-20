@@ -253,7 +253,7 @@ class TestTasksAPI:
         response = await async_client.post(
             f"/api/tasks/{task_id}/snooze",
             headers=mock_user_headers,
-            json={"snooze_until": snooze_until.isoformat()}
+            json={"snoozed_until": snooze_until.isoformat()}
         )
         assert response.status_code == 200
         result = response.json()
