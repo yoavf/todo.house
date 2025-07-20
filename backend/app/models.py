@@ -10,9 +10,16 @@ class TaskStatus(str, Enum):
     COMPLETED = "completed"
 
 
+class TaskPriority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
+    priority: TaskPriority = TaskPriority.MEDIUM
     completed: bool = False
     status: TaskStatus = TaskStatus.ACTIVE
     snoozed_until: Optional[datetime] = None
@@ -25,6 +32,7 @@ class TaskCreate(TaskBase):
 class TaskUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
+    priority: Optional[TaskPriority] = None
     completed: Optional[bool] = None
     status: Optional[TaskStatus] = None
     snoozed_until: Optional[datetime] = None

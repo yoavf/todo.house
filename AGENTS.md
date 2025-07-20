@@ -62,6 +62,15 @@ npm run dev:frontend  # Next.js app on :3000
 
 Create `.env` files in both backend and frontend directories with necessary environment variables for Supabase connection and API configuration.
 
+### Virtual Environment
+
+This project uses a single virtual environment at the root level for Python dependencies:
+- Location: `/todohouse/.venv`
+- Python version: 3.13+
+- Package manager: `uv` (ultrafast Python package manager)
+
+**Important**: Always use the root-level venv when working with backend code. If `uv` shows warnings about venv mismatch, use the `--active` flag to target the active environment.
+
 ## Development Workflow
 
 1. Backend API development in `backend/app/`
