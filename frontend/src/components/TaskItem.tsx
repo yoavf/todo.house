@@ -31,7 +31,7 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
     onUpdate(task.id, { 
       completed: newCompleted,
       status: newStatus,
-      snoozed_until: newStatus === TaskStatus.ACTIVE ? task.snoozed_until : null
+      snoozed_until: newStatus === TaskStatus.COMPLETED ? null : task.snoozed_until
     });
   };
 

@@ -20,8 +20,8 @@ export function DatePicker({
     onChange(newValue || undefined);
   };
 
-  const today = new Date().toISOString().split('T')[0];
-  const effectiveMinDate = minDate || today;
+  const today = new Date().toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+  const effectiveMinDate = minDate ? `${minDate}T00:00` : today;
 
   return (
     <input
