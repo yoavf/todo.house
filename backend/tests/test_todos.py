@@ -4,6 +4,9 @@ from faker import Faker
 
 fake = Faker()
 
+# Mark all tests in this file as integration tests
+pytestmark = pytest.mark.integration
+
 @pytest.mark.asyncio
 async def test_create_task(client: AsyncClient, setup_test_user):
     """Test creating a new task."""

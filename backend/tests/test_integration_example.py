@@ -6,6 +6,9 @@ Run with: pytest tests/test_integration_example.py -s
 import pytest
 from httpx import AsyncClient
 
+# Mark all tests in this file as integration tests
+pytestmark = pytest.mark.integration
+
 @pytest.mark.asyncio
 async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user):
     """Test creating, reading, updating, and deleting a todo."""

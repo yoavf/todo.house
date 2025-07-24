@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 import uuid
 from datetime import datetime
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_create_task_unit(client: AsyncClient):
     """Unit test for creating a task - mocks database calls."""
@@ -55,6 +56,7 @@ async def test_create_task_unit(client: AsyncClient):
         mock_supabase.table.assert_called_with('tasks')
         mock_table.insert.assert_called_once()
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_get_tasks_unit(client: AsyncClient):
     """Unit test for getting tasks - mocks database calls."""
@@ -109,6 +111,7 @@ async def test_get_tasks_unit(client: AsyncClient):
         assert len(tasks) == 2
         assert tasks[0]["title"] == "Task 1"
 
+@pytest.mark.unit
 @pytest.mark.asyncio  
 async def test_delete_task_not_found(client: AsyncClient):
     """Test deleting non-existent task returns 404."""
