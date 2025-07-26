@@ -95,7 +95,7 @@ class TestImagePreprocessor:
     async def test_validate_and_preprocess_image_too_large(self):
         """Test validation failure for oversized image."""
         # Create a fake large image data (15MB)
-        large_image_data = b"fake_image_data" * (15 * 1024 * 1024 // 15)  # 15MB of data
+        large_image_data = b"fake_image_data" * (15 * 1024 * 1024)  # 15MB of data
         
         with pytest.raises(ImageValidationError) as exc_info:
             await self.preprocessor.validate_and_preprocess(large_image_data)
