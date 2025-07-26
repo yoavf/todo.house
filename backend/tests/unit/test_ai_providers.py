@@ -2,7 +2,7 @@
 
 import json
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import Mock, patch
 from typing import Dict, Any
 
 from app.ai.providers import (

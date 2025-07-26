@@ -1,9 +1,8 @@
 """Configuration management for the application."""
 
-import os
-from typing import List, Optional
-from pydantic import BaseModel, Field, ConfigDict
-from pydantic_settings import BaseSettings
+from typing import List
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -13,7 +12,7 @@ load_dotenv()
 class AIConfig(BaseSettings):
     """AI provider configuration settings."""
     
-    model_config = ConfigDict(env_prefix="")
+    model_config = SettingsConfigDict(env_prefix="")
     
     gemini_api_key: str = Field(default="", description="Google Gemini API key")
     gemini_model: str = Field(default="gemini-1.5-flash", description="Gemini model to use")
@@ -24,7 +23,7 @@ class AIConfig(BaseSettings):
 class ImageConfig(BaseSettings):
     """Image processing configuration settings."""
     
-    model_config = ConfigDict(env_prefix="")
+    model_config = SettingsConfigDict(env_prefix="")
     
     max_image_size_mb: int = Field(default=10, description="Maximum image size in MB")
     max_ai_image_size_kb: int = Field(default=500, description="Maximum AI image size in KB")
@@ -38,11 +37,11 @@ class ImageConfig(BaseSettings):
 class AppConfig(BaseSettings):
     """Main application configuration."""
     
-    model_config = ConfigDict(env_prefix="")
+    model_config = SettingsConfigDict()
     
     # Existing Supabase config
-    supabase_url: str = Field(..., description="Supabase project URL")
-    supabase_key: str = Field(..., description="Supabase anon key")
+    supabase_url: str = Field(default="", description="Supabase project URL")
+    supabase_key: str = Field(default="", description="Supabase anon key")
 
 
 # Global configuration instances

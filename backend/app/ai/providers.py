@@ -3,7 +3,7 @@
 import json
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Union
 import logging
 
 logger = logging.getLogger(__name__)
@@ -108,7 +108,7 @@ class GeminiProvider(AIProvider):
             
         self.api_key = api_key
         self.model = model
-        self._usage_metrics = {
+        self._usage_metrics: Dict[str, Union[int, float, List[float], Optional[float]]] = {
             "requests_made": 0,
             "successful_requests": 0,
             "failed_requests": 0,
@@ -148,7 +148,9 @@ class GeminiProvider(AIProvider):
             AIProviderAPIError: If API returns an error
         """
         start_time = time.time()
-        self._usage_metrics["requests_made"] += 1
+        requests_made = self._usage_metrics["requests_made"]
+        if isinstance(requests_made, int):
+            self._usage_metrics["requests_made"] = requests_made + 1
         self._usage_metrics["last_request_time"] = start_time
         
         try:
@@ -166,14 +168,24 @@ class GeminiProvider(AIProvider):
             
             # Calculate processing time
             processing_time = time.time() - start_time
-            self._usage_metrics["response_times"].append(processing_time)
+            response_times = self._usage_metrics["response_times"]
+            if isinstance(response_times, list):
+                response_times.append(processing_time)
             
             # Update success metrics
-            self._usage_metrics["successful_requests"] += 1
+            successful_requests = self._usage_metrics["successful_requests"]
+            if isinstance(successful_requests, int):
+                self._usage_metrics["successful_requests"] = successful_requests + 1
+            
             if "tokens_used" in result:
-                self._usage_metrics["total_tokens_used"] += result.get("tokens_used", 0)
+                total_tokens = self._usage_metrics["total_tokens_used"]
+                if isinstance(total_tokens, int):
+                    self._usage_metrics["total_tokens_used"] = total_tokens + result.get("tokens_used", 0)
+            
             if "cost_estimate" in result:
-                self._usage_metrics["total_cost_estimate"] += result.get("cost_estimate", 0.0)
+                total_cost = self._usage_metrics["total_cost_estimate"]
+                if isinstance(total_cost, (int, float)):
+                    self._usage_metrics["total_cost_estimate"] = float(total_cost) + result.get("cost_estimate", 0.0)
             
             # Add metadata to result
             result.update({
@@ -185,9 +197,14 @@ class GeminiProvider(AIProvider):
             return result
             
         except Exception as e:
-            self._usage_metrics["failed_requests"] += 1
+            failed_requests = self._usage_metrics["failed_requests"]
+            if isinstance(failed_requests, int):
+                self._usage_metrics["failed_requests"] = failed_requests + 1
+            
             processing_time = time.time() - start_time
-            self._usage_metrics["response_times"].append(processing_time)
+            response_times = self._usage_metrics["response_times"]
+            if isinstance(response_times, list):
+                response_times.append(processing_time)
             
             # Handle specific error types
             if "quota" in str(e).lower() or "rate limit" in str(e).lower():
@@ -310,8 +327,9 @@ class GeminiProvider(AIProvider):
         metrics = self._usage_metrics.copy()
         
         # Calculate average response time
-        if metrics["response_times"]:
-            metrics["average_response_time"] = sum(metrics["response_times"]) / len(metrics["response_times"])
+        response_times = metrics["response_times"]
+        if isinstance(response_times, list) and response_times:
+            metrics["average_response_time"] = sum(response_times) / len(response_times)
         else:
             metrics["average_response_time"] = 0.0
         
@@ -395,7 +413,7 @@ class AIProviderFactory:
             ValueError: If provider class doesn't implement AIProvider
         """
         if not issubclass(provider_class, AIProvider):
-            raise ValueError(f"Provider class must implement AIProvider interface")
+            raise ValueError("Provider class must implement AIProvider interface")
         
-        cls._supported_providers[name.lower()] = provider_class
+        cls._supported_providers[name.lower()] = provider_class  # type: ignore
         logger.info(f"Registered AI provider: {name}")
