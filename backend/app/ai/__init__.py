@@ -1,0 +1,1 @@
+"""AI services package for image analysis and task generation."""
