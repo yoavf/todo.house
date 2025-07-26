@@ -1,12 +1,12 @@
 # Implementation Plan
 
-- [ ] 1. Set up project dependencies and configuration
+- [x] 1. Set up project dependencies and configuration
   - Add required Python packages to pyproject.toml (google-generativeai, pillow, python-multipart)
   - Create environment configuration for AI provider settings
   - Set up basic project structure for AI services
   - _Requirements: 3.1, 3.2_
 
-- [ ] 2. Create database schema extensions
+- [x] 2. Create database schema extensions
   - Write migration for images table with analysis tracking
   - Write migration for image_analyses table for logging
   - Extend tasks table with AI-related columns (source, source_image_id, ai_confidence, ai_provider)
