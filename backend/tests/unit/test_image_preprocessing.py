@@ -241,7 +241,8 @@ class TestImagePreprocessor:
         
         with patch.object(self.preprocessor, 'config', custom_config):
             # Test with image that would be valid with default config but invalid with custom
-            large_image_data = b"fake_image_data" * (7 * 1024 * 1024 // 15)  # 7MB of data
+            FAKE_IMAGE_CHUNK_SIZE = 1024 * 1024 // 15  # Chunk size in bytes
+            large_image_data = b"fake_image_data" * (7 * FAKE_IMAGE_CHUNK_SIZE)  # 7MB of data
             
             with pytest.raises(ImageValidationError) as exc_info:
                 await self.preprocessor.validate_and_preprocess(large_image_data)
