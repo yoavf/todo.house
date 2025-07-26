@@ -308,7 +308,12 @@ class GeminiProvider(AIProvider):
             
             parsed_data["tasks"] = validated_tasks
             
-            # Add token usage estimate (placeholder for now)
+            # Add token usage estimate
+            # NOTE: The following token estimation logic is a placeholder and is overly simplistic.
+            # It assumes an average of 4 characters per token, which may not accurately reflect
+            # the actual tokenization rules of the language model being used. This should be
+            # replaced with a proper token counting implementation using the tokenizer
+            # associated with the specific model (e.g., OpenAI's tiktoken library).
             parsed_data["tokens_used"] = len(response_text) // 4  # Rough estimate
             parsed_data["cost_estimate"] = parsed_data["tokens_used"] * 0.00001  # Rough cost estimate
             
