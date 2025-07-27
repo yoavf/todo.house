@@ -1,8 +1,7 @@
 """Unit tests for ImageProcessingService orchestration."""
 
 import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import AsyncMock, patch
 from typing import Dict, Any
 
 from app.ai.image_processing import ImageProcessingService, ImageProcessingError, ImageValidationError
