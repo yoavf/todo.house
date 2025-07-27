@@ -68,3 +68,35 @@ export const tasksAPI = {
 		if (!response.ok) throw new Error("Failed to delete task");
 	},
 };
+
+export interface ImageAnalysisResult {
+	tasks: Array<{
+		title: string;
+		description?: string;
+		priority: "low" | "medium" | "high";
+		confidence: number;
+	}>;
+	processing_time: number;
+}
+
+export const imageAPI = {
+	async analyzeImage(file: File): Promise<ImageAnalysisResult> {
+		const formData = new FormData();
+		formData.append("file", file);
+
+		const response = await fetch(`${API_URL}/api/analyze-image`, {
+			method: "POST",
+			headers: {
+				"X-User-Id": "test-user",
+			},
+			body: formData,
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(errorData.detail || "Failed to analyze image");
+		}
+
+		return response.json();
+	},
+};

@@ -7,6 +7,7 @@ import {
 	type TaskUpdate,
 	tasksAPI,
 } from "@/lib/api";
+import { ImageAnalyzer } from "./ImageAnalyzer";
 import { TaskForm } from "./TaskForm";
 import { TaskItem } from "./TaskItem";
 
@@ -14,6 +15,7 @@ export function TaskList() {
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [showImageAnalyzer, setShowImageAnalyzer] = useState(false);
 
 	const loadTasks = useCallback(async () => {
 		try {
@@ -69,13 +71,40 @@ export function TaskList() {
 
 	return (
 		<div className="max-w-3xl mx-auto p-4 space-y-6">
-			<h1 className="text-3xl font-bold">My Tasks</h1>
+			<div className="flex items-center justify-between">
+				<h1 className="text-3xl font-bold">My Tasks</h1>
+				<button
+					type="button"
+					onClick={() => setShowImageAnalyzer(!showImageAnalyzer)}
+					className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+				>
+					<svg
+						className="w-5 h-5"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+						/>
+					</svg>
+					{showImageAnalyzer ? "Hide Image Analysis" : "Analyze Image"}
+				</button>
+			</div>
 
 			{error && (
 				<div className="p-4 bg-red-100 text-red-700 rounded">{error}</div>
 			)}
 
-			<TaskForm onSubmit={handleCreate} />
+			{showImageAnalyzer ? (
+				<ImageAnalyzer />
+			) : (
+				<TaskForm onSubmit={handleCreate} />
+			)}
 
 			<div className="space-y-2">
 				{tasks.length === 0 ? (
