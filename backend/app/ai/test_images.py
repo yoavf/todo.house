@@ -3,7 +3,8 @@
 import io
 import logging
 from enum import Enum
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Tuple
+from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFont
 from dataclasses import dataclass
 
@@ -41,6 +42,9 @@ class TestImageMetadata:
 
 class TestImageLibrary:
     """Library of test images for prompt development and evaluation."""
+    
+    # Maximum number of images to cache (prevent unbounded growth)
+    MAX_CACHE_SIZE = 50
     
     def __init__(self):
         """Initialize the test image library."""
@@ -215,8 +219,14 @@ class TestImageLibrary:
         
         # Generate synthetic image for the scenario
         image_data = self._generate_synthetic_image(scenario)
-        self._image_cache[scenario] = image_data
         
+        # Manage cache size
+        if len(self._image_cache) >= self.MAX_CACHE_SIZE:
+            # Remove oldest entry (simple FIFO policy)
+            oldest_key = next(iter(self._image_cache))
+            del self._image_cache[oldest_key]
+        
+        self._image_cache[scenario] = image_data
         return image_data
     
     def get_test_metadata(self, scenario: TestScenario) -> TestImageMetadata:
@@ -291,13 +301,8 @@ class TestImageLibrary:
         image = Image.new('RGB', (width, height), color='white')
         draw = ImageDraw.Draw(image)
         
-        # Try to use a default font, fall back to default if not available
-        try:
-            font: Any = ImageFont.truetype("arial.ttf", 24)
-            small_font: Any = ImageFont.truetype("arial.ttf", 16)
-        except (OSError, IOError):
-            font = ImageFont.load_default()
-            small_font = ImageFont.load_default()
+        # Get cached fonts
+        font, small_font = self._get_fonts()
         
         metadata = self._metadata_cache[scenario]
         
@@ -320,10 +325,10 @@ class TestImageLibrary:
         draw.text((10, 10), f"Test Scenario: {scenario.value}", fill='black', font=font)
         draw.text((10, height - 40), metadata.description, fill='gray', font=small_font)
         
-        # Convert to bytes
-        output = io.BytesIO()
-        image.save(output, format='JPEG', quality=85)
-        return output.getvalue()
+        # Convert to bytes using context manager
+        with io.BytesIO() as output:
+            image.save(output, format='JPEG', quality=85)
+            return output.getvalue()
     
     def _draw_bathroom_sink(self, draw: Any, width: int, height: int, 
                            font: Any, small_font: Any) -> None:
@@ -509,10 +514,7 @@ class TestImageLibrary:
         image = Image.new('RGB', (width, height), color='lightgray')
         draw = ImageDraw.Draw(image)
         
-        try:
-            font: Any = ImageFont.truetype("arial.ttf", 20)
-        except (OSError, IOError):
-            font = ImageFont.load_default()
+        font, _ = self._get_fonts(size=20)
         
         # Draw border
         draw.rectangle([10, 10, width-10, height-10], outline='black', width=3)
@@ -544,10 +546,10 @@ class TestImageLibrary:
             draw.text((20, y_offset), line, fill='black', font=font)
             y_offset += 30
         
-        # Convert to bytes
-        output = io.BytesIO()
-        image.save(output, format='JPEG', quality=85)
-        return output.getvalue()
+        # Convert to bytes using context manager
+        with io.BytesIO() as output:
+            image.save(output, format='JPEG', quality=85)
+            return output.getvalue()
     
     def get_scenario_summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -567,3 +569,24 @@ class TestImageLibrary:
                 "notes": metadata.notes
             }
         return summary
+    
+    @lru_cache(maxsize=10)
+    def _get_fonts(self, size: int = 24) -> Tuple[ImageFont.ImageFont, ImageFont.ImageFont]:
+        """
+        Get cached fonts for image generation.
+        
+        Args:
+            size: Base font size
+            
+        Returns:
+            Tuple of (regular_font, small_font)
+        """
+        try:
+            font = ImageFont.truetype("arial.ttf", size)
+            small_font = ImageFont.truetype("arial.ttf", max(12, size - 8))
+        except (OSError, IOError):
+            # Fall back to default fonts
+            font = ImageFont.load_default()
+            small_font = ImageFont.load_default()
+        
+        return font, small_font

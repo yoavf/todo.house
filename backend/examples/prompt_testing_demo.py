@@ -22,6 +22,7 @@ import asyncio
 import argparse
 import json
 import sys
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -66,6 +67,50 @@ class PromptTestingCLI:
         
         return self.tester
     
+    def _validate_image_path(self, file_path: str) -> str:
+        """
+        Validate and sanitize image file path for security.
+        
+        Args:
+            file_path: Path to image file
+            
+        Returns:
+            Validated absolute path
+            
+        Raises:
+            ValueError: If path is invalid or unsafe
+        """
+        # Convert to Path object for safer handling
+        path = Path(file_path)
+        
+        # Check if file exists
+        if not path.exists():
+            raise ValueError(f"File does not exist: {file_path}")
+        
+        # Ensure it's a file, not a directory
+        if not path.is_file():
+            raise ValueError(f"Path is not a file: {file_path}")
+        
+        # Get absolute path to prevent path traversal attacks
+        abs_path = path.resolve()
+        
+        # Validate file extension (only allow common image formats)
+        allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
+        if abs_path.suffix.lower() not in allowed_extensions:
+            raise ValueError(f"Invalid file extension. Allowed: {', '.join(allowed_extensions)}")
+        
+        # Check file size (prevent DoS with huge files) - max 50MB
+        file_size = abs_path.stat().st_size
+        max_size = 50 * 1024 * 1024  # 50MB
+        if file_size > max_size:
+            raise ValueError(f"File too large ({file_size} bytes). Maximum size: {max_size} bytes")
+        
+        # Ensure file is readable
+        if not os.access(abs_path, os.R_OK):
+            raise ValueError(f"File is not readable: {abs_path}")
+        
+        return str(abs_path)
+    
     async def test_single_prompt(self, prompt: str, scenario: str, custom_image: Optional[str] = None):
         """Test a single prompt against a scenario."""
         print(f"\n🧪 Testing prompt against scenario: {scenario}")
@@ -85,9 +130,14 @@ class PromptTestingCLI:
         image_data = None
         if custom_image:
             try:
-                with open(custom_image, 'rb') as f:
+                # Validate and sanitize the file path
+                validated_path = self._validate_image_path(custom_image)
+                with open(validated_path, 'rb') as f:
                     image_data = f.read()
-                print(f"✓ Loaded custom image: {custom_image}")
+                print(f"✓ Loaded custom image: {validated_path}")
+            except ValueError as e:
+                print(f"✗ Security error: {e}")
+                return
             except Exception as e:
                 print(f"✗ Failed to load custom image: {e}")
                 return

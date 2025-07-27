@@ -15,6 +15,10 @@ from ..logging_config import PromptTestingLogger
 
 logger = logging.getLogger(__name__)
 
+# Constants
+DEFAULT_FUZZY_THRESHOLD = 0.4
+STOP_WORDS = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from'}
+
 
 class TestResult(str, Enum):
     """Test result status."""
@@ -202,7 +206,7 @@ class PromptTester:
                 ai_response={},
                 processing_time=processing_time,
                 tasks_generated=0,
-                expected_tasks=metadata.expected_tasks if 'metadata' in locals() else [],
+                expected_tasks=getattr(metadata, 'expected_tasks', []) if metadata else [],
                 matched_tasks=[],
                 missing_tasks=[],
                 unexpected_tasks=[],
@@ -346,9 +350,21 @@ class PromptTester:
         generated_tasks = ai_response.get("tasks", [])
         expected_tasks = expected_metadata.expected_tasks
         
-        # Extract task titles for comparison
-        generated_titles = [task.get("title", "").lower().strip() for task in generated_tasks]
-        expected_titles = [task.lower().strip() for task in expected_tasks]
+        # Extract and normalize task titles for comparison (do normalization once)
+        generated_titles = []
+        for task in generated_tasks:
+            title = task.get("title", "")
+            if title:
+                normalized = title.lower().strip()
+                if normalized:  # Only add non-empty titles
+                    generated_titles.append(normalized)
+        
+        expected_titles = []
+        for task in expected_tasks:
+            if task:
+                normalized = task.lower().strip()
+                if normalized:  # Only add non-empty titles
+                    expected_titles.append(normalized)
         
         # Find matches using fuzzy matching
         matched_tasks = []
@@ -403,7 +419,7 @@ class PromptTester:
             "recall": round(recall, 3) if 'recall' in locals() else 0.0
         }
     
-    def _fuzzy_match(self, expected: str, generated: str, threshold: float = 0.4) -> bool:
+    def _fuzzy_match(self, expected: str, generated: str, threshold: float = DEFAULT_FUZZY_THRESHOLD) -> bool:
         """
         Check if two task descriptions are similar enough to be considered a match.
         
@@ -434,8 +450,7 @@ class PromptTester:
             # If we have at least one word in common, check if it's a significant word
             common_words = expected_words.intersection(generated_words)
             # Filter out common stop words
-            stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from'}
-            meaningful_common = common_words - stop_words
+            meaningful_common = common_words - STOP_WORDS
             if meaningful_common:
                 key_words_match = True
         
