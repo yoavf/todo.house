@@ -55,7 +55,19 @@ class StructuredLogger:
         self.logger = logging.getLogger(name)
 
     def _log_with_extra(self, level: int, message: str, **kwargs) -> None:
-        """Log message with extra structured fields."""
+        """
+        Log a message with additional structured fields.
+        
+        Args:
+            level (int): The logging level (e.g., logging.INFO, logging.ERROR).
+            message (str): The log message.
+            **kwargs: Additional fields to include in the log entry. Fields with a value of `None`
+                will be filtered out and not included in the log.
+                
+        Behavior:
+            - Filters out any `None` values from `**kwargs`.
+            - Adds the remaining fields to the log entry under the `extra_fields` key.
+        """
         extra_fields = {k: v for k, v in kwargs.items() if v is not None}
         
         # Create a custom LogRecord with extra fields
