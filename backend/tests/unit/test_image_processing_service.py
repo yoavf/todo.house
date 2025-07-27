@@ -95,13 +95,13 @@ def api_error_provider():
 @pytest.fixture
 def sample_image_data():
     """Create sample image data for testing."""
-    # Create a minimal valid JPEG image (1x1 pixel)
+    # Create a more realistic test image (100x100 pixels) that better represents user uploads
     import io
     from PIL import Image
     
-    img = Image.new('RGB', (1, 1), color='red')
+    img = Image.new('RGB', (100, 100), color='red')
     img_bytes = io.BytesIO()
-    img.save(img_bytes, format='JPEG')
+    img.save(img_bytes, format='JPEG', quality=85)
     return img_bytes.getvalue()
 
 
@@ -274,36 +274,44 @@ class TestRetryLogic:
     @pytest.mark.asyncio
     async def test_successful_retry_after_failure(self, sample_image_data):
         """Test successful analysis after initial failures."""
-        # Create provider that fails first time, then succeeds
-        provider = MockAIProvider()
-        call_count = 0
+        # Create a dedicated mock provider that fails once then succeeds
+        class RetryTestProvider(AIProvider):
+            def __init__(self):
+                self.call_count = 0
+            
+            async def analyze_image(self, image_data: bytes, prompt: str) -> Dict[str, Any]:
+                self.call_count += 1
+                if self.call_count == 1:
+                    raise AIProviderRateLimitError("Rate limited")
+                # Success on second call
+                return {
+                    "analysis_summary": "Mock analysis of the image",
+                    "tasks": [
+                        {
+                            "title": "Clean bathroom sink",
+                            "description": "Remove limescale buildup from faucet and basin",
+                            "priority": "medium",
+                            "category": "cleaning",
+                            "reasoning": "Visible mineral deposits affect appearance"
+                        }
+                    ],
+                    "provider": "retry-test",
+                    "model": "test-model",
+                    "processing_time": 0.5,
+                    "tokens_used": 100,
+                    "cost_estimate": 0.001
+                }
+            
+            def get_provider_name(self) -> str:
+                return "retry-test"
+            
+            def get_usage_metrics(self) -> Dict[str, Any]:
+                return {}
+            
+            def reset_usage_metrics(self) -> None:
+                pass
         
-        async def failing_then_success(image_data, prompt):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                raise AIProviderRateLimitError("Rate limited")
-            # Success on second call
-            return {
-                "analysis_summary": "Mock analysis of the image",
-                "tasks": [
-                    {
-                        "title": "Clean bathroom sink",
-                        "description": "Remove limescale buildup from faucet and basin",
-                        "priority": "medium",
-                        "category": "cleaning",
-                        "reasoning": "Visible mineral deposits affect appearance"
-                    }
-                ],
-                "provider": "mock",
-                "model": "mock-model",
-                "processing_time": 0.5,
-                "tokens_used": 100,
-                "cost_estimate": 0.001
-            }
-        
-        provider.analyze_image = failing_then_success
-        
+        provider = RetryTestProvider()
         service = ImageProcessingService(ai_provider=provider)
         service.base_retry_delay = 0.01  # Speed up test
         
@@ -313,7 +321,7 @@ class TestRetryLogic:
         )
         
         # Should succeed after retries
-        assert call_count == 2
+        assert provider.call_count == 2
         assert result["retry_count"] == 1
         assert len(result["tasks"]) == 1
 

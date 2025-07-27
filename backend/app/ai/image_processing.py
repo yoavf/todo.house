@@ -235,7 +235,10 @@ class ImageProcessingService:
         Raises:
             ImageProcessingError: If all retries fail
         """
-        last_exception = None
+        if self.ai_provider is None:
+            raise ImageProcessingError("AI provider is not configured")
+        
+        last_exception: Optional[Exception] = None
         
         for attempt in range(self.max_retries + 1):  # +1 for initial attempt
             try:
