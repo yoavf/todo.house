@@ -16,6 +16,7 @@ from .providers import (
 )
 from ..models import AITaskCreate, TaskSource
 from ..services.task_service import TaskService
+from ..logging_config import ImageProcessingLogger
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +157,7 @@ class ImageProcessingService:
         self.max_retries = 3
         self.base_retry_delay = 1.0  # seconds
         self.max_retry_delay = 30.0  # seconds
+        self.processing_logger = ImageProcessingLogger()
 
     async def analyze_image_and_generate_tasks(
         self,
@@ -195,20 +197,62 @@ class ImageProcessingService:
         try:
             # Step 1: Validate and preprocess image
             logger.info(f"Starting image analysis for user {user_id}")
-            processed_data, metadata = await self.preprocessor.validate_and_preprocess(
-                image_data
-            )
-            logger.info(
-                f"Image preprocessed: {metadata['original_size']} -> {metadata['processed_size']} bytes"
-            )
+            
+            try:
+                processed_data, metadata = await self.preprocessor.validate_and_preprocess(
+                    image_data
+                )
+                
+                # Log successful validation
+                self.processing_logger.log_image_validation(
+                    user_id=user_id,
+                    validation_result="success",
+                    original_size=metadata["original_size"],
+                    processed_size=metadata["processed_size"],
+                    compression_ratio=metadata.get("compression_ratio")
+                )
+                
+                logger.info(
+                    f"Image preprocessed: {metadata['original_size']} -> {metadata['processed_size']} bytes"
+                )
+            except ImageValidationError as e:
+                # Log validation failure
+                self.processing_logger.log_image_validation(
+                    user_id=user_id,
+                    validation_result="failed",
+                    original_size=len(image_data),
+                    error_message=str(e)
+                )
+                raise
 
             # Step 2: Generate AI analysis (if provider available and tasks requested)
             analysis_result = None
             if self.ai_provider and generate_tasks:
-                analysis_result = await self._analyze_with_retry(
-                    processed_data, prompt_override or self.generate_prompt()
+                # Log AI request start
+                prompt = prompt_override or self.generate_prompt()
+                self.processing_logger.log_ai_request_start(
+                    user_id=user_id,
+                    provider=self.ai_provider.get_provider_name(),
+                    model=getattr(self.ai_provider, 'model', 'unknown'),
+                    image_size=len(processed_data),
+                    prompt_length=len(prompt)
                 )
+                
+                analysis_result = await self._analyze_with_retry(processed_data, prompt)
                 retry_count = analysis_result.get("retry_count", 0)
+                
+                # Log AI request completion
+                self.processing_logger.log_ai_request_complete(
+                    user_id=user_id,
+                    provider=self.ai_provider.get_provider_name(),
+                    model=getattr(self.ai_provider, 'model', 'unknown'),
+                    processing_time=analysis_result.get("processing_time", 0.0),
+                    tokens_used=analysis_result.get("tokens_used"),
+                    cost_estimate=analysis_result.get("cost_estimate"),
+                    tasks_generated=len(analysis_result.get("tasks", [])),
+                    retry_count=retry_count,
+                    success=True
+                )
 
             # Step 3: Process results
             processing_time = time.time() - start_time
@@ -236,6 +280,14 @@ class ImageProcessingService:
                     "retry_count": 0,
                 }
 
+            # Log pipeline completion
+            self.processing_logger.log_processing_pipeline_complete(
+                user_id=user_id,
+                total_processing_time=processing_time,
+                tasks_generated=len(result["tasks"]),
+                success=True
+            )
+
             logger.info(
                 f"Image analysis completed in {processing_time:.2f}s with {len(result['tasks'])} tasks"
             )
@@ -246,6 +298,16 @@ class ImageProcessingService:
             raise
         except Exception as e:
             processing_time = time.time() - start_time
+            
+            # Log pipeline failure
+            self.processing_logger.log_processing_pipeline_complete(
+                user_id=user_id,
+                total_processing_time=processing_time,
+                tasks_generated=0,
+                success=False,
+                error_message=str(e)
+            )
+            
             logger.error(f"Image processing failed after {processing_time:.2f}s: {e}")
             raise ImageProcessingError(f"Image processing failed: {str(e)}") from e
 
@@ -549,6 +611,15 @@ If you cannot identify any maintenance tasks, return an empty tasks array with a
 
         # Use TaskService to create tasks with proper prioritization
         created_tasks = await TaskService.create_ai_tasks(ai_tasks, user_id)
+
+        # Log task creation
+        self.processing_logger.log_task_creation(
+            user_id=user_id,
+            tasks_created=len(created_tasks),
+            source_image_id=source_image_id,
+            ai_confidence=ai_confidence,
+            provider=provider_name
+        )
 
         logger.info(
             f"Created {len(created_tasks)} tasks from AI analysis for user {user_id}"

@@ -2,9 +2,12 @@
 
 import json
 import time
+import uuid
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List, Union
 import logging
+
+from ..logging_config import AIProviderLogger
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +113,7 @@ class GeminiProvider(AIProvider):
 
         self.api_key = api_key
         self.model = model
+        self.provider_logger = AIProviderLogger("gemini")
         self._usage_metrics: Dict[
             str, Union[int, float, List[float], Optional[float]]
         ] = {
@@ -152,11 +156,22 @@ class GeminiProvider(AIProvider):
             AIProviderRateLimitError: If rate limit is exceeded
             AIProviderAPIError: If API returns an error
         """
+        request_id = str(uuid.uuid4())
         start_time = time.time()
+        
+        # Update request metrics
         requests_made = self._usage_metrics["requests_made"]
         if isinstance(requests_made, int):
             self._usage_metrics["requests_made"] = requests_made + 1
         self._usage_metrics["last_request_time"] = start_time
+
+        # Log request start
+        self.provider_logger.log_request(
+            request_id=request_id,
+            model=self.model,
+            prompt_length=len(prompt),
+            image_size=len(image_data)
+        )
 
         try:
             # Create image part for Gemini
@@ -196,12 +211,24 @@ class GeminiProvider(AIProvider):
                         total_cost
                     ) + result.get("cost_estimate", 0.0)
 
+            # Log successful response
+            self.provider_logger.log_response(
+                request_id=request_id,
+                model=self.model,
+                processing_time=processing_time,
+                tokens_used=result.get("tokens_used"),
+                cost_estimate=result.get("cost_estimate"),
+                response_length=len(response.text) if hasattr(response, 'text') else 0,
+                tasks_parsed=len(result.get("tasks", []))
+            )
+
             # Add metadata to result
             result.update(
                 {
                     "provider": self.get_provider_name(),
                     "model": self.model,
                     "processing_time": processing_time,
+                    "request_id": request_id,
                 }
             )
 
@@ -217,14 +244,33 @@ class GeminiProvider(AIProvider):
             if isinstance(response_times, list):
                 response_times.append(processing_time)
 
-            # Handle specific error types
+            # Handle specific error types and log appropriately
             if "quota" in str(e).lower() or "rate limit" in str(e).lower():
+                self.provider_logger.log_rate_limit(
+                    request_id=request_id,
+                    model=self.model,
+                    retry_after=None  # Could extract from error if available
+                )
                 logger.warning(f"Gemini rate limit exceeded: {e}")
                 raise AIProviderRateLimitError(f"Rate limit exceeded: {e}")
             elif "api" in str(e).lower() or "invalid" in str(e).lower():
+                self.provider_logger.log_error(
+                    request_id=request_id,
+                    model=self.model,
+                    error_type="api_error",
+                    error_message=str(e),
+                    processing_time=processing_time
+                )
                 logger.error(f"Gemini API error: {e}")
                 raise AIProviderAPIError(f"API error: {e}")
             else:
+                self.provider_logger.log_error(
+                    request_id=request_id,
+                    model=self.model,
+                    error_type="unexpected_error",
+                    error_message=str(e),
+                    processing_time=processing_time
+                )
                 logger.error(f"Unexpected Gemini error: {e}")
                 raise AIProviderError(f"Unexpected error: {e}")
 
