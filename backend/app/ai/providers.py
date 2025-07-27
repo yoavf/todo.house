@@ -244,7 +244,7 @@ class GeminiProvider(AIProvider):
             if isinstance(response_times, list):
                 response_times.append(processing_time)
 
-            # Handle specific error types and log appropriately
+            # Handle specific error types and log them appropriately
             if "quota" in str(e).lower() or "rate limit" in str(e).lower():
                 self.provider_logger.log_rate_limit(
                     request_id=request_id,
