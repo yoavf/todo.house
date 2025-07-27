@@ -119,6 +119,18 @@ class ImageProcessingError(Exception):
 class ImageProcessingService:
     """Main service for orchestrating image processing and AI analysis."""
     
+    # Confidence calculation constants
+    MAX_TASK_COUNT_SCORE_THRESHOLD = 5.0  # Max score at 5+ tasks
+    DESCRIPTION_LENGTH_HIGH = 50  # High quality description threshold
+    DESCRIPTION_LENGTH_MEDIUM = 20  # Medium quality description threshold
+    
+    # Retry logic constants
+    EXPONENTIAL_BACKOFF_FACTOR = 1.5  # Backoff factor for API errors
+    MAX_API_ERROR_DELAY = 10.0  # Maximum delay for API errors (seconds)
+    
+    # Validation constants
+    MAX_TITLE_LENGTH = 50  # Maximum task title length (characters)
+    
     def __init__(self, ai_provider: Optional[AIProvider] = None):
         """
         Initialize image processing service.
@@ -264,7 +276,7 @@ class ImageProcessingService:
                 last_exception = e
                 if attempt < self.max_retries:
                     # Shorter delay for API errors
-                    delay = min(self.base_retry_delay * (1.5 ** attempt), 10.0)
+                    delay = min(self.base_retry_delay * (self.EXPONENTIAL_BACKOFF_FACTOR ** attempt), self.MAX_API_ERROR_DELAY)
                     logger.warning(f"API error, retrying in {delay}s (attempt {attempt + 1}): {e}")
                     await asyncio.sleep(delay)
                 else:
@@ -307,7 +319,7 @@ class ImageProcessingService:
             # - Presence of detailed descriptions
             # - Specific priority assignments
             
-            task_count_score = min(len(tasks) / 5.0, 1.0)  # Max score at 5+ tasks
+            task_count_score = min(len(tasks) / self.MAX_TASK_COUNT_SCORE_THRESHOLD, 1.0)  # Max score at 5+ tasks
             
             detail_scores = []
             for task in tasks:
@@ -315,9 +327,9 @@ class ImageProcessingService:
                 
                 # Check for detailed description
                 description = task.get("description", "")
-                if len(description) > 50:
+                if len(description) > self.DESCRIPTION_LENGTH_HIGH:
                     detail_score += 0.3
-                elif len(description) > 20:
+                elif len(description) > self.DESCRIPTION_LENGTH_MEDIUM:
                     detail_score += 0.2
                 elif len(description) > 0:
                     detail_score += 0.1
@@ -447,7 +459,7 @@ If you cannot identify any maintenance tasks, return an empty tasks array with a
                     errors.append(f"Task {i} has invalid priority: {task['priority']}")
                 
                 # Validate title length
-                if "title" in task and len(task["title"]) > 50:
-                    errors.append(f"Task {i} title too long (max 50 characters)")
+                if "title" in task and len(task["title"]) > self.MAX_TITLE_LENGTH:
+                    errors.append(f"Task {i} title too long (max {self.MAX_TITLE_LENGTH} characters)")
         
         return errors
