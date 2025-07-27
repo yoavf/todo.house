@@ -22,6 +22,176 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/images", tags=["images"])
 
 
+async def _process_image_analysis(
+    image_data: bytes,
+    user_id: str,
+    filename: str,
+    content_type: str,
+    generate_tasks: bool,
+    prompt_override: Optional[str],
+) -> ImageAnalysisResponse:
+    """
+    Process image analysis workflow.
+    
+    Args:
+        image_data: Raw image bytes
+        user_id: User identifier
+        filename: Original filename
+        content_type: MIME type
+        generate_tasks: Whether to generate tasks
+        prompt_override: Optional custom prompt
+        
+    Returns:
+        ImageAnalysisResponse with analysis results
+    """
+    # Create processing service
+    processing_service = create_image_processing_service()
+
+    # Store image record first (if generating tasks)
+    image_id = None
+    if generate_tasks:
+        image_id = await store_image_record(
+            user_id=user_id,
+            filename=filename,
+            content_type=content_type,
+            file_size=len(image_data),
+        )
+
+    # Process image
+    logger.info(f"Starting image analysis for user {user_id}, file: {filename}")
+
+    analysis_result = await processing_service.analyze_image_and_generate_tasks(
+        image_data=image_data,
+        user_id=user_id,
+        generate_tasks=generate_tasks,
+        prompt_override=prompt_override,
+    )
+
+    # Create tasks if requested and analysis was successful
+    if generate_tasks and analysis_result.get("tasks") and image_id:
+        await _create_tasks_from_analysis(
+            processing_service=processing_service,
+            analysis_result=analysis_result,
+            user_id=user_id,
+            image_id=image_id,
+        )
+
+    # Convert to response format and return
+    return _build_analysis_response(analysis_result, image_id)
+
+
+async def _create_tasks_from_analysis(
+    processing_service: ImageProcessingService,
+    analysis_result: Dict[str, Any],
+    user_id: str,
+    image_id: str,
+) -> None:
+    """
+    Create tasks from analysis results and update image status.
+    
+    Args:
+        processing_service: Image processing service instance
+        analysis_result: AI analysis results
+        user_id: User identifier
+        image_id: Image record ID
+    """
+    try:
+        created_tasks = await processing_service.create_tasks_from_analysis(
+            analysis_result=analysis_result,
+            user_id=user_id,
+            source_image_id=image_id,
+            provider_name=analysis_result.get("provider_used", "unknown"),
+        )
+
+        # Update image record with analysis results
+        await update_image_analysis_status(
+            image_id=image_id,
+            status="completed",
+            analysis_result=analysis_result,
+        )
+
+        logger.info(f"Created {len(created_tasks)} tasks from image analysis")
+
+    except Exception as e:
+        logger.error(f"Failed to create tasks from analysis: {e}")
+        await update_image_analysis_status(
+            image_id=image_id,
+            status="failed",
+            analysis_result={"error": str(e)},
+        )
+        # Don't re-raise - analysis is still valuable even if task creation fails
+
+
+def _create_error_response(
+    error_code: str,
+    message: str,
+    details: Dict[str, Any],
+    status_code: int,
+    retry_after: Optional[int] = None,
+) -> JSONResponse:
+    """
+    Create a standardized error response.
+    
+    Args:
+        error_code: Error code identifier
+        message: Human-readable error message
+        details: Additional error details
+        status_code: HTTP status code
+        retry_after: Optional retry delay in seconds
+        
+    Returns:
+        JSONResponse with error details
+    """
+    error_response = ImageAnalysisError(
+        error_code=error_code,
+        message=message,
+        details=details,
+        retry_after=retry_after,
+    )
+    return JSONResponse(
+        status_code=status_code,
+        content=error_response.model_dump(),
+    )
+
+
+def _build_analysis_response(
+    analysis_result: Dict[str, Any], image_id: Optional[str]
+) -> ImageAnalysisResponse:
+    """
+    Build the final analysis response from results.
+    
+    Args:
+        analysis_result: AI analysis results
+        image_id: Optional image record ID
+        
+    Returns:
+        Formatted ImageAnalysisResponse
+    """
+    # Convert tasks to response format
+    generated_tasks = []
+    for task_data in analysis_result.get("tasks", []):
+        generated_task = GeneratedTask(
+            title=task_data.get("title", "Untitled task"),
+            description=task_data.get("description", "No description"),
+            priority=task_data.get("priority", "medium"),
+            category=task_data.get("category", "general"),
+            confidence_score=analysis_result.get("ai_confidence", 0.5),
+        )
+        generated_tasks.append(generated_task)
+
+    return ImageAnalysisResponse(
+        image_id=image_id,
+        tasks=generated_tasks,
+        analysis_summary=analysis_result.get(
+            "analysis_summary", "No analysis available"
+        ),
+        processing_time=analysis_result.get("processing_time", 0.0),
+        provider_used=analysis_result.get("provider_used", "none"),
+        image_metadata=analysis_result.get("image_metadata", {}),
+        retry_count=analysis_result.get("retry_count", 0),
+    )
+
+
 def create_image_processing_service() -> ImageProcessingService:
     """Create and configure image processing service with AI provider."""
     try:
@@ -107,86 +277,15 @@ async def analyze_image(
         )
 
     try:
-        # Create processing service
-        processing_service = create_image_processing_service()
-
-        # Store image record first (if generating tasks)
-        image_id = None
-        if generate_tasks:
-            image_id = await store_image_record(
-                user_id=user_id,
-                filename=image.filename,
-                content_type=image.content_type or "application/octet-stream",
-                file_size=len(image_data),
-            )
-
-        # Process image
-        logger.info(
-            f"Starting image analysis for user {user_id}, file: {image.filename}"
-        )
-
-        analysis_result = await processing_service.analyze_image_and_generate_tasks(
+        response = await _process_image_analysis(
             image_data=image_data,
             user_id=user_id,
+            filename=image.filename,
+            content_type=image.content_type or "application/octet-stream",
             generate_tasks=generate_tasks,
             prompt_override=prompt_override,
         )
-
-        # Create tasks if requested and analysis was successful
-        created_tasks = []
-        if generate_tasks and analysis_result.get("tasks") and image_id:
-            try:
-                created_tasks = await processing_service.create_tasks_from_analysis(
-                    analysis_result=analysis_result,
-                    user_id=user_id,
-                    source_image_id=image_id,
-                    provider_name=analysis_result.get("provider_used", "unknown"),
-                )
-
-                # Update image record with analysis results
-                await update_image_analysis_status(
-                    image_id=image_id,
-                    status="completed",
-                    analysis_result=analysis_result,
-                )
-
-                logger.info(f"Created {len(created_tasks)} tasks from image analysis")
-
-            except Exception as e:
-                logger.error(f"Failed to create tasks from analysis: {e}")
-                if image_id:
-                    await update_image_analysis_status(
-                        image_id=image_id,
-                        status="failed",
-                        analysis_result={"error": str(e)},
-                    )
-                # Don't fail the entire request if task creation fails
-                # The analysis is still valuable
-
-        # Convert to response format
-        generated_tasks = []
-        for task_data in analysis_result.get("tasks", []):
-            generated_task = GeneratedTask(
-                title=task_data.get("title", "Untitled task"),
-                description=task_data.get("description", "No description"),
-                priority=task_data.get("priority", "medium"),
-                category=task_data.get("category", "general"),
-                confidence_score=analysis_result.get("ai_confidence", 0.5),
-            )
-            generated_tasks.append(generated_task)
-
-        response = ImageAnalysisResponse(
-            image_id=image_id,
-            tasks=generated_tasks,
-            analysis_summary=analysis_result.get(
-                "analysis_summary", "No analysis available"
-            ),
-            processing_time=analysis_result.get("processing_time", 0.0),
-            provider_used=analysis_result.get("provider_used", "none"),
-            image_metadata=analysis_result.get("image_metadata", {}),
-            retry_count=analysis_result.get("retry_count", 0),
-        )
-
+        
         logger.info(f"Image analysis completed successfully for user {user_id}")
         return response
 
@@ -204,72 +303,30 @@ async def analyze_image(
 
     except AIProviderError as e:
         logger.error(f"AI provider error for user {user_id}: {e}")
-        try:
-            if "image_id" in locals() and image_id:
-                await update_image_analysis_status(
-                    image_id=image_id,
-                    status="failed",
-                    analysis_result={"error": str(e)},
-                )
-        except Exception:
-            pass
-
-        error_response = ImageAnalysisError(
+        return _create_error_response(
             error_code="AI_PROVIDER_ERROR",
             message="AI analysis service is temporarily unavailable",
             details={"provider_error": str(e)},
-            retry_after=60,  # Suggest retry after 1 minute
-        )
-        return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content=error_response.model_dump(),
+            retry_after=60,
         )
 
     except ImageProcessingError as e:
         logger.error(f"Image processing error for user {user_id}: {e}")
-        try:
-            if "image_id" in locals() and image_id:
-                await update_image_analysis_status(
-                    image_id=image_id,
-                    status="failed",
-                    analysis_result={"error": str(e)},
-                )
-        except Exception:
-            pass
-
-        error_response = ImageAnalysisError(
+        return _create_error_response(
             error_code="PROCESSING_ERROR",
             message="Failed to process image",
             details={"processing_error": str(e)},
-            retry_after=None,
-        )
-        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=error_response.model_dump(),
         )
 
     except Exception as e:
         logger.error(f"Unexpected error during image analysis for user {user_id}: {e}")
-        # Only update image status if image_id was successfully created
-        try:
-            if "image_id" in locals() and image_id:
-                await update_image_analysis_status(
-                    image_id=image_id,
-                    status="failed",
-                    analysis_result={"error": str(e)},
-                )
-        except Exception:
-            pass  # Don't fail on status update errors
-
-        error_response = ImageAnalysisError(
+        return _create_error_response(
             error_code="INTERNAL_ERROR",
             message="An unexpected error occurred",
             details={"error": str(e)},
-            retry_after=None,
-        )
-        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=error_response.model_dump(),
         )
 
 
