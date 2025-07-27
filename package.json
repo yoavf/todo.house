@@ -15,6 +15,9 @@
     "test:frontend:unit": "cd frontend && pnpm run test:unit",
     "test:frontend:integration": "cd frontend && pnpm run test:integration",
     "test:frontend:watch": "cd frontend && pnpm run test:watch",
+    "lint:backend": "cd backend && uv run ruff check",
+    "lint:backend:fix": "cd backend && uv run ruff check --fix",
+    "typecheck:backend": "cd backend && uv run mypy app/",
     "prepare": "husky"
   },
   "devDependencies": {
