@@ -2,7 +2,6 @@
 
 import pytest
 import uuid
-from app.models import TaskSource
 
 
 @pytest.mark.integration
