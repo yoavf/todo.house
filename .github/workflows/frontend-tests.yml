@@ -54,7 +54,7 @@ jobs:
       run: pnpm exec tsc --noEmit
     
     - name: Run unit tests
-      run: pnpm test -- --ci --coverage --maxWorkers=2
+      run: pnpm run test:ci
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
