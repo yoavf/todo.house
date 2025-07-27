@@ -2,10 +2,13 @@
 
 import io
 import logging
-from typing import Tuple, Dict, Any, Optional
+import asyncio
+import time
+from typing import Tuple, Dict, Any, Optional, List
 from PIL import Image
 
 from ..config import config
+from .providers import AIProvider, AIProviderError, AIProviderRateLimitError, AIProviderAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -108,49 +111,242 @@ class ImagePreprocessor:
         return output.getvalue()
 
 
+class ImageProcessingError(Exception):
+    """Base exception for image processing errors."""
+    pass
+
+
 class ImageProcessingService:
     """Main service for orchestrating image processing and AI analysis."""
     
-    def __init__(self, ai_provider=None):
+    def __init__(self, ai_provider: Optional[AIProvider] = None):
         """
         Initialize image processing service.
         
         Args:
-            ai_provider: AI provider instance (will be injected in later tasks)
+            ai_provider: AI provider instance for image analysis
         """
         self.preprocessor = ImagePreprocessor()
         self.ai_provider = ai_provider
+        self.max_retries = 3
+        self.base_retry_delay = 1.0  # seconds
+        self.max_retry_delay = 30.0  # seconds
     
     async def analyze_image_and_generate_tasks(
         self, 
         image_data: bytes, 
         user_id: str,
-        generate_tasks: bool = True
+        generate_tasks: bool = True,
+        prompt_override: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Main orchestration method for complete image analysis.
-        
-        This is a placeholder implementation that will be completed in later tasks.
         
         Args:
             image_data: Raw image bytes
             user_id: User identifier
             generate_tasks: Whether to generate tasks from analysis
+            prompt_override: Optional custom prompt for testing
             
         Returns:
-            Dictionary containing analysis results
+            Dictionary containing analysis results with structure:
+            {
+                "image_metadata": Dict[str, Any],
+                "analysis_summary": str,
+                "tasks": List[Dict[str, Any]],
+                "processing_time": float,
+                "provider_used": str,
+                "ai_confidence": Optional[float],
+                "retry_count": int
+            }
+            
+        Raises:
+            ImageProcessingError: If processing fails after all retries
+            ImageValidationError: If image validation fails
         """
-        # Validate and preprocess image
-        processed_data, metadata = await self.preprocessor.validate_and_preprocess(image_data)
+        start_time = time.time()
+        retry_count = 0
         
-        # Placeholder response structure
-        return {
-            "image_metadata": metadata,
-            "analysis_summary": "Image processing service placeholder",
-            "tasks": [],
-            "processing_time": 0.0,
-            "provider_used": "none"
-        }
+        try:
+            # Step 1: Validate and preprocess image
+            logger.info(f"Starting image analysis for user {user_id}")
+            processed_data, metadata = await self.preprocessor.validate_and_preprocess(image_data)
+            logger.info(f"Image preprocessed: {metadata['original_size']} -> {metadata['processed_size']} bytes")
+            
+            # Step 2: Generate AI analysis (if provider available and tasks requested)
+            analysis_result = None
+            if self.ai_provider and generate_tasks:
+                analysis_result = await self._analyze_with_retry(
+                    processed_data, 
+                    prompt_override or self.generate_prompt()
+                )
+                retry_count = analysis_result.get("retry_count", 0)
+            
+            # Step 3: Process results
+            processing_time = time.time() - start_time
+            
+            if analysis_result:
+                result = {
+                    "image_metadata": metadata,
+                    "analysis_summary": analysis_result.get("analysis_summary", "No analysis available"),
+                    "tasks": analysis_result.get("tasks", []),
+                    "processing_time": processing_time,
+                    "provider_used": analysis_result.get("provider", "none"),
+                    "ai_confidence": self._calculate_confidence(analysis_result),
+                    "retry_count": retry_count
+                }
+            else:
+                result = {
+                    "image_metadata": metadata,
+                    "analysis_summary": "Image processed but no AI analysis performed",
+                    "tasks": [],
+                    "processing_time": processing_time,
+                    "provider_used": "none",
+                    "ai_confidence": None,
+                    "retry_count": 0
+                }
+            
+            logger.info(f"Image analysis completed in {processing_time:.2f}s with {len(result['tasks'])} tasks")
+            return result
+            
+        except ImageValidationError:
+            # Re-raise validation errors without wrapping
+            raise
+        except Exception as e:
+            processing_time = time.time() - start_time
+            logger.error(f"Image processing failed after {processing_time:.2f}s: {e}")
+            raise ImageProcessingError(f"Image processing failed: {str(e)}") from e
+    
+    async def _analyze_with_retry(
+        self, 
+        image_data: bytes, 
+        prompt: str
+    ) -> Dict[str, Any]:
+        """
+        Analyze image with AI provider using retry logic.
+        
+        Args:
+            image_data: Preprocessed image bytes
+            prompt: Analysis prompt
+            
+        Returns:
+            AI analysis result with retry count
+            
+        Raises:
+            ImageProcessingError: If all retries fail
+        """
+        last_exception = None
+        
+        for attempt in range(self.max_retries + 1):  # +1 for initial attempt
+            try:
+                logger.info(f"AI analysis attempt {attempt + 1}/{self.max_retries + 1}")
+                result = await self.ai_provider.analyze_image(image_data, prompt)
+                result["retry_count"] = attempt
+                return result
+                
+            except AIProviderRateLimitError as e:
+                last_exception = e
+                if attempt < self.max_retries:
+                    # Use retry_after from exception if available, otherwise exponential backoff
+                    delay = e.retry_after if e.retry_after else min(
+                        self.base_retry_delay * (2 ** attempt),
+                        self.max_retry_delay
+                    )
+                    logger.warning(f"Rate limit hit, retrying in {delay}s (attempt {attempt + 1})")
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Rate limit exceeded after {self.max_retries} retries")
+                    
+            except AIProviderAPIError as e:
+                last_exception = e
+                if attempt < self.max_retries:
+                    # Shorter delay for API errors
+                    delay = min(self.base_retry_delay * (1.5 ** attempt), 10.0)
+                    logger.warning(f"API error, retrying in {delay}s (attempt {attempt + 1}): {e}")
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"API error persisted after {self.max_retries} retries")
+                    
+            except AIProviderError as e:
+                last_exception = e
+                # Don't retry for general provider errors
+                logger.error(f"AI provider error (no retry): {e}")
+                break
+                
+            except Exception as e:
+                last_exception = e
+                logger.error(f"Unexpected error during AI analysis: {e}")
+                break
+        
+        # All retries failed
+        error_msg = f"AI analysis failed after {self.max_retries} retries"
+        if last_exception:
+            error_msg += f": {str(last_exception)}"
+        raise ImageProcessingError(error_msg)
+    
+    def _calculate_confidence(self, analysis_result: Dict[str, Any]) -> Optional[float]:
+        """
+        Calculate confidence score based on AI analysis result.
+        
+        Args:
+            analysis_result: AI provider response
+            
+        Returns:
+            Confidence score between 0.0 and 1.0, or None if not calculable
+        """
+        try:
+            tasks = analysis_result.get("tasks", [])
+            if not tasks:
+                return 0.0
+            
+            # Simple confidence calculation based on:
+            # - Number of tasks found (more tasks = higher confidence in analysis)
+            # - Presence of detailed descriptions
+            # - Specific priority assignments
+            
+            task_count_score = min(len(tasks) / 5.0, 1.0)  # Max score at 5+ tasks
+            
+            detail_scores = []
+            for task in tasks:
+                detail_score = 0.0
+                
+                # Check for detailed description
+                description = task.get("description", "")
+                if len(description) > 50:
+                    detail_score += 0.3
+                elif len(description) > 20:
+                    detail_score += 0.2
+                elif len(description) > 0:
+                    detail_score += 0.1
+                
+                # Check for specific priority
+                priority = task.get("priority", "").lower()
+                if priority in ["high", "medium", "low"]:
+                    detail_score += 0.2
+                
+                # Check for category
+                category = task.get("category", "")
+                if category and len(category) > 0:
+                    detail_score += 0.2
+                
+                # Check for reasoning
+                reasoning = task.get("reasoning", "")
+                if len(reasoning) > 20:
+                    detail_score += 0.3
+                elif len(reasoning) > 0:
+                    detail_score += 0.1
+                
+                detail_scores.append(min(detail_score, 1.0))
+            
+            avg_detail_score = sum(detail_scores) / len(detail_scores) if detail_scores else 0.0
+            
+            # Weighted combination
+            confidence = (task_count_score * 0.4) + (avg_detail_score * 0.6)
+            return round(confidence, 3)
+            
+        except Exception as e:
+            logger.warning(f"Failed to calculate confidence score: {e}")
+            return None
     
     def generate_prompt(self, context: Optional[Dict[str, Any]] = None) -> str:
         """
@@ -162,8 +358,8 @@ class ImageProcessingService:
         Returns:
             Generated prompt string
         """
-        base_prompt = """
-You are a home maintenance expert analyzing an image to identify maintenance tasks.
+        # Base prompt for home maintenance task identification
+        base_prompt = """You are a home maintenance expert analyzing an image to identify maintenance tasks.
 
 Analyze this image and identify specific, actionable home maintenance tasks based on what you observe.
 
@@ -193,7 +389,62 @@ Return your response as a JSON array of tasks with this structure:
   "analysis_summary": "Brief summary of what you observed in the image"
 }
 
-If you cannot identify any maintenance tasks, return an empty tasks array with an explanation in the analysis_summary.
-        """.strip()
+If you cannot identify any maintenance tasks, return an empty tasks array with an explanation in the analysis_summary."""
         
-        return base_prompt
+        # Add context-specific modifications if provided
+        if context:
+            room_type = context.get("room_type")
+            if room_type:
+                base_prompt += f"\n\nNote: This image is from a {room_type}. Focus on maintenance tasks specific to this area."
+            
+            focus_areas = context.get("focus_areas")
+            if focus_areas:
+                areas_str = ", ".join(focus_areas)
+                base_prompt += f"\n\nPay special attention to: {areas_str}"
+        
+        return base_prompt.strip()
+    
+    def validate_ai_response(self, response: Dict[str, Any]) -> List[str]:
+        """
+        Validate AI response structure and content.
+        
+        Args:
+            response: AI provider response
+            
+        Returns:
+            List of validation errors (empty if valid)
+        """
+        errors = []
+        
+        # Check required fields
+        if "analysis_summary" not in response:
+            errors.append("Missing analysis_summary field")
+        
+        if "tasks" not in response:
+            errors.append("Missing tasks field")
+        elif not isinstance(response["tasks"], list):
+            errors.append("Tasks field must be a list")
+        else:
+            # Validate each task
+            for i, task in enumerate(response["tasks"]):
+                if not isinstance(task, dict):
+                    errors.append(f"Task {i} must be a dictionary")
+                    continue
+                
+                # Required task fields
+                required_fields = ["title", "description", "priority", "category"]
+                for field in required_fields:
+                    if field not in task:
+                        errors.append(f"Task {i} missing required field: {field}")
+                    elif not isinstance(task[field], str):
+                        errors.append(f"Task {i} field '{field}' must be a string")
+                
+                # Validate priority values
+                if "priority" in task and task["priority"].lower() not in ["high", "medium", "low"]:
+                    errors.append(f"Task {i} has invalid priority: {task['priority']}")
+                
+                # Validate title length
+                if "title" in task and len(task["title"]) > 50:
+                    errors.append(f"Task {i} title too long (max 50 characters)")
+        
+        return errors
