@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import supabase
 from .tasks import router as tasks_router
+from .images import router as images_router
 import os
 
 app = FastAPI(title="todo.house API", version="1.0.0")
@@ -15,12 +16,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include task routes
+# Include routers
 app.include_router(tasks_router)
+app.include_router(images_router)
+
 
 @app.get("/")
 async def root():
     return {"message": "todo.house API is running!"}
+
 
 @app.get("/api/health")
 async def health_check():
@@ -32,7 +36,11 @@ async def health_check():
         if not supabase_url or not supabase_key:
             return {"status": "error", "message": "Missing Supabase credentials"}
 
-        supabase.table('tasks').select("count", count="exact").execute()
-        return {"status": "healthy", "database": "connected", "tables": "tasks table found"}
+        supabase.table("tasks").select("count", count="exact").execute()
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "tables": "tasks table found",
+        }
     except Exception as e:
         return {"status": "error", "database": f"error: {str(e)}"}

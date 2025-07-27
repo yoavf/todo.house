@@ -25,14 +25,14 @@
   },
   "lint-staged": {
     "backend/**/*.py": [
-      "cd backend && uv run ruff check --fix",
-      "cd backend && uv run mypy app/",
-      "cd backend && uv run pytest tests/test_*_unit.py -v"
+      "sh -c 'cd backend && uv run ruff check --fix'",
+      "sh -c 'cd backend && uv run mypy app/'",
+      "sh -c 'cd backend && uv run pytest tests/test_*_unit.py -v'"
     ],
     "frontend/**/*.{ts,tsx,js,jsx}": [
-      "cd frontend && pnpm run lint:fix",
-      "cd frontend && pnpm exec tsc --noEmit",
-      "cd frontend && pnpm test -- --bail --findRelatedTests --passWithNoTests"
+      "sh -c 'cd frontend && pnpm run lint:fix'",
+      "sh -c 'cd frontend && pnpm exec tsc --noEmit'",
+      "sh -c 'cd frontend && pnpm test -- --bail --findRelatedTests --passWithNoTests'"
     ]
   },
   "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad"

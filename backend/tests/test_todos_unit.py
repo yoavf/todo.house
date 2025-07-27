@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 import uuid
 from datetime import datetime
 
+
 @pytest.mark.asyncio
 async def test_create_task_unit(client: AsyncClient):
     """Unit test for creating a task - mocks database calls."""
@@ -12,25 +13,27 @@ async def test_create_task_unit(client: AsyncClient):
     task_data = {
         "title": "Test Task",
         "description": "Test Description",
-        "priority": "medium"
+        "priority": "medium",
     }
 
     # Mock the database response
     mock_response = MagicMock()
-    mock_response.data = [{
-        "id": 1,
-        "user_id": user_id,
-        "title": task_data["title"],
-        "description": task_data["description"],
-        "priority": task_data["priority"],
-        "status": "active",
-        "completed": False,
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat()
-    }]
+    mock_response.data = [
+        {
+            "id": 1,
+            "user_id": user_id,
+            "title": task_data["title"],
+            "description": task_data["description"],
+            "priority": task_data["priority"],
+            "status": "active",
+            "completed": False,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+        }
+    ]
 
     # Patch the supabase client
-    with patch('app.tasks.supabase') as mock_supabase:
+    with patch("app.tasks.supabase") as mock_supabase:
         # Setup the mock chain: supabase.table('tasks').insert(data).execute()
         mock_table = MagicMock()
         mock_insert = MagicMock()
@@ -40,9 +43,7 @@ async def test_create_task_unit(client: AsyncClient):
 
         # Make the request
         response = await client.post(
-            "/api/tasks/",
-            json=task_data,
-            headers={"x-user-id": user_id}
+            "/api/tasks/", json=task_data, headers={"x-user-id": user_id}
         )
 
         # Assertions
@@ -52,8 +53,9 @@ async def test_create_task_unit(client: AsyncClient):
         assert data["status"] == "active"
 
         # Verify the mock was called correctly
-        mock_supabase.table.assert_called_with('tasks')
+        mock_supabase.table.assert_called_with("tasks")
         mock_table.insert.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_get_tasks_unit(client: AsyncClient):
@@ -73,7 +75,7 @@ async def test_get_tasks_unit(client: AsyncClient):
             "completed": False,
             "snoozed_until": None,
             "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         },
         {
             "id": 2,
@@ -84,11 +86,11 @@ async def test_get_tasks_unit(client: AsyncClient):
             "completed": True,
             "snoozed_until": None,
             "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
-        }
+            "updated_at": datetime.now().isoformat(),
+        },
     ]
 
-    with patch('app.tasks.supabase') as mock_supabase:
+    with patch("app.tasks.supabase") as mock_supabase:
         # Setup mock chain
         mock_table = MagicMock()
         mock_select = MagicMock()
@@ -99,15 +101,13 @@ async def test_get_tasks_unit(client: AsyncClient):
         mock_supabase.table.return_value = mock_table
 
         # Make request
-        response = await client.get(
-            "/api/tasks/",
-            headers={"x-user-id": user_id}
-        )
+        response = await client.get("/api/tasks/", headers={"x-user-id": user_id})
 
         assert response.status_code == 200
         tasks = response.json()
         assert len(tasks) == 2
         assert tasks[0]["title"] == "Task 1"
+
 
 @pytest.mark.asyncio
 async def test_delete_task_not_found(client: AsyncClient):
@@ -119,7 +119,7 @@ async def test_delete_task_not_found(client: AsyncClient):
     mock_response = MagicMock()
     mock_response.data = []
 
-    with patch('app.tasks.supabase') as mock_supabase:
+    with patch("app.tasks.supabase") as mock_supabase:
         # Setup mock chain for delete
         mock_table = MagicMock()
         mock_delete = MagicMock()
@@ -131,10 +131,7 @@ async def test_delete_task_not_found(client: AsyncClient):
         mock_table.delete.return_value = mock_delete
         mock_supabase.table.return_value = mock_table
 
-        response = await client.delete(
-            "/api/tasks/999",
-            headers={"x-user-id": user_id}
-        )
+        response = await client.delete("/api/tasks/999", headers={"x-user-id": user_id})
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"

@@ -34,14 +34,14 @@
   - Write unit tests for service orchestration
   - _Requirements: 1.1, 1.3, 4.2_
 
-- [ ] 6. Extend task models and services for AI integration
+- [x] 6. Extend task models and services for AI integration
   - Update TaskCreate and Task models with AI-related fields
   - Modify task creation service to handle AI-generated tasks
   - Add task prioritization logic based on AI confidence scores
   - Write unit tests for extended task functionality
   - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 7. Create image analysis API endpoint
+- [x] 7. Create image analysis API endpoint
   - Implement POST /api/analyze-image endpoint with multipart file upload
   - Add request validation and response formatting
   - Integrate image processing service with task creation
