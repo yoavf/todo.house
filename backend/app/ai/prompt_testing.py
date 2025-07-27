@@ -17,7 +17,10 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_FUZZY_THRESHOLD = 0.4
-STOP_WORDS = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from'}
+STOP_WORDS = {
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 
+    'for', 'of', 'with', 'by', 'from'
+}
 
 
 class TestResult(str, Enum):
@@ -206,7 +209,9 @@ class PromptTester:
                 ai_response={},
                 processing_time=processing_time,
                 tasks_generated=0,
-                expected_tasks=getattr(metadata, 'expected_tasks', []) if metadata else [],
+                expected_tasks=(
+                    getattr(metadata, 'expected_tasks', []) if metadata else []
+                ),
                 matched_tasks=[],
                 missing_tasks=[],
                 unexpected_tasks=[],
@@ -323,11 +328,13 @@ class PromptTester:
         
         # Log summary
         avg_accuracy = sum(r.accuracy_score for r in results) / len(results)
-        successful_tests = sum(1 for r in results if r.result_status == TestResult.SUCCESS)
+        successful_tests = sum(
+            1 for r in results if r.result_status == TestResult.SUCCESS
+        )
         
         logger.info(
-            f"Multi-scenario test completed: {successful_tests}/{len(scenarios)} successful, "
-            f"Average accuracy: {avg_accuracy:.2f}"
+            f"Multi-scenario test completed: {successful_tests}/{len(scenarios)} "
+            f"successful, Average accuracy: {avg_accuracy:.2f}"
         )
         
         return results
@@ -399,7 +406,9 @@ class PromptTester:
             accuracy_score = 1.0 if len(generated_tasks) == 0 else 0.5
         else:
             # Precision: matched / generated
-            precision = len(matched_tasks) / len(generated_tasks) if generated_tasks else 0
+            precision = (
+                len(matched_tasks) / len(generated_tasks) if generated_tasks else 0
+            )
             
             # Recall: matched / expected
             recall = len(matched_tasks) / len(expected_tasks) if expected_tasks else 0

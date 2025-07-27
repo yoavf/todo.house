@@ -11,7 +11,8 @@ for image analysis. It includes functionality for:
 - Generating test reports and exporting results
 
 Usage:
-    python prompt_testing_demo.py test-single --prompt "Your prompt here" --scenario bathroom_sink
+    python prompt_testing_demo.py test-single --prompt "Your prompt here" \
+           --scenario bathroom_sink
     python prompt_testing_demo.py compare-prompts --scenario bathroom_sink
     python prompt_testing_demo.py batch-test --prompt "Your prompt here"
     python prompt_testing_demo.py list-scenarios
@@ -97,13 +98,17 @@ class PromptTestingCLI:
         # Validate file extension (only allow common image formats)
         allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
         if abs_path.suffix.lower() not in allowed_extensions:
-            raise ValueError(f"Invalid file extension. Allowed: {', '.join(allowed_extensions)}")
+            raise ValueError(
+                f"Invalid file extension. Allowed: {', '.join(allowed_extensions)}"
+            )
         
         # Check file size (prevent DoS with huge files) - max 50MB
         file_size = abs_path.stat().st_size
         max_size = 50 * 1024 * 1024  # 50MB
         if file_size > max_size:
-            raise ValueError(f"File too large ({file_size} bytes). Maximum size: {max_size} bytes")
+            raise ValueError(
+                f"File too large ({file_size} bytes). Maximum size: {max_size} bytes"
+            )
         
         # Ensure file is readable
         if not os.access(abs_path, os.R_OK):
@@ -111,7 +116,9 @@ class PromptTestingCLI:
         
         return str(abs_path)
     
-    async def test_single_prompt(self, prompt: str, scenario: str, custom_image: Optional[str] = None):
+    async def test_single_prompt(
+        self, prompt: str, scenario: str, custom_image: Optional[str] = None
+    ):
         """Test a single prompt against a scenario."""
         print(f"\n🧪 Testing prompt against scenario: {scenario}")
         print(f"Prompt length: {len(prompt)} characters")
@@ -148,7 +155,11 @@ class PromptTestingCLI:
             
             # Display results
             print("\n📊 Test Results:")
-            print(f"Status: {'✓ SUCCESS' if result.result_status.value == 'success' else '✗ ' + result.result_status.value.upper()}")
+            status_msg = (
+                '✓ SUCCESS' if result.result_status.value == 'success' 
+                else '✗ ' + result.result_status.value.upper()
+            )
+            print(f"Status: {status_msg}")
             print(f"Processing time: {result.processing_time:.2f}s")
             print(f"Tasks generated: {result.tasks_generated}")
             print(f"Accuracy score: {result.accuracy_score:.3f}")

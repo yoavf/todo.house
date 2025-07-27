@@ -350,7 +350,9 @@ class TestImageLibrary:
         draw.ellipse([450, 280, 550, 330], fill='lightyellow', outline='yellow')
         
         # Labels
-        draw.text((300, 450), "Limescale buildup on faucet", fill='red', font=small_font)
+        draw.text(
+            (300, 450), "Limescale buildup on faucet", fill='red', font=small_font
+        )
         draw.text((300, 470), "Soap scum in basin", fill='red', font=small_font)
     
     def _draw_kitchen_appliances(self, draw: Any, width: int, height: int,
@@ -379,7 +381,10 @@ class TestImageLibrary:
         draw.ellipse([350, 125, 400, 145], fill='yellow', outline='orange')
         
         # Labels
-        draw.text((100, 450), "Grease buildup on stovetop and range hood", fill='red', font=small_font)
+        draw.text(
+            (100, 450), "Grease buildup on stovetop and range hood", 
+            fill='red', font=small_font
+        )
     
     def _draw_lawn_maintenance(self, draw: Any, width: int, height: int,
                               font: Any, small_font: Any) -> None:
@@ -408,7 +413,10 @@ class TestImageLibrary:
                      (200, height), (0, height)], fill='brown')
         
         # Labels
-        draw.text((50, 450), "Overgrown grass and weeds need attention", fill='red', font=small_font)
+        draw.text(
+            (50, 450), "Overgrown grass and weeds need attention", 
+            fill='red', font=small_font
+        )
     
     def _draw_dishwasher_interior(self, draw: Any, width: int, height: int,
                                  font: Any, small_font: Any) -> None:
@@ -439,7 +447,10 @@ class TestImageLibrary:
         draw.ellipse([370, 460, 430, 470], fill='brown')
         
         # Labels
-        draw.text((100, 520), "Food debris and mineral deposits need cleaning", fill='red', font=small_font)
+        draw.text(
+            (100, 520), "Food debris and mineral deposits need cleaning", 
+            fill='red', font=small_font
+        )
     
     def _draw_bathroom_shower(self, draw: Any, width: int, height: int,
                              font: Any, small_font: Any) -> None:
@@ -472,10 +483,14 @@ class TestImageLibrary:
             draw.ellipse([pos[0]-5, pos[1]-2, pos[0]+5, pos[1]+2], fill='black')
         
         # Labels
-        draw.text((100, 520), "Mold in grout and caulking - health hazard", fill='red', font=small_font)
+        draw.text(
+            (100, 520), "Mold in grout and caulking - health hazard", 
+            fill='red', font=small_font
+        )
     
     def _draw_generic_scenario(self, draw: Any, width: int, height: int,
-                              font: Any, small_font: Any, metadata: TestImageMetadata) -> None:
+                              font: Any, small_font: Any, 
+                              metadata: TestImageMetadata) -> None:
         """Draw generic scenario representation."""
         # Simple representation with text and basic shapes
         draw.rectangle([100, 150, 700, 450], fill='lightblue', outline='blue', width=3)
@@ -571,7 +586,9 @@ class TestImageLibrary:
         return summary
     
     @lru_cache(maxsize=10)
-    def _get_fonts(self, size: int = 24) -> Tuple[ImageFont.ImageFont, ImageFont.ImageFont]:
+    def _get_fonts(self, size: int = 24) -> Tuple[
+        ImageFont.ImageFont, ImageFont.ImageFont
+    ]:
         """
         Get cached fonts for image generation.
         
