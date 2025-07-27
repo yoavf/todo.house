@@ -213,7 +213,7 @@ export function ImageAnalyzer() {
 														{task.priority}
 													</span>
 													<span className="text-xs text-gray-500">
-														{Math.round(task.confidence * 100)}% confidence
+														{Math.round(task.confidence_score * 100)}% confidence
 													</span>
 												</div>
 											</div>
