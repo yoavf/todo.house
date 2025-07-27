@@ -35,10 +35,10 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
 
       - name: Install backend dependencies
         run: |
@@ -65,7 +65,7 @@ jobs:
           # assignee_trigger: "claude-bot"
           
           # Optional: Allow Claude to run specific commands
-          allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*),Bash(npm run test:backend),Bash(npm run test:backend:unit),Bash(npm run test:backend:integration),Bash(npm run lint:backend),Bash(npm run test:frontend),Bash(npm run lint:frontend),Bash(uv sync),Bash(uv run *),Bash(cd backend && uv run *)"
+          allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*),Bash(npm run test:backend),Bash(npm run test:backend:unit),Bash(npm run test:backend:integration),Bash(npm run lint:backend),Bash(npm run test:frontend),Bash(npm run lint:frontend),Bash(uv sync),Bash(uv run *),Bash(cd backend && uv run *),Bash(uv *)"
           
           # Optional: Add custom instructions for Claude to customize its behavior for your project
           custom_instructions: |
