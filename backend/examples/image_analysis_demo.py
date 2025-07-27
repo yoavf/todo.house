@@ -24,11 +24,11 @@ from PIL import Image
 def create_test_image(color="red", size=(200, 200)):
     """
     Create a simple test image.
-    
+
     Args:
         color: Color name for the image background
         size: Tuple of (width, height) for image dimensions
-        
+
     Returns:
         bytes: JPEG image data
     """
@@ -43,12 +43,12 @@ def demo_image_analysis():
     """Demonstrate how to use the image analysis endpoint."""
     print("🖼️  Image Analysis API Demo")
     print("=" * 40)
-    
+
     # Create test image
     print("Creating test image...")
     image_data = create_test_image()
     test_user_id = str(uuid.uuid4())
-    
+
     # Demo 1: Analysis without task generation
     print("\n📋 Demo 1: Image analysis without task generation")
     try:
@@ -56,9 +56,9 @@ def demo_image_analysis():
             "http://localhost:8000/api/images/analyze",
             headers={"x-user-id": test_user_id},
             files={"image": ("demo.jpg", image_data, "image/jpeg")},
-            data={"generate_tasks": "false"}
+            data={"generate_tasks": "false"},
         )
-        
+
         print(f"Status Code: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
@@ -68,7 +68,7 @@ def demo_image_analysis():
             print(f"   Analysis summary: {data.get('analysis_summary', 'N/A')}")
         else:
             print(f"❌ Error: {response.text}")
-            
+
     except requests.exceptions.ConnectionError:
         print("❌ Server not running. Start with:")
         print("   uv run uvicorn app.main:app --reload")
@@ -76,7 +76,7 @@ def demo_image_analysis():
     except Exception as e:
         print(f"❌ Error: {e}")
         return
-    
+
     # Demo 2: Analysis with task generation (if AI provider configured)
     print("\n🤖 Demo 2: Image analysis with task generation")
     try:
@@ -84,24 +84,26 @@ def demo_image_analysis():
             "http://localhost:8000/api/images/analyze",
             headers={"x-user-id": test_user_id},
             files={"image": ("demo.jpg", image_data, "image/jpeg")},
-            data={"generate_tasks": "true"}
+            data={"generate_tasks": "true"},
         )
-        
+
         print(f"Status Code: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
             print("✅ Success!")
             print(f"   Tasks generated: {len(data.get('tasks', []))}")
-            for i, task in enumerate(data.get('tasks', []), 1):
-                print(f"   Task {i}: {task.get('title', 'N/A')} ({task.get('priority', 'medium')})")
+            for i, task in enumerate(data.get("tasks", []), 1):
+                print(
+                    f"   Task {i}: {task.get('title', 'N/A')} ({task.get('priority', 'medium')})"
+                )
         elif response.status_code == 503:
             print("⚠️  AI service unavailable (no API key configured)")
         else:
             print(f"❌ Error: {response.text}")
-            
+
     except Exception as e:
         print(f"❌ Error: {e}")
-    
+
     # Demo 3: Health check
     print("\n🏥 Demo 3: Health check")
     try:
@@ -111,13 +113,15 @@ def demo_image_analysis():
             data = response.json()
             print("✅ Service healthy!")
             print(f"   AI configured: {data.get('ai_provider_configured', False)}")
-            print(f"   Supported formats: {', '.join(data.get('supported_formats', []))}")
+            print(
+                f"   Supported formats: {', '.join(data.get('supported_formats', []))}"
+            )
             print(f"   Max image size: {data.get('max_image_size_mb', 0)}MB")
         else:
             print(f"❌ Service unhealthy: {response.text}")
     except Exception as e:
         print(f"❌ Error: {e}")
-    
+
     print("\n🎉 Demo complete!")
 
 
