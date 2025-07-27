@@ -2,9 +2,9 @@
 Unit tests for AI task service functionality.
 """
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import Mock, patch
 from app.ai_task_service import AITaskService
-from app.models import GeneratedTask, TaskPriority, TaskSource, Task
+from app.models import GeneratedTask, TaskPriority, TaskSource
 
 
 class TestAITaskService:

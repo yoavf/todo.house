@@ -1,11 +1,9 @@
 """
 Integration tests for AI task endpoints.
 """
-import pytest
 import uuid
 from fastapi.testclient import TestClient
 from app.main import app
-from app.models import TaskSource, TaskPriority
 
 
 client = TestClient(app)

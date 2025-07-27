@@ -5,7 +5,7 @@ import pytest
 from datetime import datetime
 from app.models import (
     Task, TaskCreate, TaskUpdate, AITaskCreate, GeneratedTask,
-    TaskStatus, TaskPriority, TaskSource
+    TaskPriority, TaskSource
 )
 
 

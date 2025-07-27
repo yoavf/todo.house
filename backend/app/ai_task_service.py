@@ -1,7 +1,7 @@
 """
 Service for handling AI-generated tasks including creation and prioritization logic.
 """
-from typing import List, Dict, Any
+from typing import List, Dict
 from .models import GeneratedTask, AITaskCreate, Task, TaskPriority, TaskSource
 from .database import supabase
 
