@@ -34,7 +34,7 @@
   - Write unit tests for service orchestration
   - _Requirements: 1.1, 1.3, 4.2_
 
-- [ ] 6. Extend task models and services for AI integration
+- [x] 6. extExtend task models and services for AI integration
   - Update TaskCreate and Task models with AI-related fields
   - Modify task creation service to handle AI-generated tasks
   - Add task prioritization logic based on AI confidence scores

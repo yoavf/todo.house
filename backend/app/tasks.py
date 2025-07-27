@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, Query
 from typing import List, Optional
 from datetime import datetime
-from .models import Task, TaskCreate, TaskUpdate, TaskStatus, SnoozeRequest
+from .models import Task, TaskCreate, TaskUpdate, TaskStatus, TaskSource, SnoozeRequest, AITaskCreate
 from .database import supabase
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -30,8 +30,42 @@ async def get_snoozed_tasks(user_id: str = Header(..., alias="x-user-id")):
     response = supabase.table('tasks').select('*').eq('user_id', user_id).eq('status', TaskStatus.SNOOZED.value).execute()
     return response.data
 
+@router.get("/ai-generated", response_model=List[Task])
+async def get_ai_generated_tasks(
+    user_id: str = Header(..., alias="x-user-id"),
+    image_id: Optional[str] = Query(None, description="Filter by source image ID"),
+    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0, description="Minimum AI confidence score")
+):
+    """Get AI-generated tasks, optionally filtered by image or confidence"""
+    query = supabase.table('tasks').select('*').eq('user_id', user_id).eq('source', TaskSource.AI_GENERATED.value)
+    
+    if image_id:
+        query = query.eq('source_image_id', image_id)
+    
+    if min_confidence is not None:
+        query = query.gte('ai_confidence', min_confidence)
+    
+    response = query.execute()
+    return response.data
+
+
+@router.get("/manual", response_model=List[Task])
+async def get_manual_tasks(user_id: str = Header(..., alias="x-user-id")):
+    """Get manually created tasks"""
+    response = supabase.table('tasks').select('*').eq('user_id', user_id).eq('source', TaskSource.MANUAL.value).execute()
+    return response.data
+
 @router.post("/", response_model=Task)
 async def create_task(task: TaskCreate, user_id: str = Header(..., alias="x-user-id")):
+    task_data = task.model_dump()
+    task_data['user_id'] = user_id
+
+    response = supabase.table('tasks').insert(task_data).execute()
+    return response.data[0]
+
+@router.post("/ai", response_model=Task)
+async def create_ai_task(task: AITaskCreate, user_id: str = Header(..., alias="x-user-id")):
+    """Create an AI-generated task with additional metadata"""
     task_data = task.model_dump()
     task_data['user_id'] = user_id
 
@@ -99,3 +133,5 @@ async def unsnooze_task(task_id: int, user_id: str = Header(..., alias="x-user-i
     if not response.data:
         raise HTTPException(status_code=404, detail="Task not found")
     return response.data[0]
+
+

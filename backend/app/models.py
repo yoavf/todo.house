@@ -16,6 +16,11 @@ class TaskPriority(str, Enum):
     HIGH = "high"
 
 
+class TaskSource(str, Enum):
+    MANUAL = "manual"
+    AI_GENERATED = "ai_generated"
+
+
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
@@ -23,6 +28,10 @@ class TaskBase(BaseModel):
     completed: bool = False
     status: TaskStatus = TaskStatus.ACTIVE
     snoozed_until: Optional[datetime] = None
+    source: TaskSource = TaskSource.MANUAL
+    source_image_id: Optional[str] = None
+    ai_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
+    ai_provider: Optional[str] = None
 
 
 class TaskCreate(TaskBase):
@@ -36,6 +45,10 @@ class TaskUpdate(BaseModel):
     completed: Optional[bool] = None
     status: Optional[TaskStatus] = None
     snoozed_until: Optional[datetime] = None
+    source: Optional[TaskSource] = None
+    source_image_id: Optional[str] = None
+    ai_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
+    ai_provider: Optional[str] = None
 
 
 class Task(TaskBase):
@@ -49,3 +62,21 @@ class Task(TaskBase):
 
 class SnoozeRequest(BaseModel):
     snooze_until: Optional[datetime] = None
+
+
+class GeneratedTask(BaseModel):
+    """Model for AI-generated task data before persistence"""
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(..., max_length=1000)
+    priority: TaskPriority
+    category: Optional[str] = None
+    confidence_score: float = Field(..., ge=0.0, le=1.0)
+    reasoning: Optional[str] = None
+
+
+class AITaskCreate(TaskCreate):
+    """Extended TaskCreate for AI-generated tasks"""
+    source: TaskSource = TaskSource.AI_GENERATED
+    source_image_id: str
+    ai_confidence: float = Field(..., ge=0.0, le=1.0)
+    ai_provider: str
