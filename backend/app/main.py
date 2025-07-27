@@ -3,7 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import supabase
 from .tasks import router as tasks_router
 from .images import router as images_router
+from .logging_config import setup_logging
 import os
+
+# Initialize structured logging
+setup_logging(
+    log_level=os.getenv("LOG_LEVEL", "INFO"),
+    enable_json=os.getenv("ENABLE_JSON_LOGGING", "true").lower() == "true"
+)
 
 app = FastAPI(title="todo.house API", version="1.0.0")
 

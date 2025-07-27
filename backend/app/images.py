@@ -16,8 +16,14 @@ from .ai.image_processing import (
 from .ai.providers import AIProviderFactory, AIProviderError
 from .config import config
 from .database import supabase
+from .logging_config import (
+    ImageProcessingLogger,
+    generate_correlation_id,
+    set_correlation_id
+)
 
 logger = logging.getLogger(__name__)
+processing_logger = ImageProcessingLogger()
 
 router = APIRouter(prefix="/api/images", tags=["images"])
 
@@ -251,6 +257,10 @@ async def analyze_image(
         503: AI service unavailable
         500: Internal processing error
     """
+    # Generate correlation ID for request tracking
+    correlation_id = generate_correlation_id()
+    set_correlation_id(correlation_id)
+    
     # Validate file upload
     if not image.filename:
         raise HTTPException(
@@ -275,6 +285,15 @@ async def analyze_image(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file uploaded"
         )
+
+    # Log image upload
+    processing_logger.log_image_upload(
+        user_id=user_id,
+        filename=image.filename,
+        file_size=len(image_data),
+        content_type=image.content_type or "application/octet-stream",
+        correlation_id=correlation_id
+    )
 
     try:
         response = await _process_image_analysis(
