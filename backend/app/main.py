@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import supabase
 from .tasks import router as tasks_router
+from .images import router as images_router
 import os
 
 app = FastAPI(title="todo.house API", version="1.0.0")
@@ -15,8 +16,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include task routes
+# Include routers
 app.include_router(tasks_router)
+app.include_router(images_router)
 
 @app.get("/")
 async def root():

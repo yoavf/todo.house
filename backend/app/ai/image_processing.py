@@ -10,7 +10,7 @@ from PIL import Image
 from ..config import config
 from .providers import AIProvider, AIProviderError, AIProviderRateLimitError, AIProviderAPIError
 from ..models import AITaskCreate, TaskSource
-from ..services import TaskService
+from ..services.task_service import TaskService
 
 logger = logging.getLogger(__name__)
 
