@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 from pydantic import BaseModel, ConfigDict, Field
 from enum import Enum
 
@@ -16,6 +16,11 @@ class TaskPriority(str, Enum):
     HIGH = "high"
 
 
+class TaskSource(str, Enum):
+    MANUAL = "manual"
+    AI_GENERATED = "ai_generated"
+
+
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
@@ -26,7 +31,10 @@ class TaskBase(BaseModel):
 
 
 class TaskCreate(TaskBase):
-    pass
+    source: TaskSource = TaskSource.MANUAL
+    source_image_id: Optional[str] = None
+    ai_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
+    ai_provider: Optional[str] = None
 
 
 class TaskUpdate(BaseModel):
@@ -41,6 +49,10 @@ class TaskUpdate(BaseModel):
 class Task(TaskBase):
     id: int
     user_id: str
+    source: TaskSource = TaskSource.MANUAL
+    source_image_id: Optional[str] = None
+    ai_confidence: Optional[float] = None
+    ai_provider: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -49,3 +61,11 @@ class Task(TaskBase):
 
 class SnoozeRequest(BaseModel):
     snooze_until: Optional[datetime] = None
+
+
+class AITaskCreate(TaskCreate):
+    """Special model for AI-generated task creation with required AI fields"""
+    source: Literal[TaskSource.AI_GENERATED] = TaskSource.AI_GENERATED
+    source_image_id: str = Field(..., description="UUID of the source image")
+    ai_confidence: float = Field(..., ge=0.0, le=1.0, description="AI confidence score")
+    ai_provider: str = Field(..., description="AI provider that generated this task")

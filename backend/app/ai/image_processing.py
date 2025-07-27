@@ -9,6 +9,8 @@ from PIL import Image
 
 from ..config import config
 from .providers import AIProvider, AIProviderError, AIProviderRateLimitError, AIProviderAPIError
+from ..models import AITaskCreate, TaskSource
+from ..services import TaskService
 
 logger = logging.getLogger(__name__)
 
@@ -455,7 +457,7 @@ If you cannot identify any maintenance tasks, return an empty tasks array with a
                         errors.append(f"Task {i} field '{field}' must be a string")
                 
                 # Validate priority values
-                if "priority" in task and task["priority"].lower() not in ["high", "medium", "low"]:
+                if "priority" in task and isinstance(task["priority"], str) and task["priority"].lower() not in ["high", "medium", "low"]:
                     errors.append(f"Task {i} has invalid priority: {task['priority']}")
                 
                 # Validate title length
@@ -463,3 +465,48 @@ If you cannot identify any maintenance tasks, return an empty tasks array with a
                     errors.append(f"Task {i} title too long (max {self.MAX_TITLE_LENGTH} characters)")
         
         return errors
+    
+    async def create_tasks_from_analysis(
+        self,
+        analysis_result: Dict[str, Any],
+        user_id: str,
+        source_image_id: str,
+        provider_name: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Create tasks in the database from AI analysis results.
+        
+        Args:
+            analysis_result: AI analysis result containing tasks
+            user_id: User ID to assign tasks to
+            source_image_id: UUID of the source image
+            provider_name: Name of the AI provider used
+            
+        Returns:
+            List of created task records
+        """
+        tasks_data = analysis_result.get("tasks", [])
+        if not tasks_data:
+            return []
+        
+        ai_confidence = self._calculate_confidence(analysis_result)
+        ai_tasks = []
+        
+        for task_data in tasks_data:
+            # Create AITaskCreate model
+            ai_task = AITaskCreate(
+                title=task_data["title"],
+                description=task_data["description"],
+                priority=task_data.get("priority", "medium").lower(),
+                source=TaskSource.AI_GENERATED,
+                source_image_id=source_image_id,
+                ai_confidence=ai_confidence or 0.5,  # Default confidence if not calculated
+                ai_provider=provider_name
+            )
+            ai_tasks.append(ai_task)
+        
+        # Use TaskService to create tasks with proper prioritization
+        created_tasks = await TaskService.create_ai_tasks(ai_tasks, user_id)
+        
+        logger.info(f"Created {len(created_tasks)} tasks from AI analysis for user {user_id}")
+        return created_tasks

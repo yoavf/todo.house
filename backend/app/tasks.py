@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, Query
 from typing import List, Optional
 from datetime import datetime
-from .models import Task, TaskCreate, TaskUpdate, TaskStatus, SnoozeRequest
+from .models import Task, TaskCreate, TaskUpdate, TaskStatus, SnoozeRequest, AITaskCreate, TaskSource
 from .database import supabase
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -10,12 +10,16 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 @router.get("/", response_model=List[Task])
 async def get_tasks(
     user_id: str = Header(..., alias="x-user-id"),
-    status: Optional[TaskStatus] = Query(None, description="Filter by status")
+    status: Optional[TaskStatus] = Query(None, description="Filter by status"),
+    source: Optional[TaskSource] = Query(None, description="Filter by source (manual or ai_generated)")
 ):
     query = supabase.table('tasks').select('*').eq('user_id', user_id)
     
     if status:
         query = query.eq('status', status.value)
+    
+    if source:
+        query = query.eq('source', source.value)
     
     response = query.execute()
     return response.data
@@ -34,6 +38,9 @@ async def get_snoozed_tasks(user_id: str = Header(..., alias="x-user-id")):
 async def create_task(task: TaskCreate, user_id: str = Header(..., alias="x-user-id")):
     task_data = task.model_dump()
     task_data['user_id'] = user_id
+    
+    # Convert enum to string value for database
+    task_data['source'] = task_data['source'].value
 
     response = supabase.table('tasks').insert(task_data).execute()
     return response.data[0]
@@ -99,3 +106,33 @@ async def unsnooze_task(task_id: int, user_id: str = Header(..., alias="x-user-i
     if not response.data:
         raise HTTPException(status_code=404, detail="Task not found")
     return response.data[0]
+
+
+@router.post("/ai-generated", response_model=Task)
+async def create_ai_task(task: AITaskCreate, user_id: str = Header(..., alias="x-user-id")):
+    """Create a task from AI image analysis with automatic priority based on confidence"""
+    task_data = task.model_dump()
+    task_data['user_id'] = user_id
+    
+    # Convert enum to string value for database
+    task_data['source'] = task_data['source'].value
+    
+    # Set priority based on AI confidence score
+    if task_data['ai_confidence'] >= 0.8:
+        task_data['priority'] = 'high'
+    elif task_data['ai_confidence'] >= 0.6:
+        task_data['priority'] = 'medium'
+    else:
+        task_data['priority'] = 'low'
+
+    response = supabase.table('tasks').insert(task_data).execute()
+    return response.data[0]
+
+
+@router.get("/ai-generated/with-images", response_model=List[Task])
+async def get_ai_tasks_with_images(user_id: str = Header(..., alias="x-user-id")):
+    """Get all AI-generated tasks with their source image details"""
+    response = supabase.table('tasks').select(
+        '*, images!source_image_id(*)'
+    ).eq('user_id', user_id).eq('source', 'ai_generated').execute()
+    return response.data
