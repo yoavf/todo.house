@@ -414,3 +414,137 @@ class AIProviderLogger:
             average_response_time=average_response_time,
             success_rate=successful_requests / requests_made if requests_made > 0 else 0
         )
+
+
+class PromptTestingLogger:
+    """Specialized logger for prompt testing and evaluation."""
+
+    def __init__(self):
+        self.logger = StructuredLogger("prompt_testing")
+
+    def log_prompt_test_start(
+        self,
+        test_id: str,
+        scenario: str,
+        prompt_length: int,
+        provider: str,
+        model: str
+    ) -> None:
+        """Log start of prompt test."""
+        self.logger.info(
+            "Prompt test started",
+            event_type="prompt_test_start",
+            test_id=test_id,
+            scenario=scenario,
+            prompt_length=prompt_length,
+            provider=provider,
+            model=model
+        )
+
+    def log_prompt_test_complete(
+        self,
+        test_id: str,
+        scenario: str,
+        processing_time: float,
+        tasks_generated: int,
+        accuracy_score: float,
+        success: bool = True,
+        error_message: Optional[str] = None
+    ) -> None:
+        """Log completion of prompt test."""
+        self.logger.info(
+            f"Prompt test {'completed' if success else 'failed'}",
+            event_type="prompt_test_complete",
+            test_id=test_id,
+            scenario=scenario,
+            processing_time=processing_time,
+            tasks_generated=tasks_generated,
+            accuracy_score=accuracy_score,
+            success=success,
+            error_message=error_message
+        )
+
+    def log_prompt_comparison(
+        self,
+        comparison_id: str,
+        scenario: str,
+        prompt_count: int,
+        best_accuracy: float,
+        average_accuracy: float,
+        best_prompt_index: int
+    ) -> None:
+        """Log prompt comparison results."""
+        self.logger.info(
+            "Prompt comparison completed",
+            event_type="prompt_comparison",
+            comparison_id=comparison_id,
+            scenario=scenario,
+            prompt_count=prompt_count,
+            best_accuracy=best_accuracy,
+            average_accuracy=average_accuracy,
+            best_prompt_index=best_prompt_index
+        )
+
+    def log_batch_test_start(
+        self,
+        batch_id: str,
+        test_count: int,
+        scenarios: list,
+        prompts: list
+    ) -> None:
+        """Log start of batch testing."""
+        self.logger.info(
+            "Batch prompt testing started",
+            event_type="batch_test_start",
+            batch_id=batch_id,
+            test_count=test_count,
+            scenario_count=len(scenarios),
+            prompt_count=len(prompts)
+        )
+
+    def log_batch_test_complete(
+        self,
+        batch_id: str,
+        total_tests: int,
+        successful_tests: int,
+        average_accuracy: float,
+        total_processing_time: float
+    ) -> None:
+        """Log completion of batch testing."""
+        self.logger.info(
+            "Batch prompt testing completed",
+            event_type="batch_test_complete",
+            batch_id=batch_id,
+            total_tests=total_tests,
+            successful_tests=successful_tests,
+            success_rate=successful_tests / total_tests if total_tests > 0 else 0,
+            average_accuracy=average_accuracy,
+            total_processing_time=total_processing_time
+        )
+
+    def log_prompt_evaluation(
+        self,
+        test_id: str,
+        expected_tasks: list,
+        generated_tasks: list,
+        matched_tasks: list,
+        missing_tasks: list,
+        unexpected_tasks: list,
+        accuracy_score: float,
+        precision: float,
+        recall: float
+    ) -> None:
+        """Log detailed prompt evaluation metrics."""
+        self.logger.info(
+            "Prompt evaluation completed",
+            event_type="prompt_evaluation",
+            test_id=test_id,
+            expected_task_count=len(expected_tasks),
+            generated_task_count=len(generated_tasks),
+            matched_task_count=len(matched_tasks),
+            missing_task_count=len(missing_tasks),
+            unexpected_task_count=len(unexpected_tasks),
+            accuracy_score=accuracy_score,
+            precision=precision,
+            recall=recall
+        )
