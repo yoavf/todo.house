@@ -3,7 +3,7 @@
 import io
 import logging
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFont
 from dataclasses import dataclass
@@ -586,9 +586,7 @@ class TestImageLibrary:
         return summary
     
     @lru_cache(maxsize=10)
-    def _get_fonts(self, size: int = 24) -> Tuple[
-        ImageFont.ImageFont, ImageFont.ImageFont
-    ]:
+    def _get_fonts(self, size: int = 24) -> Tuple[Any, Any]:
         """
         Get cached fonts for image generation.
         
@@ -598,6 +596,8 @@ class TestImageLibrary:
         Returns:
             Tuple of (regular_font, small_font)
         """
+        font: Any
+        small_font: Any
         try:
             font = ImageFont.truetype("arial.ttf", size)
             small_font = ImageFont.truetype("arial.ttf", max(12, size - 8))
