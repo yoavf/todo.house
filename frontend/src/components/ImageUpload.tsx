@@ -19,7 +19,7 @@ export function ImageUpload({
 
 	const validateFile = useCallback(
 		(file: File): string | null => {
-			const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+			const validTypes = ["image/jpeg", "image/png", "image/webp"];
 			if (!validTypes.includes(file.type)) {
 				return "Please upload a JPEG, PNG, or WebP image";
 			}
