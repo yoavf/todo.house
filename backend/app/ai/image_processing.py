@@ -16,8 +16,10 @@ from .providers import (
 )
 from ..models import AITaskCreate, TaskSource
 from ..services.task_service import TaskService
+from ..logging_config import get_image_processing_logger
 
 logger = logging.getLogger(__name__)
+structured_logger = get_image_processing_logger()
 
 
 class ImageValidationError(Exception):
@@ -194,9 +196,13 @@ class ImageProcessingService:
 
         try:
             # Step 1: Validate and preprocess image
-            logger.info(f"Starting image analysis for user {user_id}")
             processed_data, metadata = await self.preprocessor.validate_and_preprocess(
                 image_data
+            )
+            structured_logger.log_processing_start(
+                user_id=user_id,
+                filename=metadata.get('filename', 'unknown'),
+                file_size=len(image_data)
             )
             logger.info(
                 f"Image preprocessed: {metadata['original_size']} -> {metadata['processed_size']} bytes"
@@ -206,7 +212,7 @@ class ImageProcessingService:
             analysis_result = None
             if self.ai_provider and generate_tasks:
                 analysis_result = await self._analyze_with_retry(
-                    processed_data, prompt_override or self.generate_prompt()
+                    processed_data, prompt_override or self.generate_prompt(), user_id
                 )
                 retry_count = analysis_result.get("retry_count", 0)
 
@@ -236,21 +242,41 @@ class ImageProcessingService:
                     "retry_count": 0,
                 }
 
-            logger.info(
-                f"Image analysis completed in {processing_time:.2f}s with {len(result['tasks'])} tasks"
+            # Log successful completion
+            structured_logger.log_processing_complete(
+                user_id=user_id,
+                filename=metadata.get('filename', 'unknown'),
+                processing_time=processing_time,
+                tasks_created=len(result['tasks']),
+                ai_provider=result['provider_used'],
+                success=True
             )
             return result
 
-        except ImageValidationError:
-            # Re-raise validation errors without wrapping
+        except ImageValidationError as e:
+            # Log validation failure
+            processing_time = time.time() - start_time
+            structured_logger.log_processing_error(
+                user_id=user_id,
+                filename=metadata.get('filename', 'unknown') if 'metadata' in locals() else 'unknown',
+                error_type='ImageValidationError',
+                error_message=str(e),
+                processing_time=processing_time
+            )
             raise
         except Exception as e:
             processing_time = time.time() - start_time
-            logger.error(f"Image processing failed after {processing_time:.2f}s: {e}")
+            structured_logger.log_processing_error(
+                user_id=user_id,
+                filename=metadata.get('filename', 'unknown') if 'metadata' in locals() else 'unknown',
+                error_type=type(e).__name__,
+                error_message=str(e),
+                processing_time=processing_time
+            )
             raise ImageProcessingError(f"Image processing failed: {str(e)}") from e
 
     async def _analyze_with_retry(
-        self, image_data: bytes, prompt: str
+        self, image_data: bytes, prompt: str, user_id: str
     ) -> Dict[str, Any]:
         """
         Analyze image with AI provider using retry logic.
@@ -258,6 +284,7 @@ class ImageProcessingService:
         Args:
             image_data: Preprocessed image bytes
             prompt: Analysis prompt
+            user_id: User identifier for logging
 
         Returns:
             AI analysis result with retry count
@@ -318,11 +345,25 @@ class ImageProcessingService:
             except AIProviderError as e:
                 last_exception = e
                 # Don't retry for general provider errors
+                structured_logger.log_ai_response(
+                    provider=self.ai_provider.get_provider_name(),
+                    user_id=user_id,
+                    response_time=0,
+                    tasks_found=0,
+                    success=False
+                )
                 logger.error(f"AI provider error (no retry): {e}")
                 break
 
             except Exception as e:
                 last_exception = e
+                structured_logger.log_ai_response(
+                    provider=self.ai_provider.get_provider_name(),
+                    user_id=user_id,
+                    response_time=0,
+                    tasks_found=0,
+                    success=False
+                )
                 logger.error(f"Unexpected error during AI analysis: {e}")
                 break
 

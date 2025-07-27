@@ -3,9 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import supabase
 from .tasks import router as tasks_router
 from .images import router as images_router
+from .logging_config import setup_logging
+from .middleware import LoggingMiddleware
 import os
 
+# Initialize structured logging
+setup_logging()
+
 app = FastAPI(title="todo.house API", version="1.0.0")
+
+# Add logging middleware
+app.add_middleware(LoggingMiddleware)
 
 # CORS middleware for Next.js frontend
 app.add_middleware(
