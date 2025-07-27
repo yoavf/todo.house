@@ -19,9 +19,9 @@ jobs:
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write  # Required for making commits and pushing changes
+      pull-requests: write  # Required for creating and updating PRs
+      issues: write  # Required for commenting on issues
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
@@ -29,6 +29,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          uv sync
 
       - name: Run Claude Code
         id: claude
@@ -50,13 +65,14 @@ jobs:
           # assignee_trigger: "claude-bot"
           
           # Optional: Allow Claude to run specific commands
-          # allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*)"
+          allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*),Bash(npm run test:backend),Bash(npm run test:backend:unit),Bash(npm run test:backend:integration),Bash(npm run lint:backend),Bash(npm run test:frontend),Bash(npm run lint:frontend),Bash(uv sync),Bash(uv run *),Bash(cd backend && uv run *)"
           
           # Optional: Add custom instructions for Claude to customize its behavior for your project
-          # custom_instructions: |
-          #   Follow our coding standards
-          #   Ensure all new code has tests
-          #   Use TypeScript for new files
+          custom_instructions: |
+            Always run linting and tests after making code changes:
+            - For backend: npm run lint:backend and npm run test:backend:unit
+            - For frontend: npm run lint:frontend and npm run test:frontend
+            Use uv for Python dependency management in the backend directory
           
           # Optional: Custom environment variables for Claude
           # claude_env: |
