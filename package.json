@@ -26,11 +26,12 @@
   "lint-staged": {
     "backend/**/*.py": [
       "cd backend && uv run ruff check --fix",
-      "cd backend && uv run mypy",
+      "cd backend && uv run mypy app/",
       "cd backend && uv run pytest tests/test_*_unit.py -v"
     ],
     "frontend/**/*.{ts,tsx,js,jsx}": [
-      "cd frontend && pnpm run lint",
+      "cd frontend && pnpm run lint:fix",
+      "cd frontend && pnpm exec tsc --noEmit",
       "cd frontend && pnpm test -- --bail --findRelatedTests --passWithNoTests"
     ]
   },
