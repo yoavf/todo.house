@@ -6,7 +6,16 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": [
+			"**",
+			"!.next/**",
+			"!node_modules/**",
+			"!coverage/**",
+			"!build/**",
+			"!dist/**",
+			"!htmlcov/**"
+		]
 	},
 	"formatter": {
 		"enabled": true,
