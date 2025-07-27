@@ -103,7 +103,7 @@ class TestTaskModels:
             )
         
         errors = exc_info.value.errors()
-        assert any('less than or equal to 1.0' in str(error) for error in errors)
+        assert any(error['type'] == 'less_than_equal' and error['loc'] == ('ai_confidence',) for error in errors)
         
         # Invalid confidence < 0
         with pytest.raises(ValidationError) as exc_info:
@@ -116,7 +116,7 @@ class TestTaskModels:
             )
         
         errors = exc_info.value.errors()
-        assert any('greater than or equal to 0.0' in str(error) for error in errors)
+        assert any(error['type'] == 'greater_than_equal' and error['loc'] == ('ai_confidence',) for error in errors)
     
     def test_ai_task_create_source_is_constant(self):
         """Test that AITaskCreate source cannot be changed from AI_GENERATED."""

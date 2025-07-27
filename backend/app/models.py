@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 from pydantic import BaseModel, ConfigDict, Field
 from enum import Enum
 
@@ -65,7 +65,7 @@ class SnoozeRequest(BaseModel):
 
 class AITaskCreate(TaskCreate):
     """Special model for AI-generated task creation with required AI fields"""
-    source: TaskSource = Field(TaskSource.AI_GENERATED, const=True)
+    source: Literal[TaskSource.AI_GENERATED] = TaskSource.AI_GENERATED
     source_image_id: str = Field(..., description="UUID of the source image")
     ai_confidence: float = Field(..., ge=0.0, le=1.0, description="AI confidence score")
     ai_provider: str = Field(..., description="AI provider that generated this task")

@@ -457,7 +457,7 @@ If you cannot identify any maintenance tasks, return an empty tasks array with a
                         errors.append(f"Task {i} field '{field}' must be a string")
                 
                 # Validate priority values
-                if "priority" in task and task["priority"].lower() not in ["high", "medium", "low"]:
+                if "priority" in task and isinstance(task["priority"], str) and task["priority"].lower() not in ["high", "medium", "low"]:
                     errors.append(f"Task {i} has invalid priority: {task['priority']}")
                 
                 # Validate title length
@@ -497,7 +497,7 @@ If you cannot identify any maintenance tasks, return an empty tasks array with a
             ai_task = AITaskCreate(
                 title=task_data["title"],
                 description=task_data["description"],
-                priority=task_data["priority"].lower(),
+                priority=task_data.get("priority", "medium").lower(),
                 source=TaskSource.AI_GENERATED,
                 source_image_id=source_image_id,
                 ai_confidence=ai_confidence or 0.5,  # Default confidence if not calculated

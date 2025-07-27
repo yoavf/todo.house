@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from ..models import TaskPriority, AITaskCreate
 from ..database import supabase
 
@@ -65,7 +65,7 @@ class TaskService:
     async def create_single_ai_task(
         task: AITaskCreate,
         user_id: str
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Create a single AI-generated task with automatic prioritization.
         
