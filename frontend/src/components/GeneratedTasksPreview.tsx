@@ -97,11 +97,27 @@ export function GeneratedTasksPreview({
 	};
 
 	return (
-		<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-			<div className="flex justify-between items-start mb-4">
+		<div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
+			<div className="flex justify-between items-start mb-6">
 				<div>
-					<h3 className="text-lg font-semibold">Generated Tasks</h3>
-					<p className="text-sm text-gray-600 mt-1">
+					<h3 className="text-2xl font-semibold text-gray-800 flex items-center">
+						<svg
+							className="w-6 h-6 mr-2 text-purple-600"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-label="Light bulb"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+							/>
+						</svg>
+						Generated Tasks
+					</h3>
+					<p className="text-sm text-gray-600 mt-2 flex items-center flex-wrap gap-3">
 						Found {analysisResponse.tasks.length} potential tasks • Processed in{" "}
 						{analysisResponse.processing_time.toFixed(2)}s • Provider:{" "}
 						{analysisResponse.provider_used}
@@ -111,7 +127,7 @@ export function GeneratedTasksPreview({
 					<button
 						type="button"
 						onClick={onClose}
-						className="text-gray-400 hover:text-gray-600 transition-colors"
+						className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
 						aria-label="Close preview"
 					>
 						<svg
@@ -119,7 +135,7 @@ export function GeneratedTasksPreview({
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
-							aria-hidden="true"
+							aria-label="Close"
 						>
 							<path
 								strokeLinecap="round"
@@ -134,26 +150,58 @@ export function GeneratedTasksPreview({
 
 			{/* AI Analysis Summary */}
 			{analysisResponse.analysis_summary && (
-				<div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-					<h4 className="font-medium text-blue-900 mb-2">AI Analysis</h4>
-					<p className="text-sm text-blue-800">
+				<div className="mb-6 p-5 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl">
+					<h4 className="font-medium text-blue-900 mb-2 flex items-center">
+						<svg
+							className="w-5 h-5 mr-2"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-label="Information"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+						AI Analysis
+					</h4>
+					<p className="text-sm text-blue-800 leading-relaxed">
 						{analysisResponse.analysis_summary}
 					</p>
 				</div>
 			)}
 
 			{/* Task Selection Controls */}
-			<div className="flex justify-between items-center mb-4">
+			<div className="flex justify-between items-center mb-6 px-1">
 				<button
 					type="button"
 					onClick={handleSelectAll}
-					className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+					className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors flex items-center space-x-1"
 				>
-					{selectedTasks.size === analysisResponse.tasks.length
-						? "Deselect All"
-						: "Select All"}
+					<svg
+						className="w-4 h-4"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-label="Check circle"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
+					</svg>
+					<span>
+						{selectedTasks.size === analysisResponse.tasks.length
+							? "Deselect All"
+							: "Select All"}
+					</span>
 				</button>
-				<span className="text-sm text-gray-600">
+				<span className="text-sm text-gray-600 font-medium bg-gray-100 px-3 py-1 rounded-full">
 					{selectedTasks.size} of {analysisResponse.tasks.length} selected
 				</span>
 			</div>
@@ -163,28 +211,52 @@ export function GeneratedTasksPreview({
 				{analysisResponse.tasks.map((task, index) => (
 					<div
 						key={`task-${index}-${task.title}`}
-						className={`border rounded-lg p-4 transition-all ${
+						className={`border-2 rounded-xl p-5 transition-all hover:shadow-md ${
 							selectedTasks.has(index)
-								? "border-blue-300 bg-blue-50"
-								: "border-gray-200 bg-gray-50"
+								? "border-blue-400 bg-blue-50"
+								: "border-gray-200 bg-white hover:border-gray-300"
 						}`}
 					>
 						<div className="flex items-start gap-3">
-							<input
-								type="checkbox"
-								checked={selectedTasks.has(index)}
-								onChange={() => handleTaskToggle(index)}
-								className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-							/>
+							<label className="relative flex items-center cursor-pointer mt-0.5">
+								<input
+									type="checkbox"
+									checked={selectedTasks.has(index)}
+									onChange={() => handleTaskToggle(index)}
+									className="sr-only peer"
+								/>
+								<div className="w-5 h-5 border-2 rounded peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:border-blue-600 transition-all border-gray-300 flex items-center justify-center">
+									{selectedTasks.has(index) && (
+										<svg
+											className="w-3 h-3 text-white"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											aria-label="Check"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth={3}
+												d="M5 13l4 4L19 7"
+											/>
+										</svg>
+									)}
+								</div>
+							</label>
 							<div className="flex-1 min-w-0">
-								<div className="flex items-center gap-2 mb-2">
-									<h4 className="font-medium text-gray-900">{task.title}</h4>
+								<div className="flex items-center gap-2 mb-2 flex-wrap">
+									<h4 className="font-semibold text-gray-900 text-lg">
+										{task.title}
+									</h4>
 									<span
-										className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}
+										className={`px-3 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}
 									>
 										{task.priority}
 									</span>
-									<span className="text-xs text-gray-500">{task.category}</span>
+									<span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+										{task.category}
+									</span>
 								</div>
 								<p className="text-sm text-gray-700 mb-2">{task.description}</p>
 								<div className="flex items-center gap-4 text-xs text-gray-500">
@@ -201,23 +273,47 @@ export function GeneratedTasksPreview({
 			</div>
 
 			{/* Action Buttons */}
-			<div className="flex gap-3">
+			<div className="flex gap-3 mt-6">
 				<button
 					type="button"
 					onClick={handleCreateTasks}
 					disabled={selectedTasks.size === 0 || isCreating}
-					className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+					className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center space-x-2"
 				>
-					{isCreating
-						? "Creating Tasks..."
-						: `Create ${selectedTasks.size} Task${selectedTasks.size !== 1 ? "s" : ""}`}
+					{isCreating ? (
+						<>
+							<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+							<span>Creating Tasks...</span>
+						</>
+					) : (
+						<>
+							<svg
+								className="w-5 h-5"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-label="Plus"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+								/>
+							</svg>
+							<span>
+								Create {selectedTasks.size} Task
+								{selectedTasks.size !== 1 ? "s" : ""}
+							</span>
+						</>
+					)}
 				</button>
 				{onClose && (
 					<button
 						type="button"
 						onClick={onClose}
 						disabled={isCreating}
-						className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+						className="px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
 					>
 						Cancel
 					</button>

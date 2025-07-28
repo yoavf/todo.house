@@ -214,6 +214,7 @@ async def test_create_todo_success(client, test_user_id):
 - **Feature scope**: Implement core functionality only - nice-to-haves go in `/docs/todos.md` as [P2] items
 - **Technical debt is OK**: Track refactoring needs in `/docs/todos.md` rather than blocking progress
 - **IMPORTANT**: Whenever you skip something for MVP (tests, error handling, features), you MUST add it to `/docs/todos.md` with appropriate priority level
+- You can use context7 mcp to retrieve documentation
 
 ### General Development
 - Never add comments for perfectly self-explanatory code

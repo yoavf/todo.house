@@ -162,8 +162,22 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 	return (
 		<div className="w-full max-w-2xl mx-auto">
 			{/* Main image upload container */}
-			<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-				<h2 className="text-lg sm:text-xl font-semibold mb-4">
+			<div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
+				<h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+					<svg
+						className="w-6 h-6 mr-2 text-green-600"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-label="Image"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+						/>
+					</svg>
 					Generate Tasks from Image
 				</h2>
 
@@ -172,10 +186,10 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 						{/* File Upload Area */}
 						<button
 							type="button"
-							className={`relative border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-colors w-full ${
+							className={`relative border-2 border-dashed rounded-xl p-8 sm:p-10 text-center transition-all w-full group ${
 								dragActive
-									? "border-blue-400 bg-blue-50"
-									: "border-gray-300 hover:border-gray-400"
+									? "border-blue-500 bg-blue-50 scale-[1.02]"
+									: "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
 							}`}
 							onDragEnter={handleDrag}
 							onDragLeave={handleDrag}
@@ -198,7 +212,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 							/>
 
 							<div className="space-y-3 sm:space-y-4">
-								<div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 text-gray-400">
+								<div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 text-gray-400 group-hover:text-gray-600 transition-colors">
 									<svg
 										fill="none"
 										stroke="currentColor"
@@ -215,12 +229,12 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 									</svg>
 								</div>
 								<div>
-									<p className="text-base sm:text-lg font-medium text-gray-900">
+									<p className="text-lg sm:text-xl font-semibold text-gray-800 group-hover:text-gray-900">
 										{isMobile
 											? "Tap to select an image"
 											: "Drop an image here, or click to select"}
 									</p>
-									<p className="text-xs sm:text-sm text-gray-500 mt-1">
+									<p className="text-sm text-gray-500 mt-2">
 										Supports JPEG, PNG, and WebP files up to 10MB
 									</p>
 								</div>
@@ -241,7 +255,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 								type="button"
 								onClick={() => setShowCamera(true)}
 								disabled={isProcessing}
-								className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+								className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-4 rounded-xl hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2 font-medium"
 							>
 								<svg
 									className="w-5 h-5"
@@ -276,12 +290,12 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 							<img
 								src={previewUrl || ""}
 								alt="Preview"
-								className="w-full max-h-48 sm:max-h-64 object-contain rounded-lg border border-gray-200"
+								className="w-full max-h-48 sm:max-h-64 object-contain rounded-xl border-2 border-gray-200 shadow-sm"
 							/>
 							<button
 								type="button"
 								onClick={handleClear}
-								className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 sm:w-6 sm:h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+								className="absolute top-3 right-3 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg font-medium hover:bg-red-600 transition-colors shadow-md"
 								disabled={isProcessing}
 								aria-label="Clear image"
 							>
@@ -290,7 +304,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 						</div>
 
 						{/* File Info */}
-						<div className="text-xs sm:text-sm text-gray-600 space-y-1">
+						<div className="text-sm text-gray-700 space-y-1 bg-gray-50 rounded-lg p-3">
 							<p className="truncate">
 								<strong>File:</strong> {selectedFile.name}
 							</p>
@@ -307,14 +321,17 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 
 						{/* Progress Bar */}
 						{isProcessing && (
-							<div className="space-y-2">
-								<div className="flex justify-between text-sm text-gray-600">
-									<span>Analyzing image...</span>
-									<span>{progress}%</span>
+							<div className="space-y-3">
+								<div className="flex justify-between text-sm font-medium text-gray-700">
+									<span className="flex items-center">
+										<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+										Analyzing image...
+									</span>
+									<span className="text-blue-600">{progress}%</span>
 								</div>
-								<div className="w-full bg-gray-200 rounded-full h-2">
+								<div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
 									<div
-										className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+										className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-300 shadow-sm"
 										style={{ width: `${progress}%` }}
 									/>
 								</div>
@@ -327,7 +344,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 								type="button"
 								onClick={handleAnalyze}
 								disabled={isProcessing}
-								className="flex-1 bg-blue-500 text-white py-3 sm:py-2 px-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+								className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg font-medium"
 							>
 								{isProcessing ? "Analyzing..." : "Generate Tasks"}
 							</button>
@@ -335,7 +352,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 								type="button"
 								onClick={handleClear}
 								disabled={isProcessing}
-								className="sm:w-auto px-4 py-3 sm:py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+								className="px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
 							>
 								Clear
 							</button>

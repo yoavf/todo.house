@@ -31,35 +31,35 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 
 	if (isEditing) {
 		return (
-			<div className="p-4 border rounded-lg space-y-2">
+			<div className="p-5 bg-blue-50 border-2 border-blue-200 rounded-xl space-y-3">
 				<input
 					type="text"
 					value={title}
 					onChange={(e) => setTitle(e.target.value)}
-					className="w-full px-3 py-2 border rounded"
+					className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white"
 					placeholder="Task title"
 				/>
 				<textarea
 					value={description}
 					onChange={(e) => setDescription(e.target.value)}
-					className="w-full px-3 py-2 border rounded"
+					className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none transition-colors resize-none bg-white"
 					placeholder="Task description"
 					rows={2}
 				/>
-				<div className="flex gap-2">
-					<button
-						type="button"
-						onClick={handleSave}
-						className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-					>
-						Save
-					</button>
+				<div className="flex gap-3 justify-end">
 					<button
 						type="button"
 						onClick={handleCancel}
-						className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+						className="px-4 py-2 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
 					>
 						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={handleSave}
+						className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium"
+					>
+						Save Changes
 					</button>
 				</div>
 			</div>
@@ -67,38 +67,100 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 	}
 
 	return (
-		<div className="p-4 border rounded-lg flex items-start gap-3">
-			<input
-				type="checkbox"
-				checked={task.completed}
-				onChange={toggleCompleted}
-				className="mt-1"
-			/>
-			<div className="flex-1">
-				<h3
-					className={`font-medium ${task.completed ? "line-through text-gray-500" : ""}`}
-				>
-					{task.title}
-				</h3>
-				{task.description && (
-					<p className="text-gray-600 text-sm mt-1">{task.description}</p>
-				)}
-			</div>
-			<div className="flex gap-2">
-				<button
-					type="button"
-					onClick={() => setIsEditing(true)}
-					className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-				>
-					Edit
-				</button>
-				<button
-					type="button"
-					onClick={() => onDelete(task.id)}
-					className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-				>
-					Delete
-				</button>
+		<div
+			className={`p-5 bg-white border-2 rounded-xl transition-all hover:shadow-md group ${
+				task.completed ? "border-gray-200 bg-gray-50" : "border-gray-300"
+			}`}
+		>
+			<div className="flex items-start gap-4">
+				<label className="relative flex items-center cursor-pointer mt-0.5">
+					<input
+						type="checkbox"
+						checked={task.completed}
+						onChange={toggleCompleted}
+						className="sr-only peer"
+					/>
+					<div className="w-6 h-6 border-2 rounded-lg peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:border-blue-600 transition-all border-gray-300 flex items-center justify-center">
+						{task.completed && (
+							<svg
+								className="w-4 h-4 text-white"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-label="Check"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={3}
+									d="M5 13l4 4L19 7"
+								/>
+							</svg>
+						)}
+					</div>
+				</label>
+				<div className="flex-1 min-w-0">
+					<h3
+						className={`text-lg font-medium transition-all ${
+							task.completed ? "text-gray-500 line-through" : "text-gray-800"
+						}`}
+					>
+						{task.title}
+					</h3>
+					{task.description && (
+						<p
+							className={`text-sm mt-1 ${
+								task.completed ? "text-gray-400" : "text-gray-600"
+							}`}
+						>
+							{task.description}
+						</p>
+					)}
+				</div>
+				<div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+					<button
+						type="button"
+						onClick={() => setIsEditing(true)}
+						className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+						aria-label="Edit task"
+					>
+						<svg
+							className="w-5 h-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-label="Edit"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+							/>
+						</svg>
+					</button>
+					<button
+						type="button"
+						onClick={() => onDelete(task.id)}
+						className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+						aria-label="Delete task"
+					>
+						<svg
+							className="w-5 h-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-label="Delete"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+							/>
+						</svg>
+					</button>
+				</div>
 			</div>
 		</div>
 	);
