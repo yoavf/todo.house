@@ -15,6 +15,16 @@ jest.mock("@/lib/api", () => ({
 const mockTasksAPI = tasksAPI as jest.Mocked<typeof tasksAPI>;
 
 describe("TaskList Integration", () => {
+	// Mock console.error to avoid noise in test output
+	const originalConsoleError = console.error;
+	beforeAll(() => {
+		console.error = jest.fn();
+	});
+	
+	afterAll(() => {
+		console.error = originalConsoleError;
+	});
+
 	const mockTasks = [
 		{
 			id: 1,
@@ -68,7 +78,7 @@ describe("TaskList Integration", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByText("No tasks yet. Create your first task above!"),
+				screen.getByText("No tasks yet. Create your first task above or upload an image to generate tasks automatically!"),
 			).toBeInTheDocument();
 		});
 	});
