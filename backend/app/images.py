@@ -56,12 +56,16 @@ async def _process_image_analysis(
     # Store image record first (if generating tasks)
     image_id = None
     if generate_tasks:
-        image_id = await store_image_record(
-            user_id=user_id,
-            filename=filename,
-            content_type=content_type,
-            file_size=len(image_data),
-        )
+        try:
+            image_id = await store_image_record(
+                user_id=user_id,
+                filename=filename,
+                content_type=content_type,
+                file_size=len(image_data),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to store image record, continuing without: {e}")
+            # Continue without storing image record - analysis can still work
 
     # Process image
     logger.info(f"Starting image analysis for user {user_id}, file: {filename}")
@@ -74,13 +78,17 @@ async def _process_image_analysis(
     )
 
     # Create tasks if requested and analysis was successful
-    if generate_tasks and analysis_result.get("tasks") and image_id:
-        await _create_tasks_from_analysis(
-            processing_service=processing_service,
-            analysis_result=analysis_result,
-            user_id=user_id,
-            image_id=image_id,
-        )
+    if generate_tasks and analysis_result.get("tasks"):
+        try:
+            await _create_tasks_from_analysis(
+                processing_service=processing_service,
+                analysis_result=analysis_result,
+                user_id=user_id,
+                image_id=image_id,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to create tasks from analysis: {e}")
+            # Continue - we can still return the analysis results
 
     # Convert to response format and return
     return _build_analysis_response(analysis_result, image_id)
@@ -90,7 +98,7 @@ async def _create_tasks_from_analysis(
     processing_service: ImageProcessingService,
     analysis_result: Dict[str, Any],
     user_id: str,
-    image_id: str,
+    image_id: Optional[str],
 ) -> None:
     """
     Create tasks from analysis results and update image status.
@@ -99,32 +107,50 @@ async def _create_tasks_from_analysis(
         processing_service: Image processing service instance
         analysis_result: AI analysis results
         user_id: User identifier
-        image_id: Image record ID
+        image_id: Optional image record ID
     """
     try:
-        created_tasks = await processing_service.create_tasks_from_analysis(
-            analysis_result=analysis_result,
-            user_id=user_id,
-            source_image_id=image_id,
-            provider_name=analysis_result.get("provider_used", "unknown"),
-        )
+        # Create basic tasks using simple database insertion
+        tasks_data = analysis_result.get("tasks", [])
+        created_count = 0
+        
+        for task_data in tasks_data:
+            try:
+                # Create basic task data
+                basic_task = {
+                    "title": task_data.get("title", "Untitled task"),
+                    "description": task_data.get("description", "No description"),
+                    "user_id": user_id,
+                    "completed": False,
+                }
+                
+                # Insert directly into database
+                response = supabase.table("tasks").insert(basic_task).execute()
+                if response.data:
+                    created_count += 1
+                    
+            except Exception as task_error:
+                logger.warning(f"Failed to create individual task: {task_error}")
+                continue
 
-        # Update image record with analysis results
-        await update_image_analysis_status(
-            image_id=image_id,
-            status="completed",
-            analysis_result=analysis_result,
-        )
+        # Update image record with analysis results if image_id exists
+        if image_id:
+            await update_image_analysis_status(
+                image_id=image_id,
+                status="completed",
+                analysis_result=analysis_result,
+            )
 
-        logger.info(f"Created {len(created_tasks)} tasks from image analysis")
+        logger.info(f"Created {created_count} tasks from image analysis")
 
     except Exception as e:
         logger.error(f"Failed to create tasks from analysis: {e}")
-        await update_image_analysis_status(
-            image_id=image_id,
-            status="failed",
-            analysis_result={"error": str(e)},
-        )
+        if image_id:
+            await update_image_analysis_status(
+                image_id=image_id,
+                status="failed",
+                analysis_result={"error": str(e)},
+            )
         # Don't re-raise - analysis is still valuable even if task creation fails
 
 
@@ -365,7 +391,7 @@ async def store_image_record(
         UUID of created image record
 
     Raises:
-        HTTPException: If database operation fails
+        Exception: If database operation fails
     """
     try:
         image_id = str(uuid.uuid4())
@@ -383,19 +409,13 @@ async def store_image_record(
         response = supabase.table("images").insert(image_data).execute()
 
         if not response.data:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to store image record",
-            )
+            raise Exception("Failed to store image record - no data returned")
 
         return image_id
 
     except Exception as e:
         logger.error(f"Failed to store image record: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to store image record",
-        )
+        raise Exception(f"Failed to store image record: {e}")
 
 
 async def update_image_analysis_status(
@@ -421,7 +441,7 @@ async def update_image_analysis_status(
         supabase.table("images").update(update_data).eq("id", image_id).execute()
 
     except Exception as e:
-        logger.error(f"Failed to update image analysis status: {e}")
+        logger.warning(f"Failed to update image analysis status (non-critical): {e}")
         # Don't raise exception here as this is a secondary operation
 
 
