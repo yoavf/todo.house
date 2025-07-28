@@ -258,12 +258,17 @@ class ImageProcessingService:
             processing_time = time.time() - start_time
 
             if analysis_result:
+                tasks = analysis_result.get("tasks", [])
+                # Log task confidence values for debugging
+                for i, task in enumerate(tasks):
+                    logger.info(f"Task {i}: '{task.get('title', 'Unknown')}' has confidence: {task.get('confidence', 'MISSING')}")
+                
                 result = {
                     "image_metadata": metadata,
                     "analysis_summary": analysis_result.get(
                         "analysis_summary", "No analysis available"
                     ),
-                    "tasks": analysis_result.get("tasks", []),
+                    "tasks": tasks,
                     "processing_time": processing_time,
                     "provider_used": analysis_result.get("provider", "none"),
                     "ai_confidence": self._calculate_confidence(analysis_result),
@@ -489,21 +494,14 @@ Focus on:
 - Preventive maintenance opportunities
 - Seasonal considerations
 
-Return your response as a JSON array of tasks with this structure:
-{
-  "tasks": [
-    {
-      "title": "Task title",
-      "description": "Detailed description",
-      "priority": "high|medium|low",
-      "category": "category name",
-      "reasoning": "Why this task is needed"
-    }
-  ],
-  "analysis_summary": "Brief summary of what you observed in the image"
-}
+Include a reasoning field for each task explaining why it was identified.
 
-If you cannot identify any maintenance tasks, return an empty tasks array with an explanation in the analysis_summary."""
+For each task, provide a confidence score (0.0 to 1.0) indicating how certain you are:
+- 0.8-1.0: Very confident - clear visual evidence of the issue
+- 0.5-0.7: Moderately confident - likely issue but some uncertainty
+- 0.2-0.4: Low confidence - possible issue but hard to determine from image
+
+If you cannot identify any maintenance tasks, provide an empty tasks array with an explanation in the analysis_summary."""
 
         # Add context-specific modifications if provided
         if context:
@@ -603,8 +601,7 @@ If you cannot identify any maintenance tasks, return an empty tasks array with a
                 priority=task_data.get("priority", "medium").lower(),
                 source=TaskSource.AI_GENERATED,
                 source_image_id=source_image_id,
-                ai_confidence=ai_confidence
-                or 0.5,  # Default confidence if not calculated
+                ai_confidence=task_data.get("confidence", ai_confidence or 0.5),  # Use task-specific confidence if available
                 ai_provider=provider_name,
             )
             ai_tasks.append(ai_task)
