@@ -10,7 +10,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	type ImageAnalysisResponse,
 	type TaskCreate,
@@ -188,23 +188,11 @@ export function GeneratedTasksPreview({
 						>
 							<CardContent>
 								<div className="flex items-start gap-3">
-									<label className="relative flex items-center cursor-pointer mt-0.5">
-										<Input
-											type="checkbox"
-											checked={selectedTasks.has(index)}
-											onChange={() => handleTaskToggle(index)}
-											className="sr-only peer"
-										/>
-										<div className="w-5 h-5 border-2 rounded peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:border-blue-600 transition-all border-gray-300 flex items-center justify-center">
-											{selectedTasks.has(index) && (
-												<Icons.check
-													className="w-3 h-3 text-white"
-													strokeWidth={3}
-													aria-label="Check"
-												/>
-											)}
-										</div>
-									</label>
+									<Checkbox
+										checked={selectedTasks.has(index)}
+										onCheckedChange={() => handleTaskToggle(index)}
+										className="mt-0.5 w-5 h-5 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-500 data-[state=checked]:to-blue-600 data-[state=checked]:border-blue-600"
+									/>
 									<div className="flex-1 min-w-0">
 										<div className="flex items-center gap-2 mb-2 flex-wrap">
 											<h4 className="font-semibold text-gray-900 text-lg">

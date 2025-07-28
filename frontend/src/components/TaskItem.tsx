@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Task, TaskUpdate } from "@/lib/api";
@@ -82,19 +83,11 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 		>
 			<CardContent>
 				<div className="flex items-start gap-4">
-					<label className="relative flex items-center cursor-pointer mt-0.5">
-						<Input
-							type="checkbox"
-							checked={task.completed}
-							onChange={toggleCompleted}
-							className="sr-only peer"
-						/>
-						<div className="w-6 h-6 border-2 rounded-lg peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:border-blue-600 transition-all border-gray-300 flex items-center justify-center">
-							{task.completed && (
-								<Icons.check className="w-4 h-4 text-white" strokeWidth={3} />
-							)}
-						</div>
-					</label>
+					<Checkbox
+						checked={task.completed}
+						onCheckedChange={toggleCompleted}
+						className="mt-0.5 w-6 h-6 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-500 data-[state=checked]:to-blue-600 data-[state=checked]:border-blue-600"
+					/>
 					<div className="flex-1 min-w-0">
 						<h3
 							className={`text-lg font-medium transition-all ${
