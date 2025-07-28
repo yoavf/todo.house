@@ -7,6 +7,37 @@
 - **[P1]** - Important: Should fix for production quality
 - **[P2]** - Nice-to-have: Improvements for better maintainability/performance
 
+## Image Upload Feature Improvements
+
+### Code Quality & Architecture
+- [ ] [P1] Add comprehensive integration tests for image upload workflow (currently only basic TaskList tests exist)
+- [ ] [P1] Replace hardcoded TEST_USER_ID with proper authentication system (`frontend/src/lib/api.ts:59`)
+- [ ] [P2] Extract file validation constants to shared config (duplicated in frontend and backend)
+- [ ] [P2] Add input sanitization for filename display to prevent XSS (`frontend/src/components/ImageUpload.tsx:211`)
+
+### Error Handling & UX
+- [ ] [P1] Add retry mechanism for failed image uploads in frontend
+- [ ] [P1] Implement proper loading states during task creation from analysis (`frontend/src/components/GeneratedTasksPreview.tsx:57-77`)
+- [ ] [P2] Add toast notifications for better user feedback instead of inline messages
+- [ ] [P2] Add image preview persistence across page refreshes
+
+### Performance & Reliability  
+- [ ] [P1] Add proper error boundary component for image upload failures
+- [ ] [P2] Implement image compression preview before upload to show expected processing
+- [ ] [P2] Add debouncing to prevent multiple simultaneous uploads
+- [ ] [P2] Consider implementing upload progress tracking from backend
+
+### Testing & Monitoring
+- [ ] [P1] Add unit tests for ImageUpload and GeneratedTasksPreview components
+- [ ] [P1] Add integration tests that verify end-to-end image analysis workflow
+- [ ] [P2] Add error tracking/monitoring for AI analysis failures
+- [ ] [P2] Add metrics collection for image processing success rates
+
+### Documentation & Development
+- [ ] [P2] Document AI prompt engineering approach and confidence scoring algorithm
+- [ ] [P2] Add JSDoc comments to complex processing functions
+- [ ] [P2] Create development setup docs for local AI provider testing
+
 ## Backend Improvements
 
 ### Security & Authentication
