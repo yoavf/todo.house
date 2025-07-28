@@ -123,6 +123,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 
 	return (
 		<div className="w-full max-w-2xl mx-auto">
+			{/* Main image upload container */}
 			<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
 				<h2 className="text-xl font-semibold mb-4">
 					Generate Tasks from Image
