@@ -1,5 +1,27 @@
 # CLAUDE.md/AGENTS.md
 
+## 🚧 Project Status: MVP Development Phase
+
+**Current Phase**: Building towards Minimum Viable Product (MVP)
+**Focus**: Get core functionality working first, polish later
+**Technical Debt**: Tracked in `/docs/todos.md` for post-MVP improvements
+
+### MVP Review Guidelines (IMPORTANT for GitHub Actions)
+
+When reviewing PRs during MVP phase:
+1. **Critical Issues Only**: Flag only bugs, security issues, or breaking changes
+2. **Non-Critical Feedback**: Output as structured recommendations, not blockers
+3. **Format**: Use markdown checklist format for easy copy to `/docs/todos.md`
+4. **Priority Levels**: Mark as `[P0]` (critical), `[P1]` (important), `[P2]` (nice-to-have)
+
+Example output format:
+```markdown
+## Production-Ready Improvements
+- [ ] [P1] Add input validation for X endpoint
+- [ ] [P2] Consider caching strategy for Y operation
+- [ ] [P2] Refactor Z for better maintainability
+```
+
 ## Project Overview
 
 **TodoHouse** - A full-stack todo application built with FastAPI (Python) backend and Next.js (React) frontend, using Supabase as the backend-as-a-service database solution.
