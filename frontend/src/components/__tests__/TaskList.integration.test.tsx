@@ -15,12 +15,25 @@ jest.mock("@/lib/api", () => ({
 const mockTasksAPI = tasksAPI as jest.Mocked<typeof tasksAPI>;
 
 describe("TaskList Integration", () => {
+	// Mock console.error to avoid noise in test output
+	const originalConsoleError = console.error;
+	beforeAll(() => {
+		console.error = jest.fn();
+	});
+
+	afterAll(() => {
+		console.error = originalConsoleError;
+	});
+
 	const mockTasks = [
 		{
 			id: 1,
 			title: "Task 1",
 			description: "Description 1",
+			priority: "medium" as const,
 			completed: false,
+			status: "active" as const,
+			source: "manual" as const,
 			created_at: "2024-01-01T00:00:00Z",
 			updated_at: "2024-01-01T00:00:00Z",
 			user_id: "test-user",
@@ -29,7 +42,10 @@ describe("TaskList Integration", () => {
 			id: 2,
 			title: "Task 2",
 			description: "Description 2",
+			priority: "high" as const,
 			completed: true,
+			status: "completed" as const,
+			source: "manual" as const,
 			created_at: "2024-01-02T00:00:00Z",
 			updated_at: "2024-01-02T00:00:00Z",
 			user_id: "test-user",
@@ -62,7 +78,9 @@ describe("TaskList Integration", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByText("No tasks yet. Create your first task above!"),
+				screen.getByText(
+					"No tasks yet. Create your first task above or upload an image to generate tasks automatically!",
+				),
 			).toBeInTheDocument();
 		});
 	});
@@ -74,7 +92,10 @@ describe("TaskList Integration", () => {
 			id: 3,
 			title: "New Task",
 			description: "New Description",
+			priority: "medium" as const,
 			completed: false,
+			status: "active" as const,
+			source: "manual" as const,
 			created_at: "2024-01-03T00:00:00Z",
 			updated_at: "2024-01-03T00:00:00Z",
 			user_id: "test-user",
