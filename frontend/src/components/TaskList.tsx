@@ -12,6 +12,7 @@ import { GeneratedTasksPreview } from "./GeneratedTasksPreview";
 import { ImageUpload } from "./ImageUpload";
 import { TaskForm } from "./TaskForm";
 import { TaskItem } from "./TaskItem";
+import { Icons } from "./icons";
 
 export function TaskList() {
 	const [tasks, setTasks] = useState<Task[]>([]);
@@ -118,18 +119,10 @@ export function TaskList() {
 				{error && (
 					<div className="relative p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl shadow-sm animate-in slide-in-from-top-5">
 						<div className="flex items-start">
-							<svg
+							<Icons.error
 								className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5"
-								fill="currentColor"
-								viewBox="0 0 20 20"
 								aria-label="Error"
-							>
-								<path
-									fillRule="evenodd"
-									d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-									clipRule="evenodd"
-								/>
-							</svg>
+							/>
 							<div className="flex-1">
 								<p className="font-medium">{error}</p>
 							</div>
@@ -148,18 +141,10 @@ export function TaskList() {
 				{successMessage && (
 					<div className="relative p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl shadow-sm animate-in slide-in-from-top-5">
 						<div className="flex items-start">
-							<svg
+							<Icons.success
 								className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5"
-								fill="currentColor"
-								viewBox="0 0 20 20"
 								aria-label="Success"
-							>
-								<path
-									fillRule="evenodd"
-									d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-									clipRule="evenodd"
-								/>
-							</svg>
+							/>
 							<div className="flex-1">
 								<p className="font-medium">{successMessage}</p>
 							</div>
@@ -194,20 +179,10 @@ export function TaskList() {
 				{/* Manual Task Creation */}
 				<div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
 					<h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-						<svg
+						<Icons.add
 							className="w-6 h-6 mr-2 text-blue-600"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
 							aria-label="Add"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M12 4v16m8-8H4"
-							/>
-						</svg>
+						/>
 						Create Task Manually
 					</h2>
 					<TaskForm onSubmit={handleCreate} />
@@ -216,39 +191,20 @@ export function TaskList() {
 				{/* Tasks List */}
 				<div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
 					<h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-						<svg
+						<Icons.clipboard
 							className="w-6 h-6 mr-2 text-purple-600"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
 							aria-label="Task list"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-							/>
-						</svg>
+						/>
 						Your Tasks
 					</h2>
 					<div className="space-y-3">
 						{tasks.length === 0 ? (
 							<div className="text-center py-12">
-								<svg
+								<Icons.checkSquare
 									className="w-16 h-16 mx-auto text-gray-300 mb-4"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
+									strokeWidth={1.5}
 									aria-label="Empty task list"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth={1.5}
-										d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-									/>
-								</svg>
+								/>
 								<p className="text-gray-500 font-medium mb-2">No tasks yet</p>
 								<p className="text-gray-400 text-sm">
 									Create your first task above or upload an image to generate

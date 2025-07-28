@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Icons } from "./icons";
 
 interface CameraCaptureProps {
 	onCapture: (file: File) => void;
@@ -210,21 +211,10 @@ export function CameraCapture({
 									className="bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 transition-all"
 									aria-label="Switch camera"
 								>
-									<svg
+									<Icons.switchCamera
 										className="w-6 h-6"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										role="img"
-										aria-label="Switch camera icon"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-										/>
-									</svg>
+										aria-label="Switch camera"
+									/>
 								</button>
 
 								{/* Capture Button */}
@@ -234,27 +224,10 @@ export function CameraCapture({
 									className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 transition-colors"
 									aria-label="Capture photo"
 								>
-									<svg
+									<Icons.camera
 										className="w-8 h-8"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										role="img"
-										aria-label="Camera capture icon"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-										/>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-										/>
-									</svg>
+										aria-label="Camera capture"
+									/>
 								</button>
 							</div>
 						</>
@@ -264,21 +237,10 @@ export function CameraCapture({
 								{hasPermission === false ? (
 									<>
 										<div className="text-red-500 mb-2">
-											<svg
+											<Icons.error
 												className="w-12 h-12 mx-auto"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-												role="img"
-												aria-label="Camera access denied warning icon"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth={2}
-													d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-												/>
-											</svg>
+												aria-label="Camera access denied"
+											/>
 										</div>
 										<p className="text-gray-600 mb-4">Camera access denied</p>
 										<button
@@ -292,21 +254,10 @@ export function CameraCapture({
 								) : (
 									<>
 										<div className="text-gray-400 mb-2">
-											<svg
+											<Icons.camera
 												className="w-12 h-12 mx-auto"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-												role="img"
-												aria-label="Camera starting icon"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth={2}
-													d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-												/>
-											</svg>
+												aria-label="Camera starting"
+											/>
 										</div>
 										<p className="text-gray-600">Starting camera...</p>
 									</>

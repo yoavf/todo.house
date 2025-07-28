@@ -6,6 +6,7 @@ import {
 	type TaskCreate,
 	tasksAPI,
 } from "@/lib/api";
+import { Icons } from "./icons";
 
 interface GeneratedTasksPreviewProps {
 	analysisResponse: ImageAnalysisResponse;
@@ -101,20 +102,10 @@ export function GeneratedTasksPreview({
 			<div className="flex justify-between items-start mb-6">
 				<div>
 					<h3 className="text-2xl font-semibold text-gray-800 flex items-center">
-						<svg
+						<Icons.lightbulb
 							className="w-6 h-6 mr-2 text-purple-600"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
 							aria-label="Light bulb"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-							/>
-						</svg>
+						/>
 						Generated Tasks
 					</h3>
 					<p className="text-sm text-gray-600 mt-2 flex items-center flex-wrap gap-3">
@@ -130,20 +121,10 @@ export function GeneratedTasksPreview({
 						className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
 						aria-label="Close preview"
 					>
-						<svg
+						<Icons.close
 							className="w-5 h-5"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
 							aria-label="Close"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M6 18L18 6M6 6l12 12"
-							/>
-						</svg>
+						/>
 					</button>
 				)}
 			</div>
@@ -152,20 +133,10 @@ export function GeneratedTasksPreview({
 			{analysisResponse.analysis_summary && (
 				<div className="mb-6 p-5 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl">
 					<h4 className="font-medium text-blue-900 mb-2 flex items-center">
-						<svg
+						<Icons.info
 							className="w-5 h-5 mr-2"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
 							aria-label="Information"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
+						/>
 						AI Analysis
 					</h4>
 					<p className="text-sm text-blue-800 leading-relaxed">
@@ -181,20 +152,10 @@ export function GeneratedTasksPreview({
 					onClick={handleSelectAll}
 					className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors flex items-center space-x-1"
 				>
-					<svg
+					<Icons.success
 						className="w-4 h-4"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
 						aria-label="Check circle"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
+					/>
 					<span>
 						{selectedTasks.size === analysisResponse.tasks.length
 							? "Deselect All"
@@ -227,20 +188,11 @@ export function GeneratedTasksPreview({
 								/>
 								<div className="w-5 h-5 border-2 rounded peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600 peer-checked:border-blue-600 transition-all border-gray-300 flex items-center justify-center">
 									{selectedTasks.has(index) && (
-										<svg
+										<Icons.check
 											className="w-3 h-3 text-white"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
+											strokeWidth={3}
 											aria-label="Check"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												strokeWidth={3}
-												d="M5 13l4 4L19 7"
-											/>
-										</svg>
+										/>
 									)}
 								</div>
 							</label>
@@ -287,20 +239,10 @@ export function GeneratedTasksPreview({
 						</>
 					) : (
 						<>
-							<svg
+							<Icons.add
 								className="w-5 h-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
 								aria-label="Plus"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-								/>
-							</svg>
+							/>
 							<span>
 								Create {selectedTasks.size} Task
 								{selectedTasks.size !== 1 ? "s" : ""}
