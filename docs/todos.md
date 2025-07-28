@@ -88,6 +88,8 @@
 - [ ] [P1] Implement dependency injection for better testability
 - [ ] [P2] Add database migration system (Alembic)
 - [ ] [P2] Create service layer to separate business logic from routes
+- [ ] [P2] Refactor AI providers into separate files (providers/base.py, providers/gemini.py, providers/mock.py) for better organization
+- [ ] [P2] Add maxLength validation to AI task titles once Gemini supports it in response_schema
 
 ## Frontend Improvements
 
