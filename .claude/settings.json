@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv sync:*)",
+      "Bash(curl:*)",
+      "Bash(npm run test:*)",
+      "Bash(supabase db:*)",
+      "Bash(psql:*)",
+      "Bash(ls:*)",
+      "Bash(pytest:*)",
+      "Bash(gh pr view:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(gh api:*)",
+      "Bash(git checkout:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_wait_for",
+      "Bash(pnpm run lint:*)"
+    ],
+    "deny": []
+  }
+}

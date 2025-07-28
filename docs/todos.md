@@ -100,6 +100,8 @@
 - [ ] [P1] Implement optimistic updates for better perceived performance
 - [ ] [P1] Add error boundaries for graceful error handling
 - [ ] [P2] Implement keyboard shortcuts for power users
+- [ ] [P2] Add accessibility improvements - aria-labels for all SVG icons (disabled in biome.json during MVP)
+- [ ] [P1] Fix accessibility: Proper label-input associations for custom checkbox implementations (noLabelWithoutControl disabled in biome.json during MVP)
 
 ### Performance
 - [ ] [P1] Add proper image optimization and lazy loading

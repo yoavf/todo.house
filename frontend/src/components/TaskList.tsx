@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { GeneratedTasksPreview } from "./GeneratedTasksPreview";
 import { ImageUpload } from "./ImageUpload";
+import { Icons } from "./icons";
 import { TaskForm } from "./TaskForm";
 import { TaskItem } from "./TaskItem";
 
@@ -95,82 +96,132 @@ export function TaskList() {
 	};
 
 	if (loading) {
-		return <div className="text-center py-8">Loading tasks...</div>;
+		return (
+			<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+				<div className="text-center space-y-4">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+					<p className="text-gray-600 font-medium">Loading tasks...</p>
+				</div>
+			</div>
+		);
 	}
 
 	return (
-		<div className="max-w-4xl mx-auto p-4 space-y-6">
-			<h1 className="text-3xl font-bold">My Tasks</h1>
-
-			{error && (
-				<div className="p-4 bg-red-100 text-red-700 rounded-lg flex justify-between items-center">
-					<span>{error}</span>
-					<button
-						type="button"
-						onClick={() => setError(null)}
-						className="text-red-500 hover:text-red-700 ml-4"
-						aria-label="Dismiss error"
-					>
-						×
-					</button>
+		<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+			<div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+				<div className="pt-6">
+					<h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+						My Tasks
+					</h1>
+					<p className="text-gray-600 mt-2">Organize your work efficiently</p>
 				</div>
-			)}
 
-			{successMessage && (
-				<div className="p-4 bg-green-100 text-green-700 rounded-lg flex justify-between items-center">
-					<span>{successMessage}</span>
-					<button
-						type="button"
-						onClick={() => setSuccessMessage(null)}
-						className="text-green-500 hover:text-green-700 ml-4"
-						aria-label="Dismiss success message"
-					>
-						×
-					</button>
-				</div>
-			)}
-
-			{/* Image Upload Section */}
-			<ImageUpload
-				onTasksGenerated={handleTasksGenerated}
-				onError={handleError}
-			/>
-
-			{/* Generated Tasks Preview */}
-			{analysisResponse && (
-				<GeneratedTasksPreview
-					analysisResponse={analysisResponse}
-					onTasksCreated={handleTasksCreated}
-					onError={handleError}
-					onClose={handleClosePreview}
-				/>
-			)}
-
-			{/* Manual Task Creation */}
-			<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-				<h2 className="text-xl font-semibold mb-4">Create Task Manually</h2>
-				<TaskForm onSubmit={handleCreate} />
-			</div>
-
-			{/* Tasks List */}
-			<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-				<h2 className="text-xl font-semibold mb-4">Your Tasks</h2>
-				<div className="space-y-2">
-					{tasks.length === 0 ? (
-						<p className="text-gray-500 text-center py-8">
-							No tasks yet. Create your first task above or upload an image to
-							generate tasks automatically!
-						</p>
-					) : (
-						tasks.map((task) => (
-							<TaskItem
-								key={task.id}
-								task={task}
-								onUpdate={handleUpdate}
-								onDelete={handleDelete}
+				{error && (
+					<div className="relative p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl shadow-sm animate-in slide-in-from-top-5">
+						<div className="flex items-start">
+							<Icons.error
+								className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5"
+								aria-label="Error"
 							/>
-						))
-					)}
+							<div className="flex-1">
+								<p className="font-medium">{error}</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => setError(null)}
+								className="ml-4 text-red-600 hover:text-red-800 font-medium text-lg leading-none"
+								aria-label="Dismiss error"
+							>
+								×
+							</button>
+						</div>
+					</div>
+				)}
+
+				{successMessage && (
+					<div className="relative p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl shadow-sm animate-in slide-in-from-top-5">
+						<div className="flex items-start">
+							<Icons.success
+								className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5"
+								aria-label="Success"
+							/>
+							<div className="flex-1">
+								<p className="font-medium">{successMessage}</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => setSuccessMessage(null)}
+								className="ml-4 text-green-600 hover:text-green-800 font-medium text-lg leading-none"
+								aria-label="Dismiss success message"
+							>
+								×
+							</button>
+						</div>
+					</div>
+				)}
+
+				{/* Image Upload Section */}
+				<ImageUpload
+					onTasksGenerated={handleTasksGenerated}
+					onError={handleError}
+				/>
+
+				{/* Generated Tasks Preview */}
+				{analysisResponse && (
+					<GeneratedTasksPreview
+						analysisResponse={analysisResponse}
+						onTasksCreated={handleTasksCreated}
+						onError={handleError}
+						onClose={handleClosePreview}
+					/>
+				)}
+
+				{/* Manual Task Creation */}
+				<div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
+					<h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+						<Icons.add
+							className="w-6 h-6 mr-2 text-blue-600"
+							aria-label="Add"
+						/>
+						Create Task Manually
+					</h2>
+					<TaskForm onSubmit={handleCreate} />
+				</div>
+
+				{/* Tasks List */}
+				<div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
+					<h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+						<Icons.clipboard
+							className="w-6 h-6 mr-2 text-purple-600"
+							aria-label="Task list"
+						/>
+						Your Tasks
+					</h2>
+					<div className="space-y-3">
+						{tasks.length === 0 ? (
+							<div className="text-center py-12">
+								<Icons.checkSquare
+									className="w-16 h-16 mx-auto text-gray-300 mb-4"
+									strokeWidth={1.5}
+									aria-label="Empty task list"
+								/>
+								<p className="text-gray-500 font-medium mb-2">No tasks yet</p>
+								<p className="text-gray-400 text-sm">
+									Create your first task above or upload an image to generate
+									tasks automatically!
+								</p>
+							</div>
+						) : (
+							tasks.map((task) => (
+								<TaskItem
+									key={task.id}
+									task={task}
+									onUpdate={handleUpdate}
+									onDelete={handleDelete}
+								/>
+							))
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

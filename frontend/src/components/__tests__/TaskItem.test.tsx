@@ -75,7 +75,7 @@ describe("TaskItem", () => {
 			/>,
 		);
 
-		const deleteButton = screen.getByText("Delete");
+		const deleteButton = screen.getByLabelText("Delete task");
 		fireEvent.click(deleteButton);
 
 		expect(mockOnDelete).toHaveBeenCalledWith(1);
@@ -90,11 +90,13 @@ describe("TaskItem", () => {
 			/>,
 		);
 
-		const editButton = screen.getByText("Edit");
+		const editButton = screen.getByLabelText("Edit task");
 		fireEvent.click(editButton);
 
-		expect(screen.getByPlaceholderText("Task title")).toBeInTheDocument();
-		expect(screen.getByPlaceholderText("Task description")).toBeInTheDocument();
+		expect(screen.getByDisplayValue(mockTask.title)).toBeInTheDocument();
+		expect(
+			screen.getByDisplayValue(mockTask.description || ""),
+		).toBeInTheDocument();
 	});
 
 	it("updates task when save is clicked in edit mode", async () => {
@@ -108,11 +110,13 @@ describe("TaskItem", () => {
 			/>,
 		);
 
-		const editButton = screen.getByText("Edit");
+		const editButton = screen.getByLabelText("Edit task");
 		fireEvent.click(editButton);
 
-		const titleInput = screen.getByPlaceholderText("Task title");
-		const descriptionInput = screen.getByPlaceholderText("Task description");
+		const titleInput = screen.getByDisplayValue(mockTask.title);
+		const descriptionInput = screen.getByPlaceholderText(
+			"Task description (optional)",
+		);
 
 		await user.clear(titleInput);
 		await user.type(titleInput, "Updated Task");
@@ -139,10 +143,10 @@ describe("TaskItem", () => {
 			/>,
 		);
 
-		const editButton = screen.getByText("Edit");
+		const editButton = screen.getByLabelText("Edit task");
 		fireEvent.click(editButton);
 
-		const titleInput = screen.getByPlaceholderText("Task title");
+		const titleInput = screen.getByDisplayValue(mockTask.title);
 		await user.clear(titleInput);
 		await user.type(titleInput, "Should not be saved");
 

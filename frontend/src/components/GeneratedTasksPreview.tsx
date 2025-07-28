@@ -1,11 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardAction,
+	CardContent,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	type ImageAnalysisResponse,
 	type TaskCreate,
 	tasksAPI,
 } from "@/lib/api";
+import { Icons } from "./icons";
 
 interface GeneratedTasksPreviewProps {
 	analysisResponse: ImageAnalysisResponse;
@@ -97,132 +108,158 @@ export function GeneratedTasksPreview({
 	};
 
 	return (
-		<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-			<div className="flex justify-between items-start mb-4">
-				<div>
-					<h3 className="text-lg font-semibold">Generated Tasks</h3>
-					<p className="text-sm text-gray-600 mt-1">
-						Found {analysisResponse.tasks.length} potential tasks • Processed in{" "}
-						{analysisResponse.processing_time.toFixed(2)}s • Provider:{" "}
-						{analysisResponse.provider_used}
-					</p>
-				</div>
+		<Card className="hover:shadow-xl transition-shadow duration-300">
+			<CardHeader>
+				<CardTitle className="text-2xl font-semibold text-gray-800 flex items-center">
+					<Icons.lightbulb
+						className="w-6 h-6 mr-2 text-purple-600"
+						aria-label="Light bulb"
+					/>
+					Generated Tasks
+				</CardTitle>
+				<p className="text-sm text-gray-600 flex items-center flex-wrap gap-3">
+					Found {analysisResponse.tasks.length} potential tasks • Processed in{" "}
+					{analysisResponse.processing_time.toFixed(2)}s • Provider:{" "}
+					{analysisResponse.provider_used}
+				</p>
 				{onClose && (
-					<button
-						type="button"
-						onClick={onClose}
-						className="text-gray-400 hover:text-gray-600 transition-colors"
-						aria-label="Close preview"
-					>
-						<svg
-							className="w-5 h-5"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							aria-hidden="true"
+					<CardAction>
+						<Button
+							type="button"
+							onClick={onClose}
+							variant="ghost"
+							size="icon"
+							className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+							aria-label="Close preview"
 						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M6 18L18 6M6 6l12 12"
-							/>
-						</svg>
-					</button>
+							<Icons.close className="w-5 h-5" aria-label="Close" />
+						</Button>
+					</CardAction>
 				)}
-			</div>
+			</CardHeader>
 
-			{/* AI Analysis Summary */}
-			{analysisResponse.analysis_summary && (
-				<div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-					<h4 className="font-medium text-blue-900 mb-2">AI Analysis</h4>
-					<p className="text-sm text-blue-800">
-						{analysisResponse.analysis_summary}
-					</p>
-				</div>
-			)}
+			<CardContent>
+				{/* AI Analysis Summary */}
+				{analysisResponse.analysis_summary && (
+					<Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+						<CardContent>
+							<h4 className="font-medium text-blue-900 mb-2 flex items-center">
+								<Icons.info className="w-5 h-5 mr-2" aria-label="Information" />
+								AI Analysis
+							</h4>
+							<p className="text-sm text-blue-800 leading-relaxed">
+								{analysisResponse.analysis_summary}
+							</p>
+						</CardContent>
+					</Card>
+				)}
 
-			{/* Task Selection Controls */}
-			<div className="flex justify-between items-center mb-4">
-				<button
-					type="button"
-					onClick={handleSelectAll}
-					className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-				>
-					{selectedTasks.size === analysisResponse.tasks.length
-						? "Deselect All"
-						: "Select All"}
-				</button>
-				<span className="text-sm text-gray-600">
-					{selectedTasks.size} of {analysisResponse.tasks.length} selected
-				</span>
-			</div>
-
-			{/* Tasks List */}
-			<div className="space-y-3 mb-6">
-				{analysisResponse.tasks.map((task, index) => (
-					<div
-						key={`task-${index}-${task.title}`}
-						className={`border rounded-lg p-4 transition-all ${
-							selectedTasks.has(index)
-								? "border-blue-300 bg-blue-50"
-								: "border-gray-200 bg-gray-50"
-						}`}
+				{/* Task Selection Controls */}
+				<div className="flex justify-between items-center mb-6 px-1">
+					<Button
+						type="button"
+						onClick={handleSelectAll}
+						variant="ghost"
+						size="sm"
+						className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors flex items-center space-x-1"
 					>
-						<div className="flex items-start gap-3">
-							<input
-								type="checkbox"
-								checked={selectedTasks.has(index)}
-								onChange={() => handleTaskToggle(index)}
-								className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-							/>
-							<div className="flex-1 min-w-0">
-								<div className="flex items-center gap-2 mb-2">
-									<h4 className="font-medium text-gray-900">{task.title}</h4>
-									<span
-										className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}
-									>
-										{task.priority}
-									</span>
-									<span className="text-xs text-gray-500">{task.category}</span>
+						<Icons.success className="w-4 h-4" aria-label="Check circle" />
+						<span>
+							{selectedTasks.size === analysisResponse.tasks.length
+								? "Deselect All"
+								: "Select All"}
+						</span>
+					</Button>
+					<span className="text-sm text-gray-600 font-medium bg-gray-100 px-3 py-1 rounded-full">
+						{selectedTasks.size} of {analysisResponse.tasks.length} selected
+					</span>
+				</div>
+
+				{/* Tasks List */}
+				<div className="space-y-3 mb-6">
+					{analysisResponse.tasks.map((task, index) => (
+						<Card
+							key={`task-${index}-${task.title}`}
+							className={`transition-all hover:shadow-md ${
+								selectedTasks.has(index)
+									? "border-blue-400 bg-blue-50"
+									: "border-gray-200 bg-white hover:border-gray-300"
+							}`}
+						>
+							<CardContent>
+								<div className="flex items-start gap-3">
+									<Checkbox
+										checked={selectedTasks.has(index)}
+										onCheckedChange={() => handleTaskToggle(index)}
+										className="mt-0.5 w-5 h-5 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-500 data-[state=checked]:to-blue-600 data-[state=checked]:border-blue-600"
+									/>
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center gap-2 mb-2 flex-wrap">
+											<h4 className="font-semibold text-gray-900 text-lg">
+												{task.title}
+											</h4>
+											<span
+												className={`px-3 py-1 text-xs font-medium rounded-full border ${getPriorityColor(task.priority)}`}
+											>
+												{task.priority}
+											</span>
+											<span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+												{task.category}
+											</span>
+										</div>
+										<p className="text-sm text-gray-700 mb-2">
+											{task.description}
+										</p>
+										<div className="flex items-center gap-4 text-xs text-gray-500">
+											<span
+												className={`font-medium ${getConfidenceColor(task.confidence_score)}`}
+											>
+												Confidence: {(task.confidence_score * 100).toFixed(0)}%
+											</span>
+										</div>
+									</div>
 								</div>
-								<p className="text-sm text-gray-700 mb-2">{task.description}</p>
-								<div className="flex items-center gap-4 text-xs text-gray-500">
-									<span
-										className={`font-medium ${getConfidenceColor(task.confidence_score)}`}
-									>
-										Confidence: {(task.confidence_score * 100).toFixed(0)}%
-									</span>
-								</div>
-							</div>
-						</div>
-					</div>
-				))}
-			</div>
+							</CardContent>
+						</Card>
+					))}
+				</div>
+			</CardContent>
 
 			{/* Action Buttons */}
-			<div className="flex gap-3">
-				<button
+			<CardFooter className="gap-3">
+				<Button
 					type="button"
 					onClick={handleCreateTasks}
 					disabled={selectedTasks.size === 0 || isCreating}
-					className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+					className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center space-x-2"
 				>
-					{isCreating
-						? "Creating Tasks..."
-						: `Create ${selectedTasks.size} Task${selectedTasks.size !== 1 ? "s" : ""}`}
-				</button>
+					{isCreating ? (
+						<>
+							<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+							<span>Creating Tasks...</span>
+						</>
+					) : (
+						<>
+							<Icons.add className="w-5 h-5" aria-label="Plus" />
+							<span>
+								Create {selectedTasks.size} Task
+								{selectedTasks.size !== 1 ? "s" : ""}
+							</span>
+						</>
+					)}
+				</Button>
 				{onClose && (
-					<button
+					<Button
 						type="button"
 						onClick={onClose}
 						disabled={isCreating}
-						className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+						variant="outline"
+						className="px-6 py-3 rounded-xl font-medium"
 					>
 						Cancel
-					</button>
+					</Button>
 				)}
-			</div>
-		</div>
+			</CardFooter>
+		</Card>
 	);
 }

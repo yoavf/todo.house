@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { Task, TaskUpdate } from "@/lib/api";
+import { Icons } from "./icons";
 
 interface TaskItemProps {
 	task: Task;
@@ -31,75 +37,99 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 
 	if (isEditing) {
 		return (
-			<div className="p-4 border rounded-lg space-y-2">
-				<input
-					type="text"
-					value={title}
-					onChange={(e) => setTitle(e.target.value)}
-					className="w-full px-3 py-2 border rounded"
-					placeholder="Task title"
-				/>
-				<textarea
-					value={description}
-					onChange={(e) => setDescription(e.target.value)}
-					className="w-full px-3 py-2 border rounded"
-					placeholder="Task description"
-					rows={2}
-				/>
-				<div className="flex gap-2">
-					<button
-						type="button"
-						onClick={handleSave}
-						className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-					>
-						Save
-					</button>
-					<button
+			<Card className="bg-blue-50 border-2 border-blue-200">
+				<CardContent className="space-y-3">
+					<Input
+						type="text"
+						value={title}
+						onChange={(e) => setTitle(e.target.value)}
+						className="px-4 py-3 h-12 rounded-xl bg-white"
+						placeholder="Enter task title"
+					/>
+					<Textarea
+						value={description}
+						onChange={(e) => setDescription(e.target.value)}
+						className="px-4 py-3 rounded-xl resize-none bg-white"
+						placeholder="Task description (optional)"
+						rows={2}
+					/>
+				</CardContent>
+				<CardFooter className="justify-end gap-3">
+					<Button
 						type="button"
 						onClick={handleCancel}
-						className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+						variant="outline"
+						className="px-4 py-2 rounded-xl font-medium"
 					>
 						Cancel
-					</button>
-				</div>
-			</div>
+					</Button>
+					<Button
+						type="button"
+						onClick={handleSave}
+						className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium"
+					>
+						Save
+					</Button>
+				</CardFooter>
+			</Card>
 		);
 	}
 
 	return (
-		<div className="p-4 border rounded-lg flex items-start gap-3">
-			<input
-				type="checkbox"
-				checked={task.completed}
-				onChange={toggleCompleted}
-				className="mt-1"
-			/>
-			<div className="flex-1">
-				<h3
-					className={`font-medium ${task.completed ? "line-through text-gray-500" : ""}`}
-				>
-					{task.title}
-				</h3>
-				{task.description && (
-					<p className="text-gray-600 text-sm mt-1">{task.description}</p>
-				)}
-			</div>
-			<div className="flex gap-2">
-				<button
-					type="button"
-					onClick={() => setIsEditing(true)}
-					className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-				>
-					Edit
-				</button>
-				<button
-					type="button"
-					onClick={() => onDelete(task.id)}
-					className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-				>
-					Delete
-				</button>
-			</div>
-		</div>
+		<Card
+			className={`transition-all hover:shadow-md group ${
+				task.completed ? "border-gray-200 bg-gray-50" : "border-gray-300"
+			}`}
+		>
+			<CardContent>
+				<div className="flex items-start gap-4">
+					<Checkbox
+						checked={task.completed}
+						onCheckedChange={toggleCompleted}
+						className="mt-0.5 w-6 h-6 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-500 data-[state=checked]:to-blue-600 data-[state=checked]:border-blue-600"
+					/>
+					<div className="flex-1 min-w-0">
+						<h3
+							className={`text-lg font-medium transition-all ${
+								task.completed ? "text-gray-500 line-through" : "text-gray-800"
+							}`}
+						>
+							{task.title}
+						</h3>
+						{task.description && (
+							<p
+								className={`text-sm mt-1 ${
+									task.completed ? "text-gray-400" : "text-gray-600"
+								}`}
+							>
+								{task.description}
+							</p>
+						)}
+					</div>
+					<div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+						<Button
+							type="button"
+							onClick={() => setIsEditing(true)}
+							variant="ghost"
+							size="icon"
+							className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+							aria-label="Edit task"
+						>
+							<Icons.edit className="w-5 h-5" />
+						</Button>
+						<Button
+							type="button"
+							onClick={() => onDelete(task.id)}
+							variant="ghost"
+							size="icon"
+							className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+							aria-label="Delete task"
+						>
+							<Icons.delete className="w-5 h-5" />
+						</Button>
+					</div>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
