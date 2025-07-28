@@ -38,6 +38,30 @@
 - [ ] [P2] Add JSDoc comments to complex processing functions
 - [ ] [P2] Create development setup docs for local AI provider testing
 
+## Mobile Camera Capture - Post-MVP Improvements
+
+### Code Quality & Robustness
+- [ ] [P1] Fix type casting in ImageUpload.tsx:148 - Replace `[file] as unknown as FileList` with proper FileList construction or API refactor
+- [ ] [P1] Replace setTimeout with proper async/await in CameraCapture.tsx:147-149 for camera switching to prevent race conditions
+- [ ] [P2] Enhance mobile detection logic with more robust feature detection instead of user agent parsing
+- [ ] [P2] Add proper cleanup for blob URLs in ImageUpload component lifecycle to prevent memory leaks
+
+### User Experience  
+- [ ] [P1] Add loading states during camera initialization to improve perceived performance
+- [ ] [P2] Implement camera resolution selection based on device capabilities
+- [ ] [P2] Add haptic feedback for mobile photo capture on supported devices
+- [ ] [P2] Consider adding flash toggle for low-light scenarios
+
+### Testing & Error Handling
+- [ ] [P2] Add integration tests for camera switching functionality
+- [ ] [P2] Add tests for mobile detection edge cases (tablets, hybrid devices)
+- [ ] [P2] Test camera functionality across different mobile browsers (Safari, Chrome Mobile, Samsung Internet)
+
+### Performance & Optimization
+- [ ] [P2] Optimize canvas operations for better performance on lower-end devices
+- [ ] [P2] Add image quality adjustment based on device capabilities and network conditions
+- [ ] [P2] Consider implementing image compression before processing
+
 ## Backend Improvements
 
 ### Security & Authentication
