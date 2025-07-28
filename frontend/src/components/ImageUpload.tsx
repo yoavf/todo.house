@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { tasksAPI, type ImageAnalysisResponse } from "@/lib/api";
+import { type ImageAnalysisResponse, tasksAPI } from "@/lib/api";
 
 interface ImageUploadProps {
 	onTasksGenerated?: (response: ImageAnalysisResponse) => void;
@@ -15,31 +15,34 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [progress, setProgress] = useState(0);
 
-	const handleFiles = useCallback((files: FileList | null) => {
-		if (!files || files.length === 0) return;
+	const handleFiles = useCallback(
+		(files: FileList | null) => {
+			if (!files || files.length === 0) return;
 
-		const file = files[0];
-		
-		// Validate file type
-		const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-		if (!validTypes.includes(file.type)) {
-			onError?.('Please select a valid image file (JPEG, PNG, or WebP)');
-			return;
-		}
+			const file = files[0];
 
-		// Validate file size (10MB max)
-		const maxSize = 10 * 1024 * 1024; // 10MB
-		if (file.size > maxSize) {
-			onError?.('Image file is too large. Please select a file under 10MB.');
-			return;
-		}
+			// Validate file type
+			const validTypes = ["image/jpeg", "image/png", "image/webp"];
+			if (!validTypes.includes(file.type)) {
+				onError?.("Please select a valid image file (JPEG, PNG, or WebP)");
+				return;
+			}
 
-		setSelectedFile(file);
-		
-		// Create preview URL
-		const url = URL.createObjectURL(file);
-		setPreviewUrl(url);
-	}, [onError]);
+			// Validate file size (10MB max)
+			const maxSize = 10 * 1024 * 1024; // 10MB
+			if (file.size > maxSize) {
+				onError?.("Image file is too large. Please select a file under 10MB.");
+				return;
+			}
+
+			setSelectedFile(file);
+
+			// Create preview URL
+			const url = URL.createObjectURL(file);
+			setPreviewUrl(url);
+		},
+		[onError],
+	);
 
 	const handleDrag = useCallback((e: React.DragEvent) => {
 		e.preventDefault();
@@ -51,19 +54,25 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 		}
 	}, []);
 
-	const handleDrop = useCallback((e: React.DragEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-		setDragActive(false);
-		
-		if (e.dataTransfer.files?.[0]) {
-			handleFiles(e.dataTransfer.files);
-		}
-	}, [handleFiles]);
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			setDragActive(false);
 
-	const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-		handleFiles(e.target.files);
-	}, [handleFiles]);
+			if (e.dataTransfer.files?.[0]) {
+				handleFiles(e.dataTransfer.files);
+			}
+		},
+		[handleFiles],
+	);
+
+	const handleFileInput = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			handleFiles(e.target.files);
+		},
+		[handleFiles],
+	);
 
 	const handleAnalyze = async () => {
 		if (!selectedFile) return;
@@ -73,7 +82,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 
 		// Simulate progress updates
 		const progressInterval = setInterval(() => {
-			setProgress(prev => {
+			setProgress((prev) => {
 				if (prev >= 90) {
 					clearInterval(progressInterval);
 					return prev;
@@ -86,7 +95,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 			const response = await tasksAPI.analyzeImage(selectedFile);
 			setProgress(100);
 			onTasksGenerated?.(response);
-			
+
 			// Reset form after successful analysis
 			setTimeout(() => {
 				setSelectedFile(null);
@@ -94,7 +103,8 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 				setProgress(0);
 			}, 1000);
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : 'Failed to analyze image';
+			const errorMessage =
+				error instanceof Error ? error.message : "Failed to analyze image";
 			onError?.(errorMessage);
 		} finally {
 			clearInterval(progressInterval);
@@ -114,27 +124,29 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 	return (
 		<div className="w-full max-w-2xl mx-auto">
 			<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-				<h2 className="text-xl font-semibold mb-4">Generate Tasks from Image</h2>
-				
+				<h2 className="text-xl font-semibold mb-4">
+					Generate Tasks from Image
+				</h2>
+
 				{!selectedFile ? (
-					<div
-						className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-							dragActive 
-								? 'border-blue-400 bg-blue-50' 
-								: 'border-gray-300 hover:border-gray-400'
+					<button
+						type="button"
+						className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors w-full ${
+							dragActive
+								? "border-blue-400 bg-blue-50"
+								: "border-gray-300 hover:border-gray-400"
 						}`}
 						onDragEnter={handleDrag}
 						onDragLeave={handleDrag}
 						onDragOver={handleDrag}
 						onDrop={handleDrop}
-						role="button"
-						tabIndex={0}
-						onKeyDown={(e) => {
-							if (e.key === 'Enter' || e.key === ' ') {
-								e.preventDefault();
-								document.querySelector('input[type="file"]')?.click();
-							}
+						onClick={() => {
+							const input = document.querySelector(
+								'input[type="file"]',
+							) as HTMLInputElement;
+							input?.click();
 						}}
+						disabled={isProcessing}
 					>
 						<input
 							type="file"
@@ -143,11 +155,22 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 							className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
 							disabled={isProcessing}
 						/>
-						
+
 						<div className="space-y-4">
 							<div className="mx-auto w-12 h-12 text-gray-400">
-								<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Upload icon">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+								<svg
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									role="img"
+									aria-label="Upload icon"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+									/>
 								</svg>
 							</div>
 							<div>
@@ -159,13 +182,14 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 								</p>
 							</div>
 						</div>
-					</div>
+					</button>
 				) : (
 					<div className="space-y-4">
 						{/* Image Preview */}
 						<div className="relative">
+							{/* biome-ignore lint/performance/noImgElement: Need img for blob URL preview */}
 							<img
-								src={previewUrl || ''}
+								src={previewUrl || ""}
 								alt="Preview"
 								className="w-full max-h-64 object-contain rounded-lg border border-gray-200"
 							/>
@@ -182,9 +206,16 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 
 						{/* File Info */}
 						<div className="text-sm text-gray-600">
-							<p><strong>File:</strong> {selectedFile.name}</p>
-							<p><strong>Size:</strong> {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-							<p><strong>Type:</strong> {selectedFile.type}</p>
+							<p>
+								<strong>File:</strong> {selectedFile.name}
+							</p>
+							<p>
+								<strong>Size:</strong>{" "}
+								{(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+							</p>
+							<p>
+								<strong>Type:</strong> {selectedFile.type}
+							</p>
 						</div>
 
 						{/* Progress Bar */}
@@ -195,7 +226,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 									<span>{progress}%</span>
 								</div>
 								<div className="w-full bg-gray-200 rounded-full h-2">
-									<div 
+									<div
 										className="bg-blue-500 h-2 rounded-full transition-all duration-300"
 										style={{ width: `${progress}%` }}
 									/>
@@ -211,7 +242,7 @@ export function ImageUpload({ onTasksGenerated, onError }: ImageUploadProps) {
 								disabled={isProcessing}
 								className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
 							>
-								{isProcessing ? 'Analyzing...' : 'Generate Tasks'}
+								{isProcessing ? "Analyzing..." : "Generate Tasks"}
 							</button>
 							<button
 								type="button"

@@ -2,22 +2,23 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+	type ImageAnalysisResponse,
 	type Task,
 	type TaskCreate,
 	type TaskUpdate,
-	type ImageAnalysisResponse,
 	tasksAPI,
 } from "@/lib/api";
+import { GeneratedTasksPreview } from "./GeneratedTasksPreview";
+import { ImageUpload } from "./ImageUpload";
 import { TaskForm } from "./TaskForm";
 import { TaskItem } from "./TaskItem";
-import { ImageUpload } from "./ImageUpload";
-import { GeneratedTasksPreview } from "./GeneratedTasksPreview";
 
 export function TaskList() {
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [analysisResponse, setAnalysisResponse] = useState<ImageAnalysisResponse | null>(null);
+	const [analysisResponse, setAnalysisResponse] =
+		useState<ImageAnalysisResponse | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
 	const loadTasks = useCallback(async () => {
@@ -74,10 +75,12 @@ export function TaskList() {
 	};
 
 	const handleTasksCreated = (count: number) => {
-		setSuccessMessage(`Successfully created ${count} task${count !== 1 ? 's' : ''} from image analysis!`);
+		setSuccessMessage(
+			`Successfully created ${count} task${count !== 1 ? "s" : ""} from image analysis!`,
+		);
 		setAnalysisResponse(null);
 		loadTasks(); // Refresh the task list
-		
+
 		// Clear success message after 5 seconds
 		setTimeout(() => setSuccessMessage(null), 5000);
 	};
@@ -102,7 +105,7 @@ export function TaskList() {
 			{error && (
 				<div className="p-4 bg-red-100 text-red-700 rounded-lg flex justify-between items-center">
 					<span>{error}</span>
-					<button 
+					<button
 						type="button"
 						onClick={() => setError(null)}
 						className="text-red-500 hover:text-red-700 ml-4"
@@ -116,7 +119,7 @@ export function TaskList() {
 			{successMessage && (
 				<div className="p-4 bg-green-100 text-green-700 rounded-lg flex justify-between items-center">
 					<span>{successMessage}</span>
-					<button 
+					<button
 						type="button"
 						onClick={() => setSuccessMessage(null)}
 						className="text-green-500 hover:text-green-700 ml-4"
@@ -128,7 +131,7 @@ export function TaskList() {
 			)}
 
 			{/* Image Upload Section */}
-			<ImageUpload 
+			<ImageUpload
 				onTasksGenerated={handleTasksGenerated}
 				onError={handleError}
 			/>
@@ -155,7 +158,8 @@ export function TaskList() {
 				<div className="space-y-2">
 					{tasks.length === 0 ? (
 						<p className="text-gray-500 text-center py-8">
-							No tasks yet. Create your first task above or upload an image to generate tasks automatically!
+							No tasks yet. Create your first task above or upload an image to
+							generate tasks automatically!
 						</p>
 					) : (
 						tasks.map((task) => (

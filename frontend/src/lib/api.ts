@@ -2,11 +2,11 @@ export interface Task {
 	id: number;
 	title: string;
 	description?: string;
-	priority: 'low' | 'medium' | 'high';
+	priority: "low" | "medium" | "high";
 	completed: boolean;
-	status: 'active' | 'snoozed' | 'completed';
+	status: "active" | "snoozed" | "completed";
 	snoozed_until?: string;
-	source: 'manual' | 'ai_generated';
+	source: "manual" | "ai_generated";
 	source_image_id?: string;
 	ai_confidence?: number;
 	ai_provider?: string;
@@ -18,11 +18,11 @@ export interface Task {
 export interface TaskCreate {
 	title: string;
 	description?: string;
-	priority?: 'low' | 'medium' | 'high';
+	priority?: "low" | "medium" | "high";
 	completed?: boolean;
-	status?: 'active' | 'snoozed' | 'completed';
+	status?: "active" | "snoozed" | "completed";
 	snoozed_until?: string;
-	source?: 'manual' | 'ai_generated';
+	source?: "manual" | "ai_generated";
 	source_image_id?: string;
 	ai_confidence?: number;
 	ai_provider?: string;
@@ -31,16 +31,16 @@ export interface TaskCreate {
 export interface TaskUpdate {
 	title?: string;
 	description?: string;
-	priority?: 'low' | 'medium' | 'high';
+	priority?: "low" | "medium" | "high";
 	completed?: boolean;
-	status?: 'active' | 'snoozed' | 'completed';
+	status?: "active" | "snoozed" | "completed";
 	snoozed_until?: string;
 }
 
 export interface GeneratedTask {
 	title: string;
 	description: string;
-	priority: 'low' | 'medium' | 'high';
+	priority: "low" | "medium" | "high";
 	category: string;
 	confidence_score: number;
 }
@@ -107,8 +107,8 @@ export const tasksAPI = {
 
 	async analyzeImage(imageFile: File): Promise<ImageAnalysisResponse> {
 		const formData = new FormData();
-		formData.append('image', imageFile);
-		formData.append('generate_tasks', 'true');
+		formData.append("image", imageFile);
+		formData.append("generate_tasks", "true");
 
 		const response = await fetch(`${API_URL}/api/images/analyze`, {
 			method: "POST",
