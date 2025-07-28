@@ -20,7 +20,7 @@ describe("TaskList Integration", () => {
 	beforeAll(() => {
 		console.error = jest.fn();
 	});
-	
+
 	afterAll(() => {
 		console.error = originalConsoleError;
 	});
@@ -78,7 +78,9 @@ describe("TaskList Integration", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByText("No tasks yet. Create your first task above or upload an image to generate tasks automatically!"),
+				screen.getByText(
+					"No tasks yet. Create your first task above or upload an image to generate tasks automatically!",
+				),
 			).toBeInTheDocument();
 		});
 	});
