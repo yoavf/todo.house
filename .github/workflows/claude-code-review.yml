@@ -52,6 +52,8 @@ jobs:
           direct_prompt: |
             IMPORTANT: This project is in MVP Development Phase. Please review accordingly.
 
+            FIRST: Check /docs/todos.md to see what technical debt is already tracked. Don't suggest items that are already documented there.
+
             Please review this PR with MVP priorities in mind:
 
             1. CRITICAL ISSUES (must fix):
@@ -60,11 +62,16 @@ jobs:
                - Data loss risks
 
             2. RECOMMENDATIONS (output as checklist for /docs/todos.md):
-               - Code quality improvements
-               - Performance optimizations
-               - Better error handling
-               - Test coverage gaps
-               - Architecture improvements
+               - Code quality improvements (NOT already in /docs/todos.md)
+               - Performance optimizations (NOT already in /docs/todos.md)
+               - Better error handling (NOT already in /docs/todos.md)
+               - Test coverage gaps (NOT already in /docs/todos.md)
+               - Architecture improvements (NOT already in /docs/todos.md)
+
+            Before suggesting any improvement:
+            1. Read /docs/todos.md
+            2. Check if the improvement is already listed
+            3. Only suggest NEW items not already tracked
 
             Format non-critical feedback as:
             ```markdown

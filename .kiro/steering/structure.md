@@ -67,11 +67,13 @@ backend/
 - **Models**: Separate files for Pydantic models with clear inheritance
 - **Database**: Single client instance exported from `database.py`
 
-### Testing Structure
-- **Unit tests**: Fast, mocked dependencies, marked with `@pytest.mark.unit`
-- **Integration tests**: Real database, marked with `@pytest.mark.integration`
-- **Fixtures**: Shared test setup in `conftest.py`
+### Testing Structure (MVP Approach)
+- **MVP Testing**: Focus on happy-path backend tests only
+- **Unit tests**: Basic functionality verification, marked with `@pytest.mark.unit`
+- **Integration tests**: Optional during MVP, marked with `@pytest.mark.integration`
+- **Frontend tests**: Track as [P1] items in `/docs/todos.md`
 - **Test isolation**: Each test gets unique user ID for data separation
+- **Edge cases**: Document in `/docs/todos.md` rather than implementing now
 
 ### Configuration Management
 - **Environment files**: `.env` for development, `.env.test` for testing
@@ -83,3 +85,14 @@ backend/
 - **Type safety**: Full TypeScript in frontend, Pydantic models in backend
 - **Error handling**: Consistent error responses and proper HTTP status codes
 - **Authentication**: User-specific data isolation with row-level security
+
+### MVP Implementation Guidelines
+- **Quick wins first**: Implement core features that deliver immediate value
+- **Defer complexity**: Advanced features and edge cases → `/docs/todos.md`
+- **Minimal viable tests**: Just enough to verify core functionality works
+- **Technical debt tracking**: Document shortcuts taken in `/docs/todos.md`
+- **Iterate based on feedback**: Ship fast, learn, improve
+- **ALWAYS document deferrals**: Any time you skip tests, error handling, or features for MVP, add them to `/docs/todos.md` with priority:
+  - [P0]: Critical security/breaking issues
+  - [P1]: Important functionality, major UX issues, missing tests
+  - [P2]: Nice-to-haves, optimizations, minor enhancements

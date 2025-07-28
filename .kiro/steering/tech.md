@@ -26,6 +26,14 @@
 - **Git Hooks**: husky with lint-staged for pre-commit checks
 - **Concurrency**: concurrently for running multiple dev servers
 
+## MVP Development Guidelines
+- **Testing Strategy**: 
+  - Backend: Basic happy-path tests only (edge cases → `/docs/todos.md`)
+  - Frontend: Optional during MVP, track as [P1] items for later
+- **Feature Scope**: Core functionality only, nice-to-haves → `/docs/todos.md`
+- **Code Quality**: Working code first, refactoring tracked as technical debt
+- **Error Handling**: Basic validation only, comprehensive handling → post-MVP
+
 ## Common Commands
 
 ### Development

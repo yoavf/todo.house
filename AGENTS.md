@@ -208,8 +208,17 @@ async def test_create_todo_success(client, test_user_id):
 
 ## AGENTS/CLAUDE Instructions (IMPORTANT)
 
+### MVP Phase Guidelines
+- **Speed over perfection**: Get features working first, polish later
+- **Minimal viable tests**: Write basic happy-path tests only - edge cases can be tracked in `/docs/todos.md`
+- **Feature scope**: Implement core functionality only - nice-to-haves go in `/docs/todos.md` as [P2] items
+- **Technical debt is OK**: Track refactoring needs in `/docs/todos.md` rather than blocking progress
+- **IMPORTANT**: Whenever you skip something for MVP (tests, error handling, features), you MUST add it to `/docs/todos.md` with appropriate priority level
+
+### General Development
 - Never add comments for perfectly self-explanatory code
 - When refactoring, do not leave comments about what was change or what was there before.
 - Always use an opportunity to teach the user about python
 - Frontend: Use shadcn components whenever possible, with tailwind
-- **ALWAYS write tests for every backend code change** - This includes new endpoints, modified business logic, and bug fixes
+- **Backend tests are mandatory** but keep them simple during MVP - just verify the happy path works
+- **Frontend tests are optional during MVP** - add them to `/docs/todos.md` as [P1] items for post-MVP
