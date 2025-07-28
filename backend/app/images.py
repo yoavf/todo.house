@@ -110,28 +110,14 @@ async def _create_tasks_from_analysis(
         image_id: Optional image record ID
     """
     try:
-        # Create basic tasks using simple database insertion
-        tasks_data = analysis_result.get("tasks", [])
-        created_count = 0
-        
-        for task_data in tasks_data:
-            try:
-                # Create basic task data
-                basic_task = {
-                    "title": task_data.get("title", "Untitled task"),
-                    "description": task_data.get("description", "No description"),
-                    "user_id": user_id,
-                    "completed": False,
-                }
-                
-                # Insert directly into database
-                response = supabase.table("tasks").insert(basic_task).execute()
-                if response.data:
-                    created_count += 1
-                    
-            except Exception as task_error:
-                logger.warning(f"Failed to create individual task: {task_error}")
-                continue
+        # Use the proper service method to create tasks
+        created_tasks = await processing_service.create_tasks_from_analysis(
+            analysis_result=analysis_result,
+            user_id=user_id,
+            source_image_id=image_id or "",
+            provider_name=analysis_result.get("provider_used", "unknown"),
+        )
+        created_count = len(created_tasks)
 
         # Update image record with analysis results if image_id exists
         if image_id:

@@ -55,8 +55,20 @@ export interface ImageAnalysisResponse {
 	retry_count: number;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000";
+const API_URL =
+	process.env.NEXT_PUBLIC_API_URL ||
+	(() => {
+		throw new Error(
+			"API URL is not defined. Please set NEXT_PUBLIC_API_URL in your environment.",
+		);
+	})();
+const TEST_USER_ID =
+	process.env.NEXT_PUBLIC_TEST_USER_ID ||
+	(() => {
+		throw new Error(
+			"User ID is not defined. Please set NEXT_PUBLIC_TEST_USER_ID in your environment.",
+		);
+	})();
 
 export const tasksAPI = {
 	async getTasks(): Promise<Task[]> {
