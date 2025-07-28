@@ -14,6 +14,10 @@ When reviewing PRs during MVP phase:
 3. **Format**: Use markdown checklist format for easy copy to `/docs/todos.md`
 4. **Priority Levels**: Mark as `[P0]` (critical), `[P1]` (important), `[P2]` (nice-to-have)
 
+**Note**: The review agent automatically skips PRs that:
+- Only modify `/docs/todos.md` (to avoid circular reviews)
+- Have `[skip-review]` or `[WIP]` in the PR title
+
 Example output format:
 ```markdown
 ## Production-Ready Improvements
