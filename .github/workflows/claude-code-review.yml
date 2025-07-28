@@ -42,17 +42,35 @@ jobs:
           
           # Direct prompt for automated review (no @claude mention needed)
           direct_prompt: |
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
+            IMPORTANT: This project is in MVP Development Phase. Please review accordingly.
             
-            Be constructive and helpful in your feedback.
+            Please review this PR with MVP priorities in mind:
+            
+            1. CRITICAL ISSUES (must fix):
+               - Bugs that break functionality
+               - Security vulnerabilities (unless obvious choice are made for testing and documented in the code)
+               - Data loss risks
+               
+            2. RECOMMENDATIONS (output as checklist for /docs/todos.md):
+               - Code quality improvements
+               - Performance optimizations
+               - Better error handling
+               - Test coverage gaps
+               - Architecture improvements
+            
+            Format non-critical feedback as:
+            ```markdown
+            ## Recommendations for /docs/todos.md
+            - [ ] [P1] Specific improvement with context
+            - [ ] [P2] Nice-to-have enhancement
+            ```
+            
+            Use priority levels: [P0]=critical, [P1]=important, [P2]=nice-to-have
+            
+            Focus on teaching Python best practices where relevant.
 
           # Optional: Use sticky comments to make Claude reuse the same comment on subsequent pushes to the same PR
-          # use_sticky_comment: true
+          use_sticky_comment: true
           
           # Optional: Customize review based on file types
           # direct_prompt: |
@@ -72,7 +90,7 @@ jobs:
           # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
           
           # Optional: Skip review for certain conditions
-          # if: |
-          #   !contains(github.event.pull_request.title, '[skip-review]') &&
-          #   !contains(github.event.pull_request.title, '[WIP]')
+          if: |
+            !contains(github.event.pull_request.title, '[skip-review]') &&
+            !contains(github.event.pull_request.title, '[WIP]')
 
