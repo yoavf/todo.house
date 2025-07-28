@@ -6,6 +6,7 @@ on:
     # Skip review when only updating technical debt tracker
     paths-ignore:
       - 'docs/todos.md'
+      - '**/*.md'
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
@@ -20,14 +21,14 @@ jobs:
     #   github.event.pull_request.user.login == 'external-contributor' ||
     #   github.event.pull_request.user.login == 'new-developer' ||
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-    
+
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
       issues: read
       id-token: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,44 +38,48 @@ jobs:
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@beta
+        # Skip review for certain conditions
+        if: |
+          !contains(github.event.pull_request.title, '[skip-review]') &&
+          !contains(github.event.pull_request.title, '[WIP]')
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
           # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
           # model: "claude-opus-4-20250514"
-          
+
           # Direct prompt for automated review (no @claude mention needed)
           direct_prompt: |
             IMPORTANT: This project is in MVP Development Phase. Please review accordingly.
-            
+
             Please review this PR with MVP priorities in mind:
-            
+
             1. CRITICAL ISSUES (must fix):
                - Bugs that break functionality
                - Security vulnerabilities (unless obvious choice are made for testing and documented in the code)
                - Data loss risks
-               
+
             2. RECOMMENDATIONS (output as checklist for /docs/todos.md):
                - Code quality improvements
                - Performance optimizations
                - Better error handling
                - Test coverage gaps
                - Architecture improvements
-            
+
             Format non-critical feedback as:
             ```markdown
             ## Recommendations for /docs/todos.md
             - [ ] [P1] Specific improvement with context
             - [ ] [P2] Nice-to-have enhancement
             ```
-            
+
             Use priority levels: [P0]=critical, [P1]=important, [P2]=nice-to-have
-            
+
             Focus on teaching Python best practices where relevant.
 
           # Optional: Use sticky comments to make Claude reuse the same comment on subsequent pushes to the same PR
           use_sticky_comment: true
-          
+
           # Optional: Customize review based on file types
           # direct_prompt: |
           #   Review this PR focusing on:
@@ -82,18 +87,13 @@ jobs:
           #   - For API endpoints: Security, input validation, and error handling
           #   - For React components: Performance, accessibility, and best practices
           #   - For tests: Coverage, edge cases, and test quality
-          
+
           # Optional: Different prompts for different authors
           # direct_prompt: |
-          #   ${{ github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' && 
+          #   ${{ github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' &&
           #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
           #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
-          
+
           # Optional: Add specific tools for running tests or linting
           # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
-          
-          # Optional: Skip review for certain conditions
-          if: |
-            !contains(github.event.pull_request.title, '[skip-review]') &&
-            !contains(github.event.pull_request.title, '[WIP]')
 
