@@ -10,9 +10,9 @@ import {
 } from "@/lib/api";
 import { GeneratedTasksPreview } from "./GeneratedTasksPreview";
 import { ImageUpload } from "./ImageUpload";
+import { Icons } from "./icons";
 import { TaskForm } from "./TaskForm";
 import { TaskItem } from "./TaskItem";
-import { Icons } from "./icons";
 
 export function TaskList() {
 	const [tasks, setTasks] = useState<Task[]>([]);

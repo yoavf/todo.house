@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { TaskCreate } from "@/lib/api";
 import { Icons } from "./icons";
 
@@ -26,47 +31,45 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-5">
-			<div>
-				<label
-					htmlFor="task-title"
-					className="block text-sm font-medium text-gray-700 mb-1"
-				>
-					Task Title
-				</label>
-				<input
-					id="task-title"
-					type="text"
-					value={title}
-					onChange={(e) => setTitle(e.target.value)}
-					placeholder="Enter task title"
-					className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
-					required
-				/>
-			</div>
-			<div>
-				<label
-					htmlFor="task-description"
-					className="block text-sm font-medium text-gray-700 mb-1"
-				>
-					Description (optional)
-				</label>
-				<textarea
-					id="task-description"
-					value={description}
-					onChange={(e) => setDescription(e.target.value)}
-					placeholder="Add more details about the task"
-					className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none transition-colors resize-none"
-					rows={3}
-				/>
-			</div>
-			<button
-				type="submit"
-				className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center space-x-2"
-			>
-				<Icons.add className="w-5 h-5" aria-label="Add" />
-				<span>Add Task</span>
-			</button>
-		</form>
+		<Card className="hover:shadow-xl transition-shadow duration-300">
+			<CardContent>
+				<form onSubmit={handleSubmit} className="space-y-5">
+					<div>
+						<Label htmlFor="task-title" className="mb-1">
+							Task Title
+						</Label>
+						<Input
+							id="task-title"
+							type="text"
+							value={title}
+							onChange={(e) => setTitle(e.target.value)}
+							placeholder="Enter task title"
+							className="px-4 py-3 h-12 rounded-xl"
+							required
+						/>
+					</div>
+					<div>
+						<Label htmlFor="task-description" className="mb-1">
+							Description (optional)
+						</Label>
+						<Textarea
+							id="task-description"
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+							placeholder="Task description (optional)"
+							className="px-4 py-3 rounded-xl resize-none"
+							rows={3}
+						/>
+					</div>
+					<Button
+						type="submit"
+						className="w-full px-4 py-3 h-12 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center space-x-2"
+					>
+						<Icons.add className="w-5 h-5" />
+						<span>Add Task</span>
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
 	);
 }

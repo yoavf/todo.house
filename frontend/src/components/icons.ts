@@ -1,19 +1,19 @@
 import {
-	Plus,
-	Check,
-	X,
 	AlertCircle,
+	Camera,
+	Check,
 	CheckCircle,
+	CheckSquare,
 	Clipboard,
 	Edit2,
-	Trash2,
-	Camera,
-	Upload,
-	Lightbulb,
-	Info,
-	CheckSquare,
 	Image,
+	Info,
+	Lightbulb,
+	Plus,
 	RefreshCcw,
+	Trash2,
+	Upload,
+	X,
 } from "lucide-react";
 
 export const Icons = {

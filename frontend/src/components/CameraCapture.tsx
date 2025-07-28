@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Icons } from "./icons";
 
 interface CameraCaptureProps {
@@ -243,13 +244,13 @@ export function CameraCapture({
 											/>
 										</div>
 										<p className="text-gray-600 mb-4">Camera access denied</p>
-										<button
+										<Button
 											type="button"
 											onClick={startCamera}
 											className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
 										>
 											Try Again
-										</button>
+										</Button>
 									</>
 								) : (
 									<>

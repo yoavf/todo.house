@@ -77,11 +77,7 @@ describe("TaskList Integration", () => {
 		render(<TaskList />);
 
 		await waitFor(() => {
-			expect(
-				screen.getByText(
-					"No tasks yet. Create your first task above or upload an image to generate tasks automatically!",
-				),
-			).toBeInTheDocument();
+			expect(screen.getByText("No tasks yet")).toBeInTheDocument();
 		});
 	});
 
@@ -104,10 +100,12 @@ describe("TaskList Integration", () => {
 		render(<TaskList />);
 
 		await waitFor(() => {
-			expect(screen.getByPlaceholderText("Task title")).toBeInTheDocument();
+			expect(
+				screen.getByPlaceholderText("Enter task title"),
+			).toBeInTheDocument();
 		});
 
-		const titleInput = screen.getByPlaceholderText("Task title");
+		const titleInput = screen.getByPlaceholderText("Enter task title");
 		const descriptionInput = screen.getByPlaceholderText(
 			"Task description (optional)",
 		);
@@ -160,7 +158,7 @@ describe("TaskList Integration", () => {
 			expect(screen.getByText("Task 1")).toBeInTheDocument();
 		});
 
-		const deleteButton = screen.getByText("Delete");
+		const deleteButton = screen.getAllByLabelText("Delete task")[0];
 		fireEvent.click(deleteButton);
 
 		await waitFor(() => {
@@ -188,10 +186,12 @@ describe("TaskList Integration", () => {
 		render(<TaskList />);
 
 		await waitFor(() => {
-			expect(screen.getByPlaceholderText("Task title")).toBeInTheDocument();
+			expect(
+				screen.getByPlaceholderText("Enter task title"),
+			).toBeInTheDocument();
 		});
 
-		const titleInput = screen.getByPlaceholderText("Task title");
+		const titleInput = screen.getByPlaceholderText("Enter task title");
 		const addButton = screen.getByText("Add Task");
 
 		await user.type(titleInput, "New Task");

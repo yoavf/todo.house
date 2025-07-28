@@ -72,7 +72,7 @@ describe("ImageUpload Mobile Functionality", () => {
 	});
 
 	it("should have responsive styling for mobile", () => {
-		const { container } = render(
+		render(
 			<ImageUpload
 				onTasksGenerated={mockOnTasksGenerated}
 				onError={mockOnError}
@@ -83,8 +83,8 @@ describe("ImageUpload Mobile Functionality", () => {
 		const takePhotoButton = screen.getByText("Take Photo");
 		expect(takePhotoButton).toBeInTheDocument();
 
-		// Check that the button has the expected structure
+		// Check that the button has the expected structure and green styling
 		const buttonElement = takePhotoButton.closest("button");
-		expect(buttonElement).toHaveClass("bg-green-500");
+		expect(buttonElement).toHaveClass("from-green-500");
 	});
 });

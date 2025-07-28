@@ -26,7 +26,8 @@
 		"rules": {
 			"recommended": true,
 			"a11y": {
-				"noSvgWithoutTitle": "off"
+				"noSvgWithoutTitle": "off",
+				"noLabelWithoutControl": "off"
 			}
 		}
 	},
