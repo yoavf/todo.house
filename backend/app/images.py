@@ -77,18 +77,8 @@ async def _process_image_analysis(
         prompt_override=prompt_override,
     )
 
-    # Create tasks if requested and analysis was successful
-    if generate_tasks and analysis_result.get("tasks"):
-        try:
-            await _create_tasks_from_analysis(
-                processing_service=processing_service,
-                analysis_result=analysis_result,
-                user_id=user_id,
-                image_id=image_id,
-            )
-        except Exception as e:
-            logger.warning(f"Failed to create tasks from analysis: {e}")
-            # Continue - we can still return the analysis results
+    # Note: We no longer auto-create tasks here. 
+    # Tasks should be created by the frontend when user confirms selection
 
     # Convert to response format and return
     return _build_analysis_response(analysis_result, image_id)
@@ -187,13 +177,16 @@ def _build_analysis_response(
     """
     # Convert tasks to response format
     generated_tasks = []
+    logger.info(f"Building response from analysis result with {len(analysis_result.get('tasks', []))} tasks")
     for task_data in analysis_result.get("tasks", []):
+        task_confidence = task_data.get("confidence", 0.5)
+        logger.info(f"Task '{task_data.get('title', 'Unknown')}' has confidence: {task_confidence}")
         generated_task = GeneratedTask(
             title=task_data.get("title", "Untitled task"),
             description=task_data.get("description", "No description"),
             priority=task_data.get("priority", "medium"),
             category=task_data.get("category", "general"),
-            confidence_score=analysis_result.get("ai_confidence", 0.5),
+            confidence_score=task_confidence,
         )
         generated_tasks.append(generated_task)
 
@@ -236,7 +229,7 @@ async def analyze_image(
     user_id: str = Header(..., alias="x-user-id"),
     image: UploadFile = File(..., description="Image file to analyze"),
     generate_tasks: bool = Form(
-        True, description="Whether to generate tasks from analysis"
+        True, description="Whether to analyze image and suggest tasks (does not create tasks in DB)"
     ),
     prompt_override: Optional[str] = Form(
         None, description="Custom prompt for testing"
