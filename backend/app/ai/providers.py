@@ -520,6 +520,7 @@ class MockProvider(AIProvider):
                         "priority": "high",
                         "category": "maintenance",
                         "reasoning": "Dirty filters reduce efficiency and air quality",
+                        "confidence": 0.9,
                     },
                     {
                         "title": "Inspect water heater",
@@ -527,6 +528,7 @@ class MockProvider(AIProvider):
                         "priority": "medium",
                         "category": "maintenance",
                         "reasoning": "Early rust detection can prevent leaks",
+                        "confidence": 0.75,
                     }
                 ],
                 "analysis_summary": "Found 2 maintenance items requiring attention",
@@ -539,6 +541,7 @@ class MockProvider(AIProvider):
                         "priority": "medium",
                         "category": "maintenance",
                         "reasoning": "Clogged gutters can cause water damage",
+                        "confidence": 0.65,
                     }
                 ],
                 "analysis_summary": "Exterior maintenance needed",
