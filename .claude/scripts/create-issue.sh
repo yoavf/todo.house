@@ -1,18 +1,42 @@
 #!/bin/bash
 # Script to create issue with automatic label creation and project field setting
-# Usage: ./.claude/create-issue.sh "Title" "Body" "labels" "P0|P1|P2" "XS|S|M|L|XL"
-
-TITLE="$1"
-BODY="$2"
-LABELS="$3"
-PRIORITY="$4"
-SIZE="$5"
+# Usage: echo '{"title":"Fix type safety","body":"## Description...","labels":"frontend,bug","priority":"P1","size":"S"}' | ./.claude/scripts/create-issue.sh
 
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+
+# Read JSON input from stdin
+input=$(cat)
+TITLE=$(echo "$input" | jq -r '.title' 2>/dev/null)
+BODY=$(echo "$input" | jq -r '.body' 2>/dev/null)
+LABELS=$(echo "$input" | jq -r '.labels' 2>/dev/null)
+PRIORITY=$(echo "$input" | jq -r '.priority' 2>/dev/null)
+SIZE=$(echo "$input" | jq -r '.size' 2>/dev/null)
+
+# Validate required fields
+if [ -z "$TITLE" ] || [ "$TITLE" = "null" ]; then
+  echo -e "${RED}✗ Error: title is required${NC}"
+  exit 1
+fi
+if [ -z "$BODY" ] || [ "$BODY" = "null" ]; then
+  echo -e "${RED}✗ Error: body is required${NC}"
+  exit 1
+fi
+if [ -z "$LABELS" ] || [ "$LABELS" = "null" ]; then
+  echo -e "${RED}✗ Error: labels is required${NC}"
+  exit 1
+fi
+if [ -z "$PRIORITY" ] || [ "$PRIORITY" = "null" ]; then
+  echo -e "${RED}✗ Error: priority is required${NC}"
+  exit 1
+fi
+if [ -z "$SIZE" ] || [ "$SIZE" = "null" ]; then
+  echo -e "${RED}✗ Error: size is required${NC}"
+  exit 1
+fi
 
 # Function to get label color
 get_label_color() {
