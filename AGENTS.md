@@ -4,27 +4,23 @@
 
 **Current Phase**: Building towards Minimum Viable Product (MVP)
 **Focus**: Get core functionality working first, polish later
-**Technical Debt**: Tracked in `/docs/todos.md` for post-MVP improvements
+**Technical Debt**: Tracked as GitHub issues using the `todo-tracker-pm` agent
 
 ### MVP Review Guidelines (IMPORTANT for GitHub Actions)
 
 When reviewing PRs during MVP phase:
 1. **Critical Issues Only**: Flag only bugs, security issues, or breaking changes
 2. **Non-Critical Feedback**: Output as structured recommendations, not blockers
-3. **Format**: Use markdown checklist format for easy copy to `/docs/todos.md`
+3. **Format**: Use the `todo-tracker-pm` agent to create properly formatted GitHub issues
 4. **Priority Levels**: Mark as `[P0]` (critical), `[P1]` (important), `[P2]` (nice-to-have)
 
 **Note**: The review agent automatically skips PRs that:
-- Only modify `/docs/todos.md` (to avoid circular reviews)
 - Have `[skip-review]` or `[WIP]` in the PR title
 
-Example output format:
-```markdown
-## Production-Ready Improvements
-- [ ] [P1] Add input validation for X endpoint
-- [ ] [P2] Consider caching strategy for Y operation
-- [ ] [P2] Refactor Z for better maintainability
-```
+The review agent will use the `todo-tracker-pm` agent to create GitHub issues for non-critical improvements with appropriate priority levels:
+- `[P0]` Critical: Security, data loss, breaking changes
+- `[P1]` Important: Significant bugs, performance issues
+- `[P2]` Nice-to-have: Enhancements, optimizations
 
 ## Project Overview
 
@@ -210,10 +206,10 @@ async def test_create_todo_success(client, test_user_id):
 
 ### MVP Phase Guidelines
 - **Speed over perfection**: Get features working first, polish later
-- **Minimal viable tests**: Write basic happy-path tests only - edge cases can be tracked in `/docs/todos.md`
-- **Feature scope**: Implement core functionality only - nice-to-haves go in `/docs/todos.md` as [P2] items
-- **Technical debt is OK**: Track refactoring needs in `/docs/todos.md` rather than blocking progress
-- **IMPORTANT**: Whenever you skip something for MVP (tests, error handling, features), you MUST add it to `/docs/todos.md` with appropriate priority level
+- **Minimal viable tests**: Write basic happy-path tests only - edge cases should be tracked using the `todo-tracker-pm` agent
+- **Feature scope**: Implement core functionality only - nice-to-haves should be tracked using the `todo-tracker-pm` agent as [P2] items
+- **Technical debt is OK**: Use the `todo-tracker-pm` agent to create GitHub issues for refactoring needs rather than blocking progress
+- **IMPORTANT**: Whenever you skip something for MVP (tests, error handling, features), you MUST use the `todo-tracker-pm` agent to create a GitHub issue with appropriate priority level
 - You can use context7 mcp to retrieve documentation
 
 ### General Development
@@ -222,4 +218,4 @@ async def test_create_todo_success(client, test_user_id):
 - Always use an opportunity to teach the user about python
 - Frontend: Use shadcn components whenever possible, with tailwind
 - **Backend tests are mandatory** but keep them simple during MVP - just verify the happy path works
-- **Frontend tests are optional during MVP** - add them to `/docs/todos.md` as [P1] items for post-MVP
+- **Frontend tests are optional during MVP** - use the `todo-tracker-pm` agent to create [P1] GitHub issues for post-MVP testing

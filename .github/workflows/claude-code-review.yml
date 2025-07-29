@@ -3,9 +3,8 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize]
-    # Skip review when only updating technical debt tracker
+    # Skip review when only updating markdown docs
     paths-ignore:
-      - 'docs/todos.md'
       - '**/*.md'
     # Optional: Only run on specific file changes
     # paths:
@@ -26,7 +25,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-      issues: read
+      issues: write  # Changed from read to write to allow creating issues
       id-token: write
 
     steps:
@@ -52,37 +51,31 @@ jobs:
           direct_prompt: |
             IMPORTANT: This project is in MVP Development Phase. Please review accordingly.
 
-            FIRST: Check /docs/todos.md to see what technical debt is already tracked. Don't suggest items that are already documented there.
+            FIRST: Check existing GitHub issues in the repo to avoid duplicate suggestions. Use gh issue list to see what's already tracked.
 
             Please review this PR with MVP priorities in mind:
 
-            1. CRITICAL ISSUES (must fix):
+            1. CRITICAL ISSUES (must fix before merge):
                - Bugs that break functionality
-               - Security vulnerabilities (unless obvious choice are made for testing and documented in the code)
+               - Security vulnerabilities (unless obvious choices are made for testing and documented in the code)
                - Data loss risks
 
-            2. RECOMMENDATIONS (output as checklist for /docs/todos.md):
-               - Code quality improvements (NOT already in /docs/todos.md)
-               - Performance optimizations (NOT already in /docs/todos.md)
-               - Better error handling (NOT already in /docs/todos.md)
-               - Test coverage gaps (NOT already in /docs/todos.md)
-               - Architecture improvements (NOT already in /docs/todos.md)
+            2. NON-CRITICAL IMPROVEMENTS:
+               For any non-critical improvements (code quality, performance, error handling, test coverage, architecture):
+               - First check if a GitHub issue already exists using: gh issue list --repo yoavf/todo.house
+               - If the improvement is NOT already tracked, use the todo-tracker-pm agent to create a GitHub issue
+               - The todo-tracker-pm agent will verify the code and create properly formatted issues with appropriate priority levels
 
-            Before suggesting any improvement:
-            1. Read /docs/todos.md
-            2. Check if the improvement is already listed
-            3. Only suggest NEW items not already tracked
+            IMPORTANT: Do NOT output markdown checklists or recommendations in your review comment.
+            Instead, use the todo-tracker-pm agent to create GitHub issues for all non-critical improvements.
 
-            Format non-critical feedback as:
-            ```markdown
-            ## Recommendations for /docs/todos.md
-            - [ ] [P1] Specific improvement with context
-            - [ ] [P2] Nice-to-have enhancement
-            ```
+            The todo-tracker-pm agent will:
+            - Verify if issues are still valid by examining the current code
+            - Create GitHub issues with proper priority labels ([P0], [P1], [P2])
+            - Link issues to the project board
+            - Include code references and acceptance criteria
 
-            Use priority levels: [P0]=critical, [P1]=important, [P2]=nice-to-have
-
-            Focus on teaching Python best practices where relevant.
+            Focus on teaching Python best practices where relevant in your review comments.
 
           # Optional: Use sticky comments to make Claude reuse the same comment on subsequent pushes to the same PR
           use_sticky_comment: true
@@ -101,6 +94,6 @@ jobs:
           #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
           #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
 
-          # Optional: Add specific tools for running tests or linting
-          # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
+          # Allow Claude to use gh CLI for issue management and code inspection
+          allowed_tools: "Bash(gh issue list),Bash(gh issue create),Bash(cat),Bash(grep),Bash(find),Read,Grep,Task"
 
