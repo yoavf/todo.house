@@ -25,7 +25,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-      issues: write  # Changed from read to write to allow creating issues
       id-token: write
 
     steps:
@@ -51,8 +50,6 @@ jobs:
           direct_prompt: |
             IMPORTANT: This project is in MVP Development Phase. Please review accordingly.
 
-            FIRST: Check existing GitHub issues in the repo to avoid duplicate suggestions. Use gh issue list to see what's already tracked.
-
             Please review this PR with MVP priorities in mind:
 
             1. CRITICAL ISSUES (must fix before merge):
@@ -62,20 +59,9 @@ jobs:
 
             2. NON-CRITICAL IMPROVEMENTS:
                For any non-critical improvements (code quality, performance, error handling, test coverage, architecture):
-               - First check if a GitHub issue already exists using: gh issue list --repo yoavf/todo.house
-               - If the improvement is NOT already tracked, use the todo-tracker-pm agent to create a GitHub issue
-               - The todo-tracker-pm agent will verify the code and create properly formatted issues with appropriate priority levels
-
-            IMPORTANT: Do NOT output markdown checklists or recommendations in your review comment.
-            Instead, use the todo-tracker-pm agent to create GitHub issues for all non-critical improvements.
-
-            The todo-tracker-pm agent will:
-            - Verify if issues are still valid by examining the current code
-            - Create GitHub issues with proper priority labels ([P0], [P1], [P2])
-            - Link issues to the project board
-            - Include code references and acceptance criteria
-
-            Focus on teaching Python best practices where relevant in your review comments.
+               - Simply mention them as suggestions in your review comment
+               - Use clear priority indicators: [Critical], [Important], [Nice-to-have]
+               - Focus on teaching Python best practices where relevant
 
           # Optional: Use sticky comments to make Claude reuse the same comment on subsequent pushes to the same PR
           use_sticky_comment: true
@@ -94,6 +80,6 @@ jobs:
           #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
           #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
 
-          # Allow Claude to use gh CLI for issue management and code inspection
-          allowed_tools: "Bash(gh issue list),Bash(gh issue create),Bash(cat),Bash(grep),Bash(find),Read,Grep,Task"
+          # Allow Claude to use tools for code inspection only
+          allowed_tools: "Bash(cat),Bash(grep),Bash(find),Read,Grep"
 
