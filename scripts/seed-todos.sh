@@ -49,6 +49,17 @@ if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_KEY" ]; then
     
     if [ "$verify_code" = "200" ] && [ "$verify_body" != "[]" ]; then
       echo "✅ User verified in database"
+      echo "User data: $verify_body"
+      
+      # Also verify via API endpoint
+      echo "📡 Verifying user via API..."
+      api_verify=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/api/tasks/" \
+        -H "x-user-id: $USER_ID")
+      
+      api_verify_code=$(echo "$api_verify" | tail -n1)
+      api_verify_body=$(echo "$api_verify" | sed '$d')
+      
+      echo "API verify response (HTTP $api_verify_code): $api_verify_body"
     else
       echo "❌ User not found in database after creation!"
       echo "Verify response: $verify_body"
