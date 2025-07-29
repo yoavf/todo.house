@@ -42,11 +42,8 @@ jobs:
           cd backend
           uv sync
       
-      - name: Install Playwright
-        run: |
-          # Install playwright without modifying package.json
-          npm install --no-save playwright
-          npx playwright install chromium
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
       
       - name: Setup test environment
         run: |
@@ -123,8 +120,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Clean up any local changes to avoid conflicts
-          git stash --include-untracked || true
+          # Reset any changes to tracked files (but keep screenshots)
+          git checkout -- .
           
           # Create a unique folder for this PR's screenshots
           PR_FOLDER="pr-${{ github.event.pull_request.number }}"
