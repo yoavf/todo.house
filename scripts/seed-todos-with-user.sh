@@ -22,7 +22,7 @@ user_response=$(curl -s -w "\n%{http_code}" -X POST "$SUPABASE_URL/rest/v1/users
   -H "Authorization: Bearer $SUPABASE_KEY" \
   -H "Content-Type: application/json" \
   -H "Prefer: return=minimal" \
-  -d "{\"id\":\"$USER_ID\",\"created_at\":\"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\"}")
+  -d "{\"id\":\"$USER_ID\",\"email\":\"test-user@todo.house\",\"created_at\":\"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\"}")
 
 user_code=$(echo "$user_response" | tail -n1)
 user_body=$(echo "$user_response" | sed '$d')
