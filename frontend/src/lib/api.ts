@@ -73,6 +73,7 @@ const TEST_USER_ID =
 export interface ImageMetadata {
 	id: string;
 	url: string;
+	thumbnail_url: string;
 	filename: string;
 	content_type: string;
 	file_size: number;

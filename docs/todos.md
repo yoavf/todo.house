@@ -14,6 +14,7 @@
 - [ ] [P1] Replace hardcoded TEST_USER_ID with proper authentication system (`frontend/src/lib/api.ts:59`)
 - [ ] [P2] Extract file validation constants to shared config (duplicated in frontend and backend)
 - [ ] [P2] Add input sanitization for filename display to prevent XSS (`frontend/src/components/ImageUpload.tsx:211`)
+- [ ] [P2] Consider using dataclasses for image metadata structures instead of Dict[str, Any] for cleaner type definitions in Python
 
 ### Error Handling & UX
 - [ ] [P1] Add retry mechanism for failed image uploads in frontend
@@ -32,6 +33,7 @@
 - [ ] [P1] Add integration tests that verify end-to-end image analysis workflow
 - [ ] [P2] Add error tracking/monitoring for AI analysis failures
 - [ ] [P2] Add metrics collection for image processing success rates
+- [ ] [P2] Add metrics tracking for image loading success/failure rates in frontend to identify CDN or network issues
 
 ### Documentation & Development
 - [ ] [P2] Document AI prompt engineering approach and confidence scoring algorithm

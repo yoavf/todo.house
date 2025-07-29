@@ -40,6 +40,9 @@ class ImageConfig(BaseSettings):
         default=["image/jpeg", "image/png", "image/webp"],
         description="Supported image formats",
     )
+    storage_bucket_name: str = Field(
+        default="task-images", description="Supabase storage bucket name for images"
+    )
 
 
 class AppConfig(BaseSettings):

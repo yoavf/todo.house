@@ -389,7 +389,7 @@ async def store_image_record(
             # Upload the image using named parameters as per documentation
             
             # Upload bytes directly with named parameters
-            response = supabase.storage.from_("task-images").upload(
+            response = supabase.storage.from_(config.image.storage_bucket_name).upload(
                 file=image_data,  # file parameter accepts bytes directly
                 path=storage_path,  # path parameter
                 file_options={"content-type": content_type, "upsert": "true"}
@@ -487,11 +487,16 @@ async def get_image(
             )
         
         # Get public URL from Supabase storage
-        storage_url = supabase.storage.from_("task-images").get_public_url(image_record["storage_path"])
+        storage_url = supabase.storage.from_(config.image.storage_bucket_name).get_public_url(image_record["storage_path"])
+        
+        # Generate thumbnail URL using Supabase image transformation
+        # This creates a 200x200 thumbnail with good quality
+        thumbnail_url = f"{storage_url}?width=200&height=200&resize=contain&quality=80"
         
         return {
             "id": image_record["id"],
             "url": storage_url,
+            "thumbnail_url": thumbnail_url,
             "filename": image_record["filename"],
             "content_type": image_record["content_type"],
             "file_size": image_record["file_size"],

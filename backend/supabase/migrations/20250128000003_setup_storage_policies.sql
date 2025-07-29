@@ -1,4 +1,5 @@
 -- Setup storage policies for task-images bucket
+-- Note: The bucket name 'task-images' is configured in backend/app/config.py
 
 -- First ensure the bucket exists with proper configuration
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

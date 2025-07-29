@@ -189,10 +189,11 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 										window.open(imageData.url, "_blank");
 									}
 								}}
+								aria-label={`View source image for task: ${task.title}`}
 							>
 								<Image
-									src={imageData.url}
-									alt="Task source"
+									src={imageData.thumbnail_url}
+									alt={`Source image for task: ${task.title}. ${task.description || ""}`}
 									fill
 									style={{ objectFit: "cover" }}
 								/>
