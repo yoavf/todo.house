@@ -1,9 +1,11 @@
-const fetch = require('node-fetch');
-
 // Create todos via API for screenshots
 async function seedTodosViaAPI() {
+  // Use node-fetch for Node.js
+  const fetch = require('node-fetch');
+  
   const apiUrl = process.env.API_URL || 'http://localhost:8000';
-  const userId = process.env.TEST_USER_ID || 'test-user-ci';
+  // Use a valid UUID for the test user
+  const userId = process.env.TEST_USER_ID || '550e8400-e29b-41d4-a716-446655440000';
   
   const todos = [
     {
@@ -67,11 +69,6 @@ async function seedTodosViaAPI() {
 
 // Run if called directly
 if (require.main === module) {
-  // Add node-fetch for Node < 18
-  if (!global.fetch) {
-    global.fetch = require('node-fetch');
-  }
-  
   seedTodosViaAPI().catch(console.error);
 }
 

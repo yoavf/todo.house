@@ -58,7 +58,7 @@ jobs:
           
           cat > frontend/.env.local << EOF
           NEXT_PUBLIC_API_URL=http://localhost:8000
-          NEXT_PUBLIC_TEST_USER_ID=test-user-ci
+          NEXT_PUBLIC_TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000
           EOF
       
       # Note: Seed data will be created after services start
@@ -99,7 +99,7 @@ jobs:
           done
           
           # Seed test data via API
-          API_URL=http://localhost:8000 TEST_USER_ID=test-user-ci node scripts/seed-todos-api.js || echo "Warning: Failed to seed data"
+          API_URL=http://localhost:8000 TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000 node scripts/seed-todos-api.js || echo "Warning: Failed to seed data"
           
           # Wait a bit for data to be loaded
           sleep 3

@@ -12,8 +12,8 @@ async function takeScreenshots() {
   }
 
   try {
-    // Test user credentials for CI
-    const testUserId = 'test-user-ci';
+    // Test user UUID for CI
+    const testUserId = '550e8400-e29b-41d4-a716-446655440000';
     
     // Take desktop screenshots
     console.log('📸 Taking desktop screenshots...');
