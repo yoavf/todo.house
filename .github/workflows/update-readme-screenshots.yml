@@ -23,7 +23,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -36,7 +40,7 @@ jobs:
           enable-cache: true
       
       - name: Install frontend dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       
       - name: Install backend dependencies
         run: |
@@ -74,7 +78,7 @@ jobs:
           
           # Start frontend in background
           cd frontend
-          npm run dev &
+          pnpm run dev &
           FRONTEND_PID=$!
           cd ..
           
