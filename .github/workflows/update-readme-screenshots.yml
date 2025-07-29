@@ -48,7 +48,8 @@ jobs:
       - name: Install Playwright
         run: |
           cd frontend
-          npx playwright install chromium
+          pnpm add -D playwright
+          pnpm exec playwright install chromium
       
       - name: Setup test environment
         run: |
@@ -61,6 +62,7 @@ jobs:
           
           cat > frontend/.env.local << EOF
           NEXT_PUBLIC_API_URL=http://localhost:8000
+          NEXT_PUBLIC_TEST_USER_ID=test-user-ci
           EOF
       
       - name: Seed test data
