@@ -44,7 +44,6 @@ jobs:
       
       - name: Install Playwright
         run: |
-          cd frontend
           pnpm add -D playwright
           pnpm exec playwright install chromium
       
