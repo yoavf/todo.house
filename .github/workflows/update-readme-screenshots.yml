@@ -45,9 +45,9 @@ jobs:
           cd backend
           uv sync
       
-      - name: Install Playwright
+      - name: Install Playwright and dependencies
         run: |
-          pnpm add -Dw playwright
+          pnpm add -Dw playwright node-fetch
           pnpm exec playwright install chromium
       
       - name: Setup test environment
@@ -64,8 +64,7 @@ jobs:
           NEXT_PUBLIC_TEST_USER_ID=test-user-ci
           EOF
       
-      - name: Seed test data
-        run: node scripts/seed-todos.js
+      # Note: Seed data will be created after services start
       
       - name: Start services and take screenshots
         run: |
@@ -101,6 +100,12 @@ jobs:
             echo "Waiting... ($i/30)"
             sleep 2
           done
+          
+          # Seed test data via API
+          API_URL=http://localhost:8000 TEST_USER_ID=test-user-ci node scripts/seed-todos-api.js || echo "Warning: Failed to seed data"
+          
+          # Wait a bit for data to be loaded
+          sleep 3
           
           # Take screenshots
           node scripts/take-screenshots.js
