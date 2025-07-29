@@ -14,7 +14,7 @@ from .providers import (
     AIProviderRateLimitError,
     AIProviderAPIError,
 )
-from ..models import AITaskCreate, TaskSource
+from ..models import AITaskCreate, TaskSource, TaskType
 from ..services.task_service import TaskService
 from ..logging_config import ImageProcessingLogger
 
@@ -487,6 +487,14 @@ For each task you identify:
 2. Include a detailed description explaining what needs to be done and why
 3. Assign a priority level (high, medium, low) based on urgency and safety
 4. Suggest a category (cleaning, repair, maintenance, safety, etc.)
+5. Assign one or more task_types from this list that best describe the task:
+   - interior: Tasks related to inside the home
+   - exterior: Tasks related to outside the home
+   - electricity: Electrical work or issues
+   - plumbing: Plumbing related tasks
+   - appliances: Appliance maintenance or repair
+   - maintenance: Regular upkeep and preventive care
+   - repair: Fixing broken or damaged items
 
 Focus on:
 - Visible maintenance needs (dirt, wear, damage)
@@ -594,11 +602,21 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
         ai_tasks = []
 
         for task_data in tasks_data:
+            # Parse task types
+            task_types_raw = task_data.get("task_types", [])
+            task_types = []
+            for tt in task_types_raw:
+                try:
+                    task_types.append(TaskType(tt))
+                except ValueError:
+                    logger.warning(f"Invalid task type '{tt}', skipping")
+            
             # Create AITaskCreate model
             ai_task = AITaskCreate(
                 title=task_data["title"],
                 description=task_data["description"],
                 priority=task_data.get("priority", "medium").lower(),
+                task_types=task_types,
                 source=TaskSource.AI_GENERATED,
                 source_image_id=source_image_id,
                 ai_confidence=task_data.get("confidence", ai_confidence or 0.5),  # Use task-specific confidence if available

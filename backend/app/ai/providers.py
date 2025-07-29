@@ -339,9 +339,16 @@ class GeminiProvider(AIProvider):
                                 },
                                 "confidence": {
                                     "type": "number"
+                                },
+                                "task_types": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "enum": ["interior", "exterior", "electricity", "plumbing", "appliances", "maintenance", "repair"]
+                                    }
                                 }
                             },
-                            "required": ["title", "description", "priority", "category", "reasoning", "confidence"]
+                            "required": ["title", "description", "priority", "category", "reasoning", "confidence", "task_types"]
                         }
                     },
                     "analysis_summary": {

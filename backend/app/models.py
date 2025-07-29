@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, Literal, List, Dict, Any
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from enum import Enum
 
 
@@ -21,6 +21,16 @@ class TaskSource(str, Enum):
     AI_GENERATED = "ai_generated"
 
 
+class TaskType(str, Enum):
+    INTERIOR = "interior"
+    EXTERIOR = "exterior"
+    ELECTRICITY = "electricity"
+    PLUMBING = "plumbing"
+    APPLIANCES = "appliances"
+    MAINTENANCE = "maintenance"
+    REPAIR = "repair"
+
+
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
@@ -28,6 +38,7 @@ class TaskBase(BaseModel):
     completed: bool = False
     status: TaskStatus = TaskStatus.ACTIVE
     snoozed_until: Optional[datetime] = None
+    task_types: List[TaskType] = Field(default_factory=list)
 
 
 class TaskCreate(TaskBase):
@@ -44,6 +55,7 @@ class TaskUpdate(BaseModel):
     completed: Optional[bool] = None
     status: Optional[TaskStatus] = None
     snoozed_until: Optional[datetime] = None
+    task_types: Optional[List[TaskType]] = None
 
 
 class Task(TaskBase):
@@ -57,6 +69,25 @@ class Task(TaskBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+    
+    @field_validator('task_types', mode='before')
+    @classmethod
+    def parse_task_types(cls, v):
+        """Parse task_types from database JSONB format to TaskType enum list."""
+        if v is None:
+            return []
+        if isinstance(v, list):
+            parsed = []
+            for item in v:
+                if isinstance(item, TaskType):
+                    parsed.append(item)
+                elif isinstance(item, str):
+                    try:
+                        parsed.append(TaskType(item))
+                    except ValueError:
+                        pass  # Skip invalid task types
+            return parsed
+        return []
 
 
 class SnoozeRequest(BaseModel):
@@ -81,6 +112,7 @@ class GeneratedTask(BaseModel):
     priority: TaskPriority
     category: str = Field(..., max_length=100)
     confidence_score: float = Field(..., ge=0.0, le=1.0)
+    task_types: List[TaskType] = Field(default_factory=list)
 
 
 class ImageAnalysisResponse(BaseModel):
