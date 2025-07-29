@@ -2,6 +2,9 @@ from datetime import datetime
 from typing import Optional, Literal, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from enum import Enum
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TaskStatus(str, Enum):
