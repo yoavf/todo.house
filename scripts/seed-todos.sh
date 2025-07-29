@@ -7,25 +7,37 @@ USER_EMAIL="test-user@example.com"
 
 echo "📡 Seeding data via API at $API_URL"
 
-# First, create the user using direct database insert (since we have DB access in CI)
-# Note: This assumes we have SUPABASE_URL and SUPABASE_KEY in environment
+# First, clean up any existing test data to avoid conflicts
 if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_KEY" ]; then
+  echo "🧹 Cleaning up existing test data..."
+  
+  # Delete existing tasks for this user
+  curl -s -X DELETE "$SUPABASE_URL/rest/v1/tasks?user_id=eq.$USER_ID" \
+    -H "apikey: $SUPABASE_KEY" \
+    -H "Authorization: Bearer $SUPABASE_KEY" > /dev/null
+  
+  # Delete existing test user
+  curl -s -X DELETE "$SUPABASE_URL/rest/v1/users?id=eq.$USER_ID" \
+    -H "apikey: $SUPABASE_KEY" \
+    -H "Authorization: Bearer $SUPABASE_KEY" > /dev/null
+  
   echo "🧑 Creating test user..."
   
-  # Create user via Supabase REST API
+  # Create user via Supabase REST API with upsert
   user_response=$(curl -s -w "\n%{http_code}" -X POST "$SUPABASE_URL/rest/v1/users" \
     -H "apikey: $SUPABASE_KEY" \
     -H "Authorization: Bearer $SUPABASE_KEY" \
     -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
+    -H "Prefer: return=representation,resolution=merge-duplicates" \
     -d "{\"id\":\"$USER_ID\",\"email\":\"$USER_EMAIL\"}")
   
   http_code=$(echo "$user_response" | tail -n1)
   
-  if [ "$http_code" = "201" ] || [ "$http_code" = "409" ]; then
+  if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
     echo "✅ User ready: $USER_EMAIL"
   else
-    echo "⚠️  Could not create user (may already exist)"
+    echo "❌ Failed to create user (HTTP $http_code)"
+    echo "Response: $(echo "$user_response" | sed '$d')"
   fi
 else
   echo "⚠️  Skipping user creation (no Supabase credentials)"
