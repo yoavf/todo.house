@@ -35,12 +35,12 @@ echo "📝 Creating todos..."
 
 # Array of todos to create
 todos=(
-  '{"title":"Review pull request #42","description":"Review the new authentication feature implementation and provide feedback on security concerns","completed":false}'
-  '{"title":"Update API documentation","description":"Add the new endpoints to the Swagger documentation and update examples","completed":false}'
-  '{"title":"Fix database migration issue","description":"Investigate and fix the failing migration in the staging environment","completed":false}'
-  '{"title":"Implement user analytics","description":"Add basic analytics tracking for user actions using Mixpanel","completed":false}'
-  '{"title":"Deploy hotfix to production","description":"Deploy the authentication bug fix after QA approval","completed":true}'
-  '{"title":"Write unit tests for new feature","description":"Add comprehensive test coverage for the payment processing module","completed":true}'
+  '{"title":"Review pull request #42","description":"Review the new authentication feature implementation and provide feedback on security concerns","completed":false,"priority":"high"}'
+  '{"title":"Update API documentation","description":"Add the new endpoints to the Swagger documentation and update examples","completed":false,"priority":"medium"}'
+  '{"title":"Fix database migration issue","description":"Investigate and fix the failing migration in the staging environment","completed":false,"priority":"high"}'
+  '{"title":"Implement user analytics","description":"Add basic analytics tracking for user actions using Mixpanel","completed":false,"priority":"low"}'
+  '{"title":"Deploy hotfix to production","description":"Deploy the authentication bug fix after QA approval","completed":true,"priority":"high"}'
+  '{"title":"Write unit tests for new feature","description":"Add comprehensive test coverage for the payment processing module","completed":true,"priority":"medium"}'
 )
 
 # Create each todo
