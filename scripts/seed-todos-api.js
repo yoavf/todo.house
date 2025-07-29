@@ -1,7 +1,7 @@
+const fetch = require('node-fetch');
+
 // Create todos via API for screenshots
 async function seedTodosViaAPI() {
-  // Use node-fetch for Node.js
-  const fetch = require('node-fetch');
   
   const apiUrl = process.env.API_URL || 'http://localhost:8000';
   // Use a valid UUID for the test user
