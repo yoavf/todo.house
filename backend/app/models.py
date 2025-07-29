@@ -85,7 +85,7 @@ class Task(TaskBase):
                     try:
                         parsed.append(TaskType(item))
                     except ValueError:
-                        pass  # Skip invalid task types
+                        logger.warning(f"Invalid task type encountered during deserialization: {item}")
             return parsed
         return []
 
