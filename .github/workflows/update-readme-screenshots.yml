@@ -47,8 +47,9 @@ jobs:
       
       - name: Install Playwright
         run: |
-          pnpm add -Dw playwright
-          pnpm exec playwright install chromium
+          # Install playwright without modifying package.json
+          npm install --no-save playwright
+          npx playwright install chromium
       
       - name: Setup test environment
         run: |

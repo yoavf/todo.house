@@ -44,8 +44,9 @@ jobs:
       
       - name: Install Playwright
         run: |
-          pnpm add -Dw playwright
-          pnpm exec playwright install chromium
+          # Install playwright without modifying package.json
+          npm install --no-save playwright
+          npx playwright install chromium
       
       - name: Setup test environment
         run: |
@@ -121,6 +122,9 @@ jobs:
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Clean up any local changes to avoid conflicts
+          git stash --include-untracked || true
           
           # Create a unique folder for this PR's screenshots
           PR_FOLDER="pr-${{ github.event.pull_request.number }}"
