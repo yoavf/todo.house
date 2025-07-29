@@ -62,10 +62,14 @@ async def _process_image_analysis(
                 filename=filename,
                 content_type=content_type,
                 file_size=len(image_data),
+                image_data=image_data,
             )
         except Exception as e:
-            logger.warning(f"Failed to store image record, continuing without: {e}")
-            # Continue without storing image record - analysis can still work
+            logger.error(f"Failed to store image record: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to store image: {str(e)}"
+            )
 
     # Process image
     logger.info(f"Starting image analysis for user {user_id}, file: {filename}")
@@ -355,16 +359,17 @@ async def analyze_image(
 
 
 async def store_image_record(
-    user_id: str, filename: str, content_type: str, file_size: int
+    user_id: str, filename: str, content_type: str, file_size: int, image_data: bytes
 ) -> str:
     """
-    Store image record in database.
+    Store image record in database and file in Supabase storage.
 
     Args:
         user_id: User identifier
         filename: Original filename
         content_type: MIME type
         file_size: File size in bytes
+        image_data: Image file data
 
     Returns:
         UUID of created image record
@@ -374,18 +379,37 @@ async def store_image_record(
     """
     try:
         image_id = str(uuid.uuid4())
+        storage_path = f"images/{user_id}/{image_id}"
 
-        image_data = {
+        # Store the actual image file in Supabase storage
+        try:
+            # Skip bucket creation - assume it exists
+            # The bucket should be created manually in Supabase Studio
+            
+            # Upload the image using named parameters as per documentation
+            
+            # Upload bytes directly with named parameters
+            response = supabase.storage.from_("task-images").upload(
+                file=image_data,  # file parameter accepts bytes directly
+                path=storage_path,  # path parameter
+                file_options={"content-type": content_type, "upsert": "true"}
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to upload image to storage: {e}")
+            raise e
+
+        image_record = {
             "id": image_id,
             "user_id": user_id,
             "filename": filename,
             "content_type": content_type,
             "file_size": file_size,
-            "storage_path": f"images/{user_id}/{image_id}",  # Placeholder path
+            "storage_path": storage_path,
             "analysis_status": "processing",
         }
 
-        response = supabase.table("images").insert(image_data).execute()
+        response = supabase.table("images").insert(image_record).execute()
 
         if not response.data:
             raise Exception("Failed to store image record - no data returned")
@@ -422,6 +446,67 @@ async def update_image_analysis_status(
     except Exception as e:
         logger.warning(f"Failed to update image analysis status (non-critical): {e}")
         # Don't raise exception here as this is a secondary operation
+
+
+@router.get("/{image_id}")
+async def get_image(
+    image_id: str,
+    user_id: str = Header(..., alias="x-user-id")
+):
+    """
+    Get image URL and metadata by ID.
+    
+    Args:
+        image_id: UUID of the image
+        user_id: User identifier from header
+        
+    Returns:
+        Image metadata including public URL
+        
+    Raises:
+        404: Image not found
+        403: User doesn't have access to this image
+    """
+    try:
+        # Fetch image record from database
+        response = supabase.table("images").select("*").eq("id", image_id).execute()
+        
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Image not found"
+            )
+        
+        image_record = response.data[0]
+        
+        # Check if user owns this image
+        if image_record["user_id"] != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this image"
+            )
+        
+        # Get public URL from Supabase storage
+        storage_url = supabase.storage.from_("task-images").get_public_url(image_record["storage_path"])
+        
+        return {
+            "id": image_record["id"],
+            "url": storage_url,
+            "filename": image_record["filename"],
+            "content_type": image_record["content_type"],
+            "file_size": image_record["file_size"],
+            "created_at": image_record["created_at"],
+            "analysis_status": image_record["analysis_status"],
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get image {image_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve image"
+        )
 
 
 @router.get("/health")

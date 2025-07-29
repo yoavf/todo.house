@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { Task, TaskUpdate } from "@/lib/api";
+import type { ImageMetadata, Task, TaskUpdate } from "@/lib/api";
+import { tasksAPI } from "@/lib/api";
 import { Icons } from "./icons";
 
 interface TaskItemProps {
@@ -19,6 +21,28 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [title, setTitle] = useState(task.title);
 	const [description, setDescription] = useState(task.description || "");
+	const [imageData, setImageData] = useState<ImageMetadata | null>(null);
+	const [imageLoading, setImageLoading] = useState(false);
+	const [imageError, setImageError] = useState(false);
+
+	useEffect(() => {
+		if (task.source === "ai_generated" && task.source_image_id) {
+			setImageLoading(true);
+			tasksAPI
+				.getImage(task.source_image_id)
+				.then((data) => {
+					setImageData(data);
+					setImageError(false);
+				})
+				.catch((err) => {
+					console.error("Failed to load image:", err);
+					setImageError(true);
+				})
+				.finally(() => {
+					setImageLoading(false);
+				});
+		}
+	}, [task.source, task.source_image_id]);
 
 	const handleSave = () => {
 		onUpdate(task.id, { title, description });
@@ -105,6 +129,19 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 								{task.description}
 							</p>
 						)}
+						{task.source === "ai_generated" && (
+							<div className="flex items-center gap-2 mt-2">
+								<Icons.camera className="w-4 h-4 text-blue-500" />
+								<span className="text-xs text-blue-600 font-medium">
+									AI Generated
+								</span>
+								{task.ai_confidence && (
+									<span className="text-xs text-gray-500">
+										({Math.round(task.ai_confidence * 100)}% confidence)
+									</span>
+								)}
+							</div>
+						)}
 					</div>
 					<div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
 						<Button
@@ -129,6 +166,40 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 						</Button>
 					</div>
 				</div>
+				{/* Show image thumbnail for AI-generated tasks */}
+				{task.source === "ai_generated" && task.source_image_id && (
+					<div className="mt-3">
+						{imageLoading && (
+							<div className="flex items-center justify-center h-24 bg-gray-100 rounded-lg">
+								<Icons.loader className="w-6 h-6 text-gray-400 animate-spin" />
+							</div>
+						)}
+						{imageError && (
+							<div className="flex items-center justify-center h-24 bg-gray-100 rounded-lg">
+								<Icons.imageOff className="w-6 h-6 text-gray-400" />
+							</div>
+						)}
+						{imageData && !imageError && (
+							<button
+								type="button"
+								className="w-full h-24 relative rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+								onClick={() => window.open(imageData.url, "_blank")}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										window.open(imageData.url, "_blank");
+									}
+								}}
+							>
+								<Image
+									src={imageData.url}
+									alt="Task source"
+									fill
+									style={{ objectFit: "cover" }}
+								/>
+							</button>
+						)}
+					</div>
+				)}
 			</CardContent>
 		</Card>
 	);

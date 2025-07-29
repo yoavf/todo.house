@@ -70,6 +70,16 @@ const TEST_USER_ID =
 		);
 	})();
 
+export interface ImageMetadata {
+	id: string;
+	url: string;
+	filename: string;
+	content_type: string;
+	file_size: number;
+	created_at: string;
+	analysis_status: string;
+}
+
 export const tasksAPI = {
 	async getTasks(): Promise<Task[]> {
 		const response = await fetch(`${API_URL}/api/tasks/`, {
@@ -135,6 +145,16 @@ export const tasksAPI = {
 			throw new Error(errorData.message || "Failed to analyze image");
 		}
 
+		return response.json();
+	},
+
+	async getImage(imageId: string): Promise<ImageMetadata> {
+		const response = await fetch(`${API_URL}/api/images/${imageId}`, {
+			headers: {
+				"X-User-Id": TEST_USER_ID,
+			},
+		});
+		if (!response.ok) throw new Error("Failed to fetch image");
 		return response.json();
 	},
 };

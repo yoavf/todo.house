@@ -7,8 +7,10 @@ import {
 	Clipboard,
 	Edit2,
 	Image,
+	ImageOff,
 	Info,
 	Lightbulb,
+	Loader2,
 	Plus,
 	RefreshCcw,
 	Trash2,
@@ -35,12 +37,16 @@ export const Icons = {
 	camera: Camera,
 	upload: Upload,
 	image: Image,
+	imageOff: ImageOff,
 
 	// AI & generation
 	lightbulb: Lightbulb,
 
 	// Actions
 	switchCamera: RefreshCcw,
+
+	// Loading
+	loader: Loader2,
 };
 
 export type IconName = keyof typeof Icons;

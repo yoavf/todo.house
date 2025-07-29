@@ -67,6 +67,11 @@
 ### Security & Authentication
 - [ ] [P0] Implement proper authentication instead of X-User-Id headers
 - [ ] [P0] Add rate limiting to prevent API abuse
+- [ ] [P0] **VERIFY SUPABASE STORAGE BUCKET PERMISSIONS AND RLS POLICIES** - Currently using permissive policies for development. Must properly configure:
+  - Storage bucket RLS policies to restrict uploads/access by authenticated users only
+  - Image table RLS policies to use proper auth.uid() checks instead of `true`
+  - Storage bucket MIME type restrictions and file size limits
+  - Proper CORS configuration for storage bucket
 - [ ] [P1] Implement CORS configuration for production domains
 - [ ] [P1] Add API key management for service-to-service communication
 - [ ] [P2] Implement request signing for sensitive operations
