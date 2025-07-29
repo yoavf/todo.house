@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -14,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
 	type ImageAnalysisResponse,
 	type TaskCreate,
+	type TaskType,
 	tasksAPI,
 } from "@/lib/api";
 import { Icons } from "./icons";
@@ -24,6 +26,19 @@ interface GeneratedTasksPreviewProps {
 	onError?: (error: string) => void;
 	onClose?: () => void;
 }
+
+const getTaskTypeColor = (type: TaskType): string => {
+	const colors: Record<TaskType, string> = {
+		interior: "bg-blue-100 text-blue-700 hover:bg-blue-200",
+		exterior: "bg-green-100 text-green-700 hover:bg-green-200",
+		electricity: "bg-yellow-100 text-yellow-700 hover:bg-yellow-200",
+		plumbing: "bg-cyan-100 text-cyan-700 hover:bg-cyan-200",
+		appliances: "bg-purple-100 text-purple-700 hover:bg-purple-200",
+		maintenance: "bg-orange-100 text-orange-700 hover:bg-orange-200",
+		repair: "bg-red-100 text-red-700 hover:bg-red-200",
+	};
+	return colors[type] || "bg-gray-100 text-gray-700 hover:bg-gray-200";
+};
 
 export function GeneratedTasksPreview({
 	analysisResponse,
@@ -76,6 +91,7 @@ export function GeneratedTasksPreview({
 					source_image_id: analysisResponse.image_id || undefined,
 					ai_confidence: task.confidence_score,
 					ai_provider: analysisResponse.provider_used,
+					task_types: task.task_types,
 				};
 
 				await tasksAPI.createTask(taskData);
@@ -215,6 +231,19 @@ export function GeneratedTasksPreview({
 										<p className="text-sm text-gray-700 mb-2">
 											{task.description}
 										</p>
+										{task.task_types && task.task_types.length > 0 && (
+											<div className="flex flex-wrap gap-1.5 mb-2">
+												{task.task_types.map((type) => (
+													<Badge
+														key={type}
+														variant="secondary"
+														className={`text-xs px-2 py-0.5 ${getTaskTypeColor(type)}`}
+													>
+														{type}
+													</Badge>
+												))}
+											</div>
+										)}
 										<div className="flex items-center gap-4 text-xs text-gray-500">
 											<span
 												className={`font-medium ${getConfidenceColor(task.confidence_score)}`}
