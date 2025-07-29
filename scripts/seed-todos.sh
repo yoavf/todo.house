@@ -35,9 +35,29 @@ if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_KEY" ]; then
   
   if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
     echo "✅ User ready: $USER_EMAIL"
+    
+    # Wait a moment for the user to be committed
+    sleep 2
+    
+    # Verify user exists
+    verify_response=$(curl -s -w "\n%{http_code}" -X GET "$SUPABASE_URL/rest/v1/users?id=eq.$USER_ID" \
+      -H "apikey: $SUPABASE_KEY" \
+      -H "Authorization: Bearer $SUPABASE_KEY")
+    
+    verify_code=$(echo "$verify_response" | tail -n1)
+    verify_body=$(echo "$verify_response" | sed '$d')
+    
+    if [ "$verify_code" = "200" ] && [ "$verify_body" != "[]" ]; then
+      echo "✅ User verified in database"
+    else
+      echo "❌ User not found in database after creation!"
+      echo "Verify response: $verify_body"
+      exit 1
+    fi
   else
     echo "❌ Failed to create user (HTTP $http_code)"
     echo "Response: $(echo "$user_response" | sed '$d')"
+    exit 1
   fi
 else
   echo "⚠️  Skipping user creation (no Supabase credentials)"
@@ -55,11 +75,17 @@ todos=(
   '{"title":"Write unit tests for new feature","description":"Add comprehensive test coverage for the payment processing module","completed":true,"priority":"medium"}'
 )
 
+# Debug: Show what user ID we're using
+echo "📋 Using User ID: $USER_ID"
+
 # Create each todo
 for todo in "${todos[@]}"; do
+  # Debug: Show the request
+  echo "📤 Sending request with x-user-id: $USER_ID"
+  
   response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/api/tasks/" \
     -H "Content-Type: application/json" \
-    -H "X-User-ID: $USER_ID" \
+    -H "x-user-id: $USER_ID" \
     -d "$todo")
   
   http_code=$(echo "$response" | tail -n1)
@@ -71,6 +97,7 @@ for todo in "${todos[@]}"; do
   else
     title=$(echo "$todo" | grep -o '"title":"[^"]*"' | cut -d'"' -f4)
     echo "❌ Failed to create: $title (HTTP $http_code)"
+    echo "Response body: $body"
   fi
 done
 
