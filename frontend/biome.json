@@ -27,7 +27,11 @@
 			"recommended": true,
 			"a11y": {
 				"noSvgWithoutTitle": "off",
-				"noLabelWithoutControl": "off"
+				"noLabelWithoutControl": "off",
+				"useSemanticElements": "off"
+			},
+			"suspicious": {
+				"noArrayIndexKey": "off"
 			}
 		}
 	},
