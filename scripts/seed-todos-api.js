@@ -44,7 +44,7 @@ async function seedTodosViaAPI() {
   
   for (const todo of todos) {
     try {
-      const response = await fetch(`${apiUrl}/tasks/`, {
+      const response = await fetch(`${apiUrl}/api/tasks/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

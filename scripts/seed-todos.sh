@@ -45,7 +45,7 @@ todos=(
 
 # Create each todo
 for todo in "${todos[@]}"; do
-  response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/tasks/" \
+  response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/api/tasks/" \
     -H "Content-Type: application/json" \
     -H "X-User-ID: $USER_ID" \
     -d "$todo")
