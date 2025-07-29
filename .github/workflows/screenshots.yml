@@ -44,7 +44,7 @@ jobs:
       
       - name: Install Playwright
         run: |
-          pnpm add -D playwright
+          pnpm add -Dw playwright
           pnpm exec playwright install chromium
       
       - name: Setup test environment
