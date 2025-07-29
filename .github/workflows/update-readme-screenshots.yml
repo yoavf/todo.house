@@ -45,9 +45,9 @@ jobs:
           cd backend
           uv sync
       
-      - name: Install Playwright and dependencies
+      - name: Install Playwright
         run: |
-          pnpm add -Dw playwright node-fetch
+          pnpm add -Dw playwright
           pnpm exec playwright install chromium
       
       - name: Setup test environment
@@ -101,10 +101,15 @@ jobs:
             sleep 2
           done
           
-          # Seed test data via API
-          API_URL=http://localhost:8000 TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000 node scripts/seed-todos-api.js || echo "Warning: Failed to seed data"
+          # Seed test data using shell script
+          chmod +x scripts/seed-todos.sh
+          SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+          SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" \
+          API_URL=http://localhost:8000 \
+          TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000 \
+          ./scripts/seed-todos.sh || echo "Warning: Some seeding may have failed"
           
-          # Wait a bit for data to be loaded
+          # Wait a bit for data to propagate
           sleep 3
           
           # Take screenshots
