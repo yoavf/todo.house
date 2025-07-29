@@ -55,7 +55,7 @@ jobs:
           # Create .env files for CI
           cat > backend/.env << EOF
           SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://test.supabase.co' }}
-          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'test-key' }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY || 'test-key' }}
           ENVIRONMENT=test
           EOF
           
