@@ -1,0 +1,327 @@
+name: Screenshot Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      
+      - name: Install frontend dependencies
+        run: npm ci
+      
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          uv sync
+      
+      - name: Install Playwright
+        run: |
+          cd frontend
+          npx playwright install chromium
+      
+      - name: Setup test environment
+        run: |
+          # Create .env files for CI
+          cat > backend/.env << EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://test.supabase.co' }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'test-key' }}
+          ENVIRONMENT=test
+          EOF
+          
+          cat > frontend/.env.local << EOF
+          NEXT_PUBLIC_API_URL=http://localhost:8000
+          EOF
+      
+      - name: Seed test data
+        run: node scripts/seed-todos.js
+      
+      - name: Start services and take screenshots
+        run: |
+          # Start backend in background
+          cd backend
+          uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          BACKEND_PID=$!
+          cd ..
+          
+          # Start frontend in background
+          cd frontend
+          npm run dev &
+          FRONTEND_PID=$!
+          cd ..
+          
+          # Wait for services to be ready
+          echo "Waiting for backend to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          echo "Waiting for frontend to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          # Take screenshots
+          node scripts/take-screenshots.js
+          
+          # Kill services
+          kill $BACKEND_PID || true
+          kill $FRONTEND_PID || true
+      
+      - name: Upload screenshots to branch
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create a unique folder for this PR's screenshots
+          PR_FOLDER="pr-${{ github.event.pull_request.number }}"
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          SCREENSHOT_FOLDER="${PR_FOLDER}/${TIMESTAMP}"
+          
+          # Save timestamp for comment step
+          echo "SCREENSHOT_TIMESTAMP=${TIMESTAMP}" >> $GITHUB_ENV
+          
+          # Fetch or create the screenshots branch
+          git fetch origin gh-screenshots 2>/dev/null || true
+          
+          # Switch to screenshots branch
+          if git show-ref --verify --quiet refs/remotes/origin/gh-screenshots; then
+            git checkout gh-screenshots
+            git pull origin gh-screenshots
+          else
+            git checkout --orphan gh-screenshots
+            git rm -rf . 2>/dev/null || true
+            echo "# Screenshots Branch" > README.md
+            echo "This branch stores screenshots for pull requests." >> README.md
+            git add README.md
+            git commit -m "Initialize screenshots branch"
+          fi
+          
+          # Create folder structure and copy screenshots
+          mkdir -p "$SCREENSHOT_FOLDER"
+          cp -r screenshots/* "$SCREENSHOT_FOLDER/" 2>/dev/null || true
+          
+          # Update latest symlink
+          rm -f "${PR_FOLDER}/latest"
+          ln -s "${TIMESTAMP}" "${PR_FOLDER}/latest"
+          
+          # Add and commit
+          git add "$PR_FOLDER"
+          git commit -m "Update screenshots for PR #${{ github.event.pull_request.number }} at ${TIMESTAMP}" || echo "No changes to commit"
+          
+          # Push to origin
+          git push origin gh-screenshots || git push --set-upstream origin gh-screenshots
+      
+      - name: Comment PR with screenshots
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Get list of screenshots
+            const screenshotsDir = 'screenshots';
+            const screenshots = fs.readdirSync(screenshotsDir)
+              .filter(file => file.endsWith('.png'))
+              .sort();
+            
+            if (screenshots.length === 0) {
+              console.log('No screenshots found');
+              return;
+            }
+            
+            // Get timestamp
+            const timestamp = process.env.SCREENSHOT_TIMESTAMP || new Date().toISOString();
+            
+            // Base URLs
+            const prNumber = context.issue.number;
+            const baseUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/refs/heads/gh-screenshots/pr-${prNumber}`;
+            const latestUrl = `${baseUrl}/${timestamp}`;
+            
+            // Create comment body
+            let comment = '## 🖼️ TodoHouse Screenshots\n\n';
+            comment += '### 📸 Latest Screenshots\n\n';
+            comment += 'Generated from the most recent commit:\n\n';
+            
+            // Desktop screenshots section
+            comment += '#### 🖥️ Desktop Views\n\n';
+            comment += '<table>\n<tr>\n';
+            
+            const desktopScreenshots = screenshots.filter(s => s.includes('desktop'));
+            desktopScreenshots.forEach((screenshot, index) => {
+              const screenshotUrl = `${latestUrl}/${screenshot}`;
+              const title = screenshot.replace('.png', '')
+                .replace(/^\d+-/, '')
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase());
+              
+              comment += '<td align="center">\n';
+              comment += `<b>${title}</b><br>\n`;
+              comment += `<a href="${screenshotUrl}" target="_blank">`;
+              comment += `<img src="${screenshotUrl}" alt="${title}" width="400">`;
+              comment += `</a>\n`;
+              comment += '</td>\n';
+              
+              if ((index + 1) % 2 === 0) {
+                comment += '</tr>\n<tr>\n';
+              }
+            });
+            
+            comment += '</tr>\n</table>\n\n';
+            
+            // Mobile screenshots section
+            comment += '#### 📱 Mobile Views\n\n';
+            comment += '<table>\n<tr>\n';
+            
+            const mobileScreenshots = screenshots.filter(s => s.includes('mobile'));
+            mobileScreenshots.forEach((screenshot, index) => {
+              const screenshotUrl = `${latestUrl}/${screenshot}`;
+              const title = screenshot.replace('.png', '')
+                .replace(/^\d+-/, '')
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase());
+              
+              comment += '<td align="center">\n';
+              comment += `<b>${title}</b><br>\n`;
+              comment += `<a href="${screenshotUrl}" target="_blank">`;
+              comment += `<img src="${screenshotUrl}" alt="${title}" width="200">`;
+              comment += `</a>\n`;
+              comment += '</td>\n';
+              
+              if ((index + 1) % 3 === 0) {
+                comment += '</tr>\n<tr>\n';
+              }
+            });
+            
+            comment += '</tr>\n</table>\n\n';
+            
+            // Check for existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🖼️ TodoHouse Screenshots')
+            );
+            
+            // Extract history if exists
+            let historySection = '';
+            if (botComment && botComment.body.includes('### 📷 Screenshot History')) {
+              const historyMatch = botComment.body.match(/### 📷 Screenshot History[\s\S]*$/);
+              if (historyMatch) {
+                historySection = historyMatch[0];
+                historySection = historySection.replace(/\n---\n\*Screenshots generated[\s\S]*$/, '');
+              }
+            }
+            
+            // Create or update history
+            if (historySection) {
+              let newHistoryEntry = `\n<details>\n<summary><b>${timestamp}</b> - ${screenshots.length} screenshots</summary>\n\n`;
+              newHistoryEntry += '<table>\n<tr>\n';
+              
+              screenshots.forEach((screenshot, index) => {
+                const screenshotUrl = `${latestUrl}/${screenshot}`;
+                
+                if (index > 0 && index % 4 === 0) {
+                  newHistoryEntry += '</tr>\n<tr>\n';
+                }
+                
+                newHistoryEntry += '<td align="center">\n';
+                newHistoryEntry += `<a href="${screenshotUrl}" target="_blank">`;
+                newHistoryEntry += `<img src="${screenshotUrl}" alt="${screenshot}" width="150">`;
+                newHistoryEntry += `</a>\n`;
+                newHistoryEntry += '</td>\n';
+              });
+              
+              newHistoryEntry += '</tr>\n</table>\n\n</details>\n';
+              
+              historySection = historySection.replace('### 📷 Screenshot History\n',
+                                                    '### 📷 Screenshot History\n' + newHistoryEntry);
+            } else {
+              historySection = '### 📷 Screenshot History\n';
+              historySection += `\n<details>\n<summary><b>${timestamp}</b> - ${screenshots.length} screenshots</summary>\n\n`;
+              historySection += '<table>\n<tr>\n';
+              
+              screenshots.forEach((screenshot, index) => {
+                const screenshotUrl = `${latestUrl}/${screenshot}`;
+                
+                if (index > 0 && index % 4 === 0) {
+                  historySection += '</tr>\n<tr>\n';
+                }
+                
+                historySection += '<td align="center">\n';
+                historySection += `<a href="${screenshotUrl}" target="_blank">`;
+                historySection += `<img src="${screenshotUrl}" alt="${screenshot}" width="150">`;
+                historySection += `</a>\n`;
+                historySection += '</td>\n';
+              });
+              
+              historySection += '</tr>\n</table>\n\n</details>\n';
+            }
+            
+            // Add history to comment
+            comment += historySection;
+            
+            // Add footer
+            comment += `\n---\n`;
+            comment += `*Screenshots generated automatically by GitHub Actions at ${timestamp}*\n`;
+            comment += `*${screenshots.length} screenshots captured with seeded test data*`;
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+              console.log('Updated existing comment');
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+              console.log('Created new comment');
+            }

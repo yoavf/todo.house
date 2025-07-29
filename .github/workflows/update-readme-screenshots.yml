@@ -1,0 +1,202 @@
+name: Update README Screenshots
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      
+      - name: Install frontend dependencies
+        run: npm ci
+      
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          uv sync
+      
+      - name: Install Playwright
+        run: |
+          cd frontend
+          npx playwright install chromium
+      
+      - name: Setup test environment
+        run: |
+          # Create .env files for CI
+          cat > backend/.env << EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://test.supabase.co' }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'test-key' }}
+          ENVIRONMENT=test
+          EOF
+          
+          cat > frontend/.env.local << EOF
+          NEXT_PUBLIC_API_URL=http://localhost:8000
+          EOF
+      
+      - name: Seed test data
+        run: node scripts/seed-todos.js
+      
+      - name: Start services and take screenshots
+        run: |
+          # Start backend in background
+          cd backend
+          uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          BACKEND_PID=$!
+          cd ..
+          
+          # Start frontend in background
+          cd frontend
+          npm run dev &
+          FRONTEND_PID=$!
+          cd ..
+          
+          # Wait for services to be ready
+          echo "Waiting for backend to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          echo "Waiting for frontend to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          # Take screenshots
+          node scripts/take-screenshots.js
+          
+          # Kill services
+          kill $BACKEND_PID || true
+          kill $FRONTEND_PID || true
+      
+      - name: Create screenshots directory in docs
+        run: mkdir -p docs/screenshots
+      
+      - name: Copy screenshots to docs
+        run: |
+          cp screenshots/*.png docs/screenshots/
+          ls -la docs/screenshots/
+      
+      - name: Update README with screenshots
+        run: |
+          # Create or update README screenshots section
+          if ! grep -q "## Screenshots" README.md; then
+            echo -e "\n## Screenshots\n" >> README.md
+          fi
+          
+          # Update screenshots section
+          cat > screenshots-section.md << 'EOF'
+          ## Screenshots
+          
+          ### Desktop Views
+          
+          <table>
+            <tr>
+              <td align="center">
+                <b>Home Screen</b><br>
+                <img src="docs/screenshots/01-desktop-home.png" alt="Desktop Home" width="400">
+              </td>
+              <td align="center">
+                <b>Add Todo</b><br>
+                <img src="docs/screenshots/02-desktop-add-todo.png" alt="Desktop Add Todo" width="400">
+              </td>
+            </tr>
+            <tr>
+              <td align="center">
+                <b>Todo Hover State</b><br>
+                <img src="docs/screenshots/03-desktop-todo-hover.png" alt="Desktop Todo Hover" width="400">
+              </td>
+              <td align="center">
+                <!-- Placeholder for future screenshot -->
+              </td>
+            </tr>
+          </table>
+          
+          ### Mobile Views
+          
+          <table>
+            <tr>
+              <td align="center">
+                <b>Home Screen</b><br>
+                <img src="docs/screenshots/04-mobile-home.png" alt="Mobile Home" width="200">
+              </td>
+              <td align="center">
+                <b>Add Todo</b><br>
+                <img src="docs/screenshots/05-mobile-add-todo.png" alt="Mobile Add Todo" width="200">
+              </td>
+              <td align="center">
+                <b>Swipe Actions</b><br>
+                <img src="docs/screenshots/06-mobile-swipe-actions.png" alt="Mobile Swipe Actions" width="200">
+              </td>
+            </tr>
+          </table>
+          EOF
+          
+          # Replace screenshots section in README
+          if grep -q "## Screenshots" README.md; then
+            # Extract everything before Screenshots section
+            sed -n '1,/^## Screenshots/p' README.md | sed '$d' > README_temp.md
+            
+            # Add new screenshots section
+            cat screenshots-section.md >> README_temp.md
+            
+            # Add everything after screenshots section if there's more content
+            awk '/^## Screenshots/{f=1} f && /^##[^#]/{f=0} !f' README.md | tail -n +2 >> README_temp.md
+            
+            mv README_temp.md README.md
+          else
+            cat screenshots-section.md >> README.md
+          fi
+          
+          rm screenshots-section.md
+      
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add docs/screenshots/*.png README.md
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update README screenshots [skip ci]"
+            git push origin main
+          fi
