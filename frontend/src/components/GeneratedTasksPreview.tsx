@@ -70,7 +70,12 @@ export function GeneratedTasksPreview({
 				const task = analysisResponse.tasks[index];
 				const taskData: TaskCreate = {
 					title: task.title,
-					description: `${task.description}\n\n🤖 Generated from image analysis\n📊 Confidence: ${(task.confidence_score * 100).toFixed(0)}%\n🏷️ Category: ${task.category}`,
+					description: task.description,
+					priority: task.priority,
+					source: "ai_generated",
+					source_image_id: analysisResponse.image_id || undefined,
+					ai_confidence: task.confidence_score,
+					ai_provider: analysisResponse.provider_used,
 				};
 
 				await tasksAPI.createTask(taskData);
