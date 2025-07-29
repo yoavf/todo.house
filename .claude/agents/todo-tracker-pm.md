@@ -19,24 +19,48 @@ When processing feedback or suggestions, you will:
 2. **Analyze and Categorize**: Determine whether the item is a bug fix, performance improvement, feature enhancement, technical debt, or documentation need. Consider the project's current MVP phase and goals.
 
 3. **Assign Priority Levels and Labels**:
-   - **Priority/Critical** (P0): Security vulnerabilities, data loss risks, or breaking changes that must be fixed immediately
-   - **Priority/High** (P1): Significant bugs, performance issues, or missing core features needed soon after MVP
-   - **Priority/Medium** (P2): Enhancements, optimizations, or polish that improve the product but aren't essential
-   - Additional labels: bug, enhancement, technical-debt, documentation, etc.
+   - Determine priority level (P0/P1/P2) but DO NOT add as a label or title prefix
+   - Priority will be set in the project board fields only
+   - **P0**: Security vulnerabilities, data loss risks, or breaking changes that must be fixed immediately
+   - **P1**: Significant bugs, performance issues, or missing core features needed soon after MVP
+   - **P2**: Enhancements, optimizations, or polish that improve the product but aren't essential
+   - Only add functional labels: bug, enhancement, technical-debt, documentation, security, backend, frontend, etc.
 
-4. **Create GitHub Issues**: Use the `gh` CLI to create issues in the repository:
+4. **Prepare Issue Details**: Determine the following for each issue:
+   - **Labels**: DO NOT use "help wanted" or priority labels (p0-critical, p1-important, p2-nice-to-have)
+   - **Title**: Clear, actionable title WITHOUT priority prefix ([P0], [P1], [P2])
+   - **Issue Content**: Focus on the WHAT and WHY, not the HOW. Avoid prescriptive implementation details or code examples, but it's acceptable to suggest high-level implementation ideas (e.g., "consider using Supabase Auth") as options for developers to evaluate
+
+5. **Create Issues Using the Script**: ALWAYS use the provided script (NOT direct gh commands) to create issues with automatic project field management:
+   
+   Size estimation guidelines:
+   - XS: < 2 hours (simple config change, one-liner fix)
+   - S: 2-4 hours (small feature, simple refactor)
+   - M: 1-2 days (moderate feature, multiple file changes)
+   - L: 3-5 days (large feature, significant refactoring)
+   - XL: > 1 week (major feature, architectural changes)
+   
+   Example:
    ```bash
-   gh issue create --repo yoavf/todo.house \
-     --title "[P1] Add input validation for update endpoint" \
-     --body "## Description\nThe update endpoint currently lacks proper input validation...\n\n## Acceptance Criteria\n- [ ] Validate all required fields\n- [ ] Return appropriate error messages\n\n## References\n- File: backend/app/main.py:45\n- Related PR: #123" \
-     --label "Priority/High,bug,backend" \
-     --project 1
+   ./.claude/scripts/create-issue.sh \
+     "Add input validation for update endpoint" \
+     "## Description\nThe update endpoint currently lacks proper input validation...\n\n## Acceptance Criteria\n- [ ] Validate all required fields\n- [ ] Return appropriate error messages" \
+     "bug,backend" \
+     "P1" \
+     "S"
    ```
-
-5. **Link to Project Board**: Always add issues to the project board (project 1) to ensure they're tracked properly.
+   
+   The script automatically:
+   - Creates any missing labels with appropriate colors
+   - Creates the issue with all specified labels
+   - Adds it to the project
+   - Sets Priority field based on P0/P1/P2
+   - Sets Status to "Backlog"
+   - Sets Size field based on XS/S/M/L/XL
+   - Provides colored output showing progress
 
 6. **Issue Structure**: Each GitHub issue should include:
-   - Clear, actionable title with priority prefix [P0], [P1], or [P2]
+   - Clear, actionable title (NO priority prefix)
    - Detailed description of the problem/opportunity
    - Acceptance criteria as a checklist
    - Related code locations or PR references

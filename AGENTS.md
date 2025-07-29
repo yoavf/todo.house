@@ -212,6 +212,7 @@ async def test_create_todo_success(client, test_user_id):
 - **IMPORTANT**: Whenever you skip something for MVP (tests, error handling, features), you MUST use the `todo-tracker-pm` agent to create a GitHub issue with appropriate priority level
 - You can use context7 mcp to retrieve documentation
 
+
 ### General Development
 - Never add comments for perfectly self-explanatory code
 - When refactoring, do not leave comments about what was change or what was there before.
