@@ -48,9 +48,12 @@ jobs:
       - name: Setup test environment
         run: |
           # Create .env files for CI
+          echo "🔍 Setting up environment..."
+          echo "SUPABASE_URL is set: ${{ secrets.SUPABASE_URL != '' && 'yes' || 'no' }}"
+          
           cat > backend/.env << EOF
-          SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://test.supabase.co' }}
-          SUPABASE_KEY=${{ secrets.SUPABASE_KEY || 'test-key' }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
           ENVIRONMENT=test
           EOF
           
