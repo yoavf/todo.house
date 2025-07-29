@@ -339,9 +339,16 @@ class GeminiProvider(AIProvider):
                                 },
                                 "confidence": {
                                     "type": "number"
+                                },
+                                "task_types": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "enum": ["interior", "exterior", "electricity", "plumbing", "appliances", "maintenance", "repair"]
+                                    }
                                 }
                             },
-                            "required": ["title", "description", "priority", "category", "reasoning", "confidence"]
+                            "required": ["title", "description", "priority", "category", "reasoning", "confidence", "task_types"]
                         }
                     },
                     "analysis_summary": {
@@ -521,6 +528,7 @@ class MockProvider(AIProvider):
                         "category": "maintenance",
                         "reasoning": "Dirty filters reduce efficiency and air quality",
                         "confidence": 0.9,
+                        "task_types": ["interior", "maintenance"],
                     },
                     {
                         "title": "Inspect water heater",
@@ -529,6 +537,7 @@ class MockProvider(AIProvider):
                         "category": "maintenance",
                         "reasoning": "Early rust detection can prevent leaks",
                         "confidence": 0.75,
+                        "task_types": ["interior", "plumbing", "maintenance"],
                     }
                 ],
                 "analysis_summary": "Found 2 maintenance items requiring attention",
@@ -542,6 +551,7 @@ class MockProvider(AIProvider):
                         "category": "maintenance",
                         "reasoning": "Clogged gutters can cause water damage",
                         "confidence": 0.65,
+                        "task_types": ["exterior", "maintenance"],
                     }
                 ],
                 "analysis_summary": "Exterior maintenance needed",

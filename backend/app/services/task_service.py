@@ -45,6 +45,10 @@ class TaskService:
 
             # Convert enum to string value for database
             task_data["source"] = task_data["source"].value
+            
+            # Convert task_types enum list to string list for JSONB storage
+            if "task_types" in task_data and task_data["task_types"]:
+                task_data["task_types"] = [tt.value for tt in task_data["task_types"]]
 
             # Override priority based on AI confidence if not already set
             if task.priority == TaskPriority.MEDIUM:  # Default value

@@ -67,6 +67,10 @@ async def create_task(task: TaskCreate, user_id: str = Header(..., alias="x-user
 
     # Convert enum to string value for database
     task_data["source"] = task_data["source"].value
+    
+    # Convert task_types enum list to string list for JSONB storage
+    if "task_types" in task_data and task_data["task_types"]:
+        task_data["task_types"] = [tt.value for tt in task_data["task_types"]]
 
     response = supabase.table("tasks").insert(task_data).execute()
     return response.data[0]
@@ -99,6 +103,10 @@ async def update_task(
         else:
             task_data["status"] = TaskStatus.ACTIVE.value
             task_data["snoozed_until"] = None
+    
+    # Convert task_types enum list to string list for JSONB storage
+    if "task_types" in task_data and task_data["task_types"] is not None:
+        task_data["task_types"] = [tt.value for tt in task_data["task_types"]]
 
     response = (
         supabase.table("tasks")
