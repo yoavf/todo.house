@@ -609,7 +609,9 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
                 try:
                     task_types.append(TaskType(tt))
                 except ValueError:
-                    logger.warning(f"Invalid task type '{tt}', skipping")
+                    logger.warning(
+                        f"Invalid task type '{tt}', skipping. Valid types are: {[t.value for t in TaskType]}"
+                    )
             
             # Create AITaskCreate model
             ai_task = AITaskCreate(
