@@ -94,9 +94,9 @@ jobs:
           BACKEND_PID=$!
           cd ..
           
-          # Start frontend
+          # Start frontend (without Turbopack due to CI issues)
           cd frontend
-          pnpm run dev &
+          npx next dev &
           FRONTEND_PID=$!
           cd ..
           
