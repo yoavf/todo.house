@@ -129,6 +129,14 @@ jobs:
       
       - name: Upload screenshots to branch
         run: |
+          # Save screenshots to a temporary location before switching branches
+          if [ -d "screenshots" ]; then
+            cp -r screenshots /tmp/pr-screenshots
+          else
+            echo "No screenshots directory found"
+            exit 1
+          fi
+          
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -159,11 +167,9 @@ jobs:
             git commit -m "Initialize screenshots branch"
           fi
           
-          # Copy screenshots
+          # Copy screenshots from temp location
           mkdir -p "$SCREENSHOT_DIR"
-          if [ -d "screenshots" ]; then
-            cp -r screenshots/* "$SCREENSHOT_DIR/"
-          fi
+          cp -r /tmp/pr-screenshots/* "$SCREENSHOT_DIR/"
           
           # Update latest symlink
           rm -f "pr-${PR_NUMBER}/latest"
@@ -182,20 +188,15 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             
-            const screenshotsDir = 'screenshots';
-            if (!fs.existsSync(screenshotsDir)) {
-              console.log('No screenshots directory found');
-              return;
-            }
-            
-            const screenshots = fs.readdirSync(screenshotsDir)
-              .filter(f => f.endsWith('.png'))
-              .sort();
-            
-            if (screenshots.length === 0) {
-              console.log('No screenshots found');
-              return;
-            }
+            // Define the expected screenshots
+            const screenshots = [
+              'desktop-home.png',
+              'desktop-add-todo.png',
+              'desktop-hover.png',
+              'mobile-home.png',
+              'mobile-add-todo.png',
+              'mobile-actions.png'
+            ];
             
             const pr = context.issue.number;
             const timestamp = process.env.SCREENSHOT_TIMESTAMP;
