@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -16,6 +17,7 @@ import {
 	type TaskCreate,
 	tasksAPI,
 } from "@/lib/api";
+import { getTaskTypeColor } from "@/lib/utils";
 import { Icons } from "./icons";
 
 interface GeneratedTasksPreviewProps {
@@ -76,6 +78,7 @@ export function GeneratedTasksPreview({
 					source_image_id: analysisResponse.image_id || undefined,
 					ai_confidence: task.confidence_score,
 					ai_provider: analysisResponse.provider_used,
+					task_types: task.task_types,
 				};
 
 				await tasksAPI.createTask(taskData);
@@ -215,6 +218,19 @@ export function GeneratedTasksPreview({
 										<p className="text-sm text-gray-700 mb-2">
 											{task.description}
 										</p>
+										{task.task_types && task.task_types.length > 0 && (
+											<div className="flex flex-wrap gap-1.5 mb-2">
+												{task.task_types.map((type) => (
+													<Badge
+														key={type}
+														variant="secondary"
+														className={`text-xs px-2 py-0.5 ${getTaskTypeColor(type)}`}
+													>
+														{type}
+													</Badge>
+												))}
+											</div>
+										)}
 										<div className="flex items-center gap-4 text-xs text-gray-500">
 											<span
 												className={`font-medium ${getConfidenceColor(task.confidence_score)}`}

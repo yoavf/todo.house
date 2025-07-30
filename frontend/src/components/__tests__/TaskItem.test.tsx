@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Task } from "@/lib/api";
+import type { Task, TaskType } from "@/lib/api";
 import { TaskItem } from "../TaskItem";
 
 describe("TaskItem", () => {
@@ -155,5 +155,66 @@ describe("TaskItem", () => {
 
 		expect(mockOnUpdate).not.toHaveBeenCalled();
 		expect(screen.getByText("Test Task")).toBeInTheDocument();
+	});
+
+	it("displays task type badges when task has types", () => {
+		const taskWithTypes = {
+			...mockTask,
+			task_types: ["interior", "electricity", "repair"] as TaskType[],
+		};
+
+		render(
+			<TaskItem
+				task={taskWithTypes}
+				onUpdate={mockOnUpdate}
+				onDelete={mockOnDelete}
+			/>,
+		);
+
+		expect(screen.getByText("interior")).toBeInTheDocument();
+		expect(screen.getByText("electricity")).toBeInTheDocument();
+		expect(screen.getByText("repair")).toBeInTheDocument();
+	});
+
+	it("does not display task type badges when task has no types", () => {
+		render(
+			<TaskItem
+				task={mockTask}
+				onUpdate={mockOnUpdate}
+				onDelete={mockOnDelete}
+			/>,
+		);
+
+		// Check that no task type badges are rendered
+		expect(screen.queryByText("interior")).not.toBeInTheDocument();
+		expect(screen.queryByText("exterior")).not.toBeInTheDocument();
+		expect(screen.queryByText("electricity")).not.toBeInTheDocument();
+		expect(screen.queryByText("plumbing")).not.toBeInTheDocument();
+		expect(screen.queryByText("appliances")).not.toBeInTheDocument();
+		expect(screen.queryByText("maintenance")).not.toBeInTheDocument();
+		expect(screen.queryByText("repair")).not.toBeInTheDocument();
+	});
+
+	it("displays AI generated indicator with task types", () => {
+		const aiTask = {
+			...mockTask,
+			source: "ai_generated" as const,
+			source_image_id: "test-image-id",
+			ai_confidence: 0.85,
+			task_types: ["maintenance", "interior"] as TaskType[],
+		};
+
+		render(
+			<TaskItem
+				task={aiTask}
+				onUpdate={mockOnUpdate}
+				onDelete={mockOnDelete}
+			/>,
+		);
+
+		expect(screen.getByText("AI Generated")).toBeInTheDocument();
+		expect(screen.getByText("(85% confidence)")).toBeInTheDocument();
+		expect(screen.getByText("maintenance")).toBeInTheDocument();
+		expect(screen.getByText("interior")).toBeInTheDocument();
 	});
 });

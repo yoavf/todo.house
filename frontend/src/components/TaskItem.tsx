@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ImageMetadata, Task, TaskUpdate } from "@/lib/api";
 import { tasksAPI } from "@/lib/api";
+import { getTaskTypeColor } from "@/lib/utils";
 import { Icons } from "./icons";
 
 interface TaskItemProps {
@@ -128,6 +130,19 @@ export function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
 							>
 								{task.description}
 							</p>
+						)}
+						{task.task_types && task.task_types.length > 0 && (
+							<div className="flex flex-wrap gap-1.5 mt-2">
+								{task.task_types.map((type) => (
+									<Badge
+										key={type}
+										variant="secondary"
+										className={`text-xs px-2 py-0.5 ${getTaskTypeColor(type)}`}
+									>
+										{type}
+									</Badge>
+								))}
+							</div>
 						)}
 						{task.source === "ai_generated" && (
 							<div className="flex items-center gap-2 mt-2">

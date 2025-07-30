@@ -1,3 +1,12 @@
+export type TaskType =
+	| "interior"
+	| "exterior"
+	| "electricity"
+	| "plumbing"
+	| "appliances"
+	| "maintenance"
+	| "repair";
+
 export interface Task {
 	id: number;
 	title: string;
@@ -13,6 +22,7 @@ export interface Task {
 	created_at: string;
 	updated_at: string;
 	user_id: string;
+	task_types?: TaskType[];
 }
 
 export interface TaskCreate {
@@ -26,6 +36,7 @@ export interface TaskCreate {
 	source_image_id?: string;
 	ai_confidence?: number;
 	ai_provider?: string;
+	task_types?: TaskType[];
 }
 
 export interface TaskUpdate {
@@ -35,6 +46,7 @@ export interface TaskUpdate {
 	completed?: boolean;
 	status?: "active" | "snoozed" | "completed";
 	snoozed_until?: string;
+	task_types?: TaskType[];
 }
 
 export interface GeneratedTask {
@@ -43,6 +55,7 @@ export interface GeneratedTask {
 	priority: "low" | "medium" | "high";
 	category: string;
 	confidence_score: number;
+	task_types?: TaskType[];
 }
 
 export interface ImageAnalysisResponse {
