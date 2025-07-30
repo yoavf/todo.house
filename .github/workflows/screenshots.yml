@@ -50,11 +50,11 @@ jobs:
         run: |
           echo "🔧 Setting up test environment..."
           
-          # Backend environment
+          # Backend environment with SQLite for testing
           cat > backend/.env << EOF
-          DATABASE_URL=${{ secrets.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/todohouse_test' }}
-          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          DATABASE_URL=sqlite+aiosqlite:///./test_screenshots.db
+          SUPABASE_URL=${{ secrets.SUPABASE_URL || '' }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY || '' }}
           ENVIRONMENT=test
           EOF
           
@@ -63,26 +63,6 @@ jobs:
           NEXT_PUBLIC_API_URL=http://localhost:8000
           NEXT_PUBLIC_TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000
           EOF
-      
-      - name: Start PostgreSQL (if using local DB)
-        if: ${{ secrets.TEST_DATABASE_URL == '' }}
-        run: |
-          docker run -d \
-            --name postgres-test \
-            -e POSTGRES_PASSWORD=postgres \
-            -e POSTGRES_DB=todohouse_test \
-            -p 5432:5432 \
-            postgres:16
-          
-          # Wait for PostgreSQL to be ready
-          for i in {1..30}; do
-            if docker exec postgres-test pg_isready; then
-              echo "PostgreSQL is ready!"
-              break
-            fi
-            echo "Waiting for PostgreSQL... ($i/30)"
-            sleep 1
-          done
       
       - name: Run database migrations
         run: |
@@ -272,8 +252,3 @@ jobs:
               });
             }
       
-      - name: Cleanup
-        if: always()
-        run: |
-          docker stop postgres-test || true
-          docker rm postgres-test || true
