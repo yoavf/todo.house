@@ -8,12 +8,12 @@ from pathlib import Path
 backend_path = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_path))
 
-from app.database.models import Base
-from app.database.engine import engine
+from app.database import Base, get_engine
 
 
 async def init_db():
     """Create all tables defined in the models."""
+    engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("✅ Database tables created successfully")
