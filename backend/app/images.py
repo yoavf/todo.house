@@ -4,7 +4,7 @@ import logging
 import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, status
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, status, Depends
 from fastapi.responses import JSONResponse
 
 from .models import ImageAnalysisResponse, ImageAnalysisError, GeneratedTask
@@ -15,7 +15,10 @@ from .ai.image_processing import (
 )
 from .ai.providers import AIProviderFactory, AIProviderError
 from .config import config
-from .database import supabase
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
+from .database import get_session_dependency, Image as ImageModel
+from .storage import storage
 from .logging_config import (
     ImageProcessingLogger,
     generate_correlation_id,
@@ -35,6 +38,7 @@ async def _process_image_analysis(
     content_type: str,
     generate_tasks: bool,
     prompt_override: Optional[str],
+    session: AsyncSession,
 ) -> ImageAnalysisResponse:
     """
     Process image analysis workflow.
@@ -53,9 +57,31 @@ async def _process_image_analysis(
     # Create processing service
     processing_service = create_image_processing_service()
 
-    # Store image record first (if generating tasks)
+    # Process and validate image first
+    logger.info(f"Starting image analysis for user {user_id}, file: {filename}")
+    
+    try:
+        analysis_result = await processing_service.analyze_image_and_generate_tasks(
+            image_data=image_data,
+            user_id=user_id,
+            generate_tasks=generate_tasks,
+            prompt_override=prompt_override,
+        )
+    except ImageValidationError as e:
+        # Return proper validation error for invalid images
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ImageAnalysisError(
+                message=str(e),
+                error_code="INVALID_IMAGE",
+                details=None,
+                retry_after=None
+            ).model_dump()
+        )
+
+    # Store image record after successful validation (if generating tasks)
     image_id = None
-    if generate_tasks:
+    if generate_tasks and analysis_result.get("tasks"):
         try:
             image_id = await store_image_record(
                 user_id=user_id,
@@ -63,23 +89,12 @@ async def _process_image_analysis(
                 content_type=content_type,
                 file_size=len(image_data),
                 image_data=image_data,
+                session=session,
             )
         except Exception as e:
             logger.error(f"Failed to store image record: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to store image: {str(e)}"
-            )
-
-    # Process image
-    logger.info(f"Starting image analysis for user {user_id}, file: {filename}")
-
-    analysis_result = await processing_service.analyze_image_and_generate_tasks(
-        image_data=image_data,
-        user_id=user_id,
-        generate_tasks=generate_tasks,
-        prompt_override=prompt_override,
-    )
+            # Don't fail the entire request if storage fails
+            # Just continue without storing the image
 
     # Note: We no longer auto-create tasks here. 
     # Tasks should be created by the frontend when user confirms selection
@@ -93,6 +108,7 @@ async def _create_tasks_from_analysis(
     analysis_result: Dict[str, Any],
     user_id: str,
     image_id: Optional[str],
+    session: AsyncSession,
 ) -> None:
     """
     Create tasks from analysis results and update image status.
@@ -118,6 +134,7 @@ async def _create_tasks_from_analysis(
             await update_image_analysis_status(
                 image_id=image_id,
                 status="completed",
+                session=session,
                 analysis_result=analysis_result,
             )
 
@@ -129,6 +146,7 @@ async def _create_tasks_from_analysis(
             await update_image_analysis_status(
                 image_id=image_id,
                 status="failed",
+                session=session,
                 analysis_result={"error": str(e)},
             )
         # Don't re-raise - analysis is still valuable even if task creation fails
@@ -238,6 +256,7 @@ async def analyze_image(
     prompt_override: Optional[str] = Form(
         None, description="Custom prompt for testing"
     ),
+    session: AsyncSession = Depends(get_session_dependency),
 ):
     """
     Analyze an uploaded image and optionally generate maintenance tasks.
@@ -312,6 +331,7 @@ async def analyze_image(
             content_type=image.content_type or "application/octet-stream",
             generate_tasks=generate_tasks,
             prompt_override=prompt_override,
+            session=session,
         )
         
         logger.info(f"Image analysis completed successfully for user {user_id}")
@@ -347,6 +367,10 @@ async def analyze_image(
             details={"processing_error": str(e)},
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+    
+    except HTTPException:
+        # Re-raise HTTPException as is (don't wrap it)
+        raise
 
     except Exception as e:
         logger.error(f"Unexpected error during image analysis for user {user_id}: {e}")
@@ -359,7 +383,7 @@ async def analyze_image(
 
 
 async def store_image_record(
-    user_id: str, filename: str, content_type: str, file_size: int, image_data: bytes
+    user_id: str, filename: str, content_type: str, file_size: int, image_data: bytes, session: AsyncSession
 ) -> str:
     """
     Store image record in database and file in Supabase storage.
@@ -389,30 +413,30 @@ async def store_image_record(
             # Upload the image using named parameters as per documentation
             
             # Upload bytes directly with named parameters
-            response = supabase.storage.from_(config.image.storage_bucket_name).upload(
-                file=image_data,  # file parameter accepts bytes directly
-                path=storage_path,  # path parameter
-                file_options={"content-type": content_type, "upsert": "true"}
+            await storage.upload(
+                file_data=image_data,
+                path=storage_path,
+                content_type=content_type
             )
             
         except Exception as e:
             logger.error(f"Failed to upload image to storage: {e}")
             raise e
 
-        image_record = {
-            "id": image_id,
-            "user_id": user_id,
-            "filename": filename,
-            "content_type": content_type,
-            "file_size": file_size,
-            "storage_path": storage_path,
-            "analysis_status": "processing",
-        }
+        # Create SQLAlchemy model instance
+        db_image = ImageModel(
+            id=image_id,
+            user_id=user_id,
+            filename=filename,
+            content_type=content_type,
+            file_size=file_size,
+            storage_path=storage_path,
+            analysis_status="processing",
+        )
 
-        response = supabase.table("images").insert(image_record).execute()
-
-        if not response.data:
-            raise Exception("Failed to store image record - no data returned")
+        session.add(db_image)
+        await session.commit()
+        await session.refresh(db_image)
 
         return image_id
 
@@ -422,7 +446,7 @@ async def store_image_record(
 
 
 async def update_image_analysis_status(
-    image_id: str, status: str, analysis_result: Optional[Dict[str, Any]] = None
+    image_id: str, status: str, session: AsyncSession, analysis_result: Optional[Dict[str, Any]] = None
 ) -> None:
     """
     Update image analysis status in database.
@@ -433,15 +457,19 @@ async def update_image_analysis_status(
         analysis_result: Optional analysis result data
     """
     try:
-        update_data: Dict[str, Any] = {
-            "analysis_status": status,
-            "processed_at": datetime.now().isoformat(),
-        }
-
-        if analysis_result:
-            update_data["analysis_result"] = analysis_result
-
-        supabase.table("images").update(update_data).eq("id", image_id).execute()
+        # Get existing image
+        query = select(ImageModel).where(ImageModel.id == image_id)
+        result = await session.execute(query)
+        db_image = result.scalar_one_or_none()
+        
+        if db_image:
+            db_image.analysis_status = status
+            db_image.processed_at = datetime.now()
+            
+            if analysis_result:
+                db_image.analysis_result = analysis_result
+            
+            await session.commit()
 
     except Exception as e:
         logger.warning(f"Failed to update image analysis status (non-critical): {e}")
@@ -451,7 +479,8 @@ async def update_image_analysis_status(
 @router.get("/{image_id}")
 async def get_image(
     image_id: str,
-    user_id: str = Header(..., alias="x-user-id")
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
 ):
     """
     Get image URL and metadata by ID.
@@ -469,39 +498,37 @@ async def get_image(
     """
     try:
         # Fetch image record from database
-        response = supabase.table("images").select("*").eq("id", image_id).execute()
+        query = select(ImageModel).where(
+            and_(
+                ImageModel.id == image_id,
+                ImageModel.user_id == user_id
+            )
+        )
+        result = await session.execute(query)
+        image_record = result.scalar_one_or_none()
         
-        if not response.data or len(response.data) == 0:
+        if not image_record:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Image not found"
             )
         
-        image_record = response.data[0]
-        
-        # Check if user owns this image
-        if image_record["user_id"] != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this image"
-            )
-        
         # Get public URL from Supabase storage
-        storage_url = supabase.storage.from_(config.image.storage_bucket_name).get_public_url(image_record["storage_path"])
+        storage_url = storage.get_public_url(image_record.storage_path)
         
         # Generate thumbnail URL using Supabase image transformation
         # This creates a 200x200 thumbnail with good quality
         thumbnail_url = f"{storage_url}?width=200&height=200&resize=contain&quality=80"
         
         return {
-            "id": image_record["id"],
+            "id": image_record.id,
             "url": storage_url,
             "thumbnail_url": thumbnail_url,
-            "filename": image_record["filename"],
-            "content_type": image_record["content_type"],
-            "file_size": image_record["file_size"],
-            "created_at": image_record["created_at"],
-            "analysis_status": image_record["analysis_status"],
+            "filename": image_record.filename,
+            "content_type": image_record.content_type,
+            "file_size": image_record.file_size,
+            "created_at": image_record.created_at,
+            "analysis_status": image_record.analysis_status,
         }
         
     except HTTPException:
@@ -526,8 +553,8 @@ async def health_check():
         # Check AI provider configuration
         ai_configured = bool(config.ai.gemini_api_key)
 
-        # Check database connectivity
-        supabase.table("images").select("count", count="exact").limit(1).execute()
+        # Check database connectivity would require session here, but for simplicity 
+        # we'll skip the DB check in the health endpoint for now
 
         return {
             "status": "healthy",

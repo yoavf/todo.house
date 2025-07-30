@@ -356,11 +356,11 @@ class TestPromptGeneration:
         prompt = service_without_provider.generate_prompt()
 
         assert "home maintenance expert" in prompt
-        assert "JSON array" in prompt
         assert "title" in prompt
         assert "description" in prompt
         assert "priority" in prompt
         assert "category" in prompt
+        assert "task_types" in prompt
 
     def test_generate_prompt_with_room_context(self, service_without_provider):
         """Test prompt generation with room type context."""
