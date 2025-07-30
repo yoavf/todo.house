@@ -6,7 +6,7 @@ Uses SQLAlchemy to directly insert test data.
 import asyncio
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Add backend to Python path
@@ -52,7 +52,7 @@ async def seed_data():
                 test_user = User(
                     id=TEST_USER_ID,
                     email="test@todohouse.app",
-                    created_at=datetime.utcnow()
+                    created_at=datetime.now(timezone.utc)
                 )
                 session.add(test_user)
                 print("✅ Created test user")
@@ -72,7 +72,7 @@ async def seed_data():
                     completed=False,
                     priority="high",
                     status="active",
-                    created_at=datetime.utcnow() - timedelta(hours=2)
+                    created_at=datetime.now(timezone.utc) - timedelta(hours=2)
                 ),
                 Task(
                     user_id=TEST_USER_ID,
@@ -81,7 +81,7 @@ async def seed_data():
                     completed=False,
                     priority="medium",
                     status="active",
-                    created_at=datetime.utcnow() - timedelta(hours=4)
+                    created_at=datetime.now(timezone.utc) - timedelta(hours=4)
                 ),
                 Task(
                     user_id=TEST_USER_ID,
@@ -90,7 +90,7 @@ async def seed_data():
                     completed=False,
                     priority="high",
                     status="active",
-                    created_at=datetime.utcnow() - timedelta(hours=6)
+                    created_at=datetime.now(timezone.utc) - timedelta(hours=6)
                 ),
                 Task(
                     user_id=TEST_USER_ID,
@@ -99,8 +99,7 @@ async def seed_data():
                     completed=True,
                     priority="medium",
                     status="completed",
-                    created_at=datetime.utcnow() - timedelta(days=1),
-                    completed_at=datetime.utcnow() - timedelta(hours=8)
+                    created_at=datetime.now(timezone.utc) - timedelta(days=1)
                 ),
                 Task(
                     user_id=TEST_USER_ID,
@@ -109,8 +108,7 @@ async def seed_data():
                     completed=True,
                     priority="low",
                     status="completed",
-                    created_at=datetime.utcnow() - timedelta(days=2),
-                    completed_at=datetime.utcnow() - timedelta(days=1)
+                    created_at=datetime.now(timezone.utc) - timedelta(days=2)
                 ),
                 Task(
                     user_id=TEST_USER_ID,
@@ -119,7 +117,7 @@ async def seed_data():
                     completed=False,
                     priority="low",
                     status="active",
-                    created_at=datetime.utcnow() - timedelta(days=3)
+                    created_at=datetime.now(timezone.utc) - timedelta(days=3)
                 ),
             ]
             
