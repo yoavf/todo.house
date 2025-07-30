@@ -8,8 +8,8 @@ from pathlib import Path
 backend_path = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_path))
 
-from app.database.base import Base
-from app.database import engine
+from app.database.models import Base
+from app.database.engine import engine
 
 
 async def init_db():
