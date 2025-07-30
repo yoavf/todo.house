@@ -31,7 +31,12 @@ else:
 async def seed_data():
     """Seed test data for screenshots"""
     print(f"🌱 Seeding test data...")
-    print(f"📊 Database: {ASYNC_DATABASE_URL.split('@')[1]}")
+    # Handle different database URL formats
+    if "@" in ASYNC_DATABASE_URL:
+        db_info = ASYNC_DATABASE_URL.split('@')[1]
+    else:
+        db_info = ASYNC_DATABASE_URL.split('://')[1] if '://' in ASYNC_DATABASE_URL else ASYNC_DATABASE_URL
+    print(f"📊 Database: {db_info}")
     print(f"👤 Test user: {TEST_USER_ID}")
     
     # Create engine and session
