@@ -46,7 +46,7 @@ jobs:
     - name: Run tests
       run: uv run pytest -v --tb=short
       env:
-        DATABASE_URL: sqlite+aiosqlite:///:memory:
+        DATABASE_URL: "sqlite+aiosqlite:///:memory:"
         SUPABASE_URL: http://localhost:54321
         SUPABASE_KEY: test-key-for-ci
         STORAGE_BUCKET_NAME: test-images
@@ -56,7 +56,7 @@ jobs:
       run: |
         uv run pytest --cov=app --cov-report=xml --cov-report=html
       env:
-        DATABASE_URL: sqlite+aiosqlite:///:memory:
+        DATABASE_URL: "sqlite+aiosqlite:///:memory:"
         SUPABASE_URL: http://localhost:54321
         SUPABASE_KEY: test-key-for-ci
         STORAGE_BUCKET_NAME: test-images
