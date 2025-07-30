@@ -99,13 +99,11 @@ jobs:
             sleep 2
           done
           
-          # Seed test data using script that creates user first
-          chmod +x scripts/seed-todos-with-user.sh
-          API_URL=http://localhost:8000 \
+          # Seed test data using Python script with same Supabase client
+          cd backend
           TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000 \
-          SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }} \
-          ./scripts/seed-todos-with-user.sh || echo "Warning: Some seeding may have failed"
+          uv run python ../scripts/seed_data.py
+          cd ..
           
           # Wait a bit for data to propagate
           sleep 3
