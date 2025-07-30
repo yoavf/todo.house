@@ -183,10 +183,10 @@ class TestGeminiProvider:
             mock_response.text = "Invalid JSON response"
 
             with patch.object(provider, "_make_api_call", return_value=mock_response):
-                result = await provider.analyze_image(b"fake_image", "test prompt")
-
-                assert result["analysis_summary"] == "Invalid JSON response"
-                assert result["tasks"] == []
+                with pytest.raises(AIProviderError) as exc_info:
+                    await provider.analyze_image(b"fake_image", "test prompt")
+                
+                assert "Invalid JSON response from Gemini" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_gemini_provider_analyze_image_rate_limit_error(self):

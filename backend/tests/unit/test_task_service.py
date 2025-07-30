@@ -1,9 +1,10 @@
 """Unit tests for TaskService with AI integration."""
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from app.services.task_service import TaskService
 from app.models import AITaskCreate, TaskPriority, TaskSource
+from app.database import Task as TaskModel
 
 
 class TestTaskService:
@@ -34,25 +35,13 @@ class TestTaskService:
         assert TaskService.determine_priority_from_confidence(0.59) == TaskPriority.LOW
 
     @pytest.mark.asyncio
-    @patch("app.services.task_service.supabase")
-    async def test_create_ai_tasks_single(self, mock_supabase):
+    async def test_create_ai_tasks_single(self):
         """Test creating a single AI-generated task."""
-        # Mock the database response
-        mock_response = MagicMock()
-        mock_response.data = [
-            {
-                "id": 1,
-                "title": "Fix leaky faucet",
-                "description": "Kitchen faucet is dripping",
-                "priority": "high",
-                "source": "ai_generated",
-                "source_image_id": "image-123",
-                "ai_confidence": 0.85,
-                "ai_provider": "gemini",
-                "user_id": "user-123",
-            }
-        ]
-        mock_supabase.table().insert().execute.return_value = mock_response
+        # Create a mock session
+        mock_session = AsyncMock()
+        mock_session.add = MagicMock()
+        mock_session.commit = AsyncMock()
+        mock_session.refresh = AsyncMock()
 
         # Create test task
         task = AITaskCreate(
@@ -65,29 +54,30 @@ class TestTaskService:
         )
 
         # Execute
-        result = await TaskService.create_ai_tasks([task], "user-123")
+        result = await TaskService.create_ai_tasks(mock_session, [task], "user-123")
 
         # Verify
         assert len(result) == 1
-        assert result[0]["title"] == "Fix leaky faucet"
-        assert result[0]["priority"] == "high"  # Should be high due to confidence 0.85
-
-        # Verify database call
-        mock_supabase.table.assert_called_with("tasks")
-        insert_data = mock_supabase.table().insert.call_args[0][0]
-        assert insert_data["priority"] == "high"
-        assert insert_data["ai_confidence"] == 0.85
+        assert isinstance(result[0], TaskModel)
+        
+        # Verify database calls
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_called_once()
+        
+        # Check the task that was added
+        added_task = mock_session.add.call_args[0][0]
+        assert added_task.title == "Fix leaky faucet"
+        assert added_task.priority == TaskPriority.HIGH  # Should be high due to confidence 0.85
+        assert added_task.ai_confidence == 0.85
 
     @pytest.mark.asyncio
-    @patch("app.services.task_service.supabase")
-    async def test_create_ai_tasks_multiple(self, mock_supabase):
+    async def test_create_ai_tasks_multiple(self):
         """Test creating multiple AI-generated tasks with different confidence levels."""
-        # Mock database responses for each insert
-        mock_responses = [
-            MagicMock(data=[{"id": i, "title": f"Task {i}", "priority": priority}])
-            for i, priority in enumerate(["high", "medium", "low"], 1)
-        ]
-        mock_supabase.table().insert().execute.side_effect = mock_responses
+        # Create a mock session
+        mock_session = AsyncMock()
+        mock_session.add = MagicMock()
+        mock_session.commit = AsyncMock()
+        mock_session.refresh = AsyncMock()
 
         # Create test tasks with different confidence levels
         tasks = [
@@ -118,24 +108,29 @@ class TestTaskService:
         ]
 
         # Execute
-        result = await TaskService.create_ai_tasks(tasks, "user-123")
+        result = await TaskService.create_ai_tasks(mock_session, tasks, "user-123")
 
         # Verify
         assert len(result) == 3
-        assert result[0]["priority"] == "high"
-        assert result[1]["priority"] == "medium"
-        assert result[2]["priority"] == "low"
-
+        
         # Verify database calls
-        assert mock_supabase.table().insert().execute.call_count == 3
+        assert mock_session.add.call_count == 3
+        mock_session.commit.assert_called_once()
+        
+        # Check priorities set on added tasks
+        added_tasks = [call[0][0] for call in mock_session.add.call_args_list]
+        assert added_tasks[0].priority == TaskPriority.HIGH
+        assert added_tasks[1].priority == TaskPriority.MEDIUM
+        assert added_tasks[2].priority == TaskPriority.LOW
 
     @pytest.mark.asyncio
-    @patch("app.services.task_service.supabase")
-    async def test_create_ai_tasks_respects_explicit_priority(self, mock_supabase):
+    async def test_create_ai_tasks_respects_explicit_priority(self):
         """Test that explicitly set priority is not overridden by confidence."""
-        mock_response = MagicMock()
-        mock_response.data = [{"id": 1, "priority": "low"}]
-        mock_supabase.table().insert().execute.return_value = mock_response
+        # Create a mock session
+        mock_session = AsyncMock()
+        mock_session.add = MagicMock()
+        mock_session.commit = AsyncMock()
+        mock_session.refresh = AsyncMock()
 
         # Create task with high confidence but explicit low priority
         task = AITaskCreate(
@@ -149,19 +144,20 @@ class TestTaskService:
         )
 
         # Execute
-        await TaskService.create_ai_tasks([task], "user-123")
+        await TaskService.create_ai_tasks(mock_session, [task], "user-123")
 
         # Verify the explicit priority was kept
-        insert_data = mock_supabase.table().insert.call_args[0][0]
-        assert insert_data["priority"] == "low"
+        added_task = mock_session.add.call_args[0][0]
+        assert added_task.priority == TaskPriority.LOW
 
     @pytest.mark.asyncio
-    @patch("app.services.task_service.supabase")
-    async def test_create_single_ai_task(self, mock_supabase):
+    async def test_create_single_ai_task(self):
         """Test the convenience method for creating a single task."""
-        mock_response = MagicMock()
-        mock_response.data = [{"id": 1, "title": "Single task"}]
-        mock_supabase.table().insert().execute.return_value = mock_response
+        # Create a mock session
+        mock_session = AsyncMock()
+        mock_session.add = MagicMock()
+        mock_session.commit = AsyncMock()
+        mock_session.refresh = AsyncMock()
 
         task = AITaskCreate(
             title="Single task",
@@ -172,9 +168,13 @@ class TestTaskService:
             ai_provider="gemini",
         )
 
-        result = await TaskService.create_single_ai_task(task, "user-123")
+        result = await TaskService.create_single_ai_task(mock_session, task, "user-123")
 
         assert result is not None
-        assert result["title"] == "Single task"
-        # Should call table at least once with 'tasks'
-        mock_supabase.table.assert_called_with("tasks")
+        assert isinstance(result, TaskModel)
+        
+        # Should have added exactly one task
+        mock_session.add.assert_called_once()
+        added_task = mock_session.add.call_args[0][0]
+        assert added_task.title == "Single task"
+        assert added_task.priority == TaskPriority.MEDIUM  # 0.75 confidence = medium

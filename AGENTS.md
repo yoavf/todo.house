@@ -24,13 +24,15 @@ The review agent will use the `todo-tracker-pm` agent to create GitHub issues fo
 
 ## Project Overview
 
-**TodoHouse** - A full-stack todo application built with FastAPI (Python) backend and Next.js (React) frontend, using Supabase as the backend-as-a-service database solution.
+**TodoHouse** - A full-stack todo application built with FastAPI (Python) backend and Next.js (React) frontend, using SQLAlchemy ORM with PostgreSQL database.
 
 ## Architecture
 
-- **Backend**: FastAPI (Python) - RESTful API server
+- **Backend**: FastAPI (Python) with SQLAlchemy ORM - RESTful API server
 - **Frontend**: Next.js (React) - Server-side rendered React application
-- **Database**: Supabase (PostgreSQL) - Backend-as-a-service with real-time capabilities
+- **Database**: PostgreSQL (via Supabase or any PostgreSQL instance)
+- **Storage**: Supabase Storage for file uploads
+- **ORM**: SQLAlchemy 2.0 with async support
 - **Monorepo**: Simple workspace structure with npm workspaces
 
 ## Directory Structure
@@ -41,7 +43,9 @@ todohouse/
 │   ├── app/
 │   │   ├── __init__.py
 │   │   ├── main.py    # FastAPI app entry point
-│   │   └── database.py # Supabase connection
+│   │   ├── database.py # Database setup
+│   │   ├── database/   # SQLAlchemy components
+│   │   └── storage.py  # Storage abstraction
 │   ├── pyproject.toml # Python dependencies (uv)
 │   └── .env          # Environment variables
 ├── frontend/         # Next.js application
@@ -53,16 +57,19 @@ todohouse/
 ## Development Goals
 
 - Learn Python deeply through practical backend development
-- Implement modern FastAPI patterns with async/await
-- Use Supabase for zero-hassle database management and scaling
+- Master SQLAlchemy ORM patterns with async/await
+- Build database-agnostic backend (works with any PostgreSQL)
+- Implement clean architecture with proper separation of concerns
 - Build a production-ready monorepo structure
 - Focus on clean code patterns and type safety
 
 ## Technology Choices
 
 - **FastAPI**: Modern, fast Python web framework with automatic API documentation
+- **SQLAlchemy**: Powerful ORM with async support for database operations
 - **uv**: Fast Python package manager for dependency management
-- **Supabase**: PostgreSQL-based BaaS for database, auth, and real-time features
+- **PostgreSQL**: Production-grade relational database (can use Supabase or self-hosted)
+- **Supabase Storage**: For file uploads and image storage
 - **Next.js**: React framework for the frontend application
 - **TypeScript**: For type safety across the frontend
 

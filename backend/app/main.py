@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import supabase
+from sqlalchemy import text
+from .database import get_session
 from .tasks import router as tasks_router
 from .images import router as images_router
 from .logging_config import setup_logging
@@ -37,17 +38,20 @@ async def root():
 async def health_check():
     try:
         # Check if env vars are loaded
-        supabase_url = os.getenv("SUPABASE_URL")
-        supabase_key = os.getenv("SUPABASE_KEY")
+        database_url = os.getenv("DATABASE_URL")
+        
+        if not database_url:
+            return {"status": "error", "message": "Missing DATABASE_URL"}
 
-        if not supabase_url or not supabase_key:
-            return {"status": "error", "message": "Missing Supabase credentials"}
-
-        supabase.table("tasks").select("count", count="exact").execute()
+        # Check SQLAlchemy database connection
+        async with get_session() as session:
+            # Simple query to test connection
+            await session.execute(text("SELECT 1"))
+            
         return {
             "status": "healthy",
             "database": "connected",
-            "tables": "tasks table found",
+            "sqlalchemy": "connected",
         }
     except Exception as e:
         return {"status": "error", "database": f"error: {str(e)}"}

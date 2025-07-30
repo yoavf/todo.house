@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Header, Query
+from fastapi import APIRouter, HTTPException, Header, Query, Depends
 from typing import List, Optional
 from datetime import datetime
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
 from .models import (
     Task,
     TaskCreate,
@@ -10,7 +12,8 @@ from .models import (
     AITaskCreate,
     TaskSource,
 )
-from .database import supabase
+from .database import get_session_dependency, Task as TaskModel
+from .services.task_service import TaskService
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -23,114 +26,174 @@ async def get_tasks(
     source: Optional[TaskSource] = Query(
         None, description="Filter by source (manual or ai_generated)"
     ),
+    session: AsyncSession = Depends(get_session_dependency),
 ):
-    query = supabase.table("tasks").select("*").eq("user_id", user_id)
-
+    # Build query conditions
+    conditions = [TaskModel.user_id == user_id]
+    
     if status:
-        query = query.eq("status", status.value)
-
+        conditions.append(TaskModel.status == status)
+    
     if source:
-        query = query.eq("source", source.value)
-
-    response = query.execute()
-    return response.data
+        conditions.append(TaskModel.source == source)
+    
+    # Execute query
+    query = select(TaskModel).where(and_(*conditions))
+    result = await session.execute(query)
+    tasks = result.scalars().all()
+    
+    return tasks
 
 
 @router.get("/active", response_model=List[Task])
-async def get_active_tasks(user_id: str = Header(..., alias="x-user-id")):
-    response = (
-        supabase.table("tasks")
-        .select("*")
-        .eq("user_id", user_id)
-        .eq("status", TaskStatus.ACTIVE.value)
-        .execute()
+async def get_active_tasks(
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
+):
+    query = select(TaskModel).where(
+        and_(
+            TaskModel.user_id == user_id,
+            TaskModel.status == TaskStatus.ACTIVE
+        )
     )
-    return response.data
+    result = await session.execute(query)
+    tasks = result.scalars().all()
+    return tasks
 
 
 @router.get("/snoozed", response_model=List[Task])
-async def get_snoozed_tasks(user_id: str = Header(..., alias="x-user-id")):
-    response = (
-        supabase.table("tasks")
-        .select("*")
-        .eq("user_id", user_id)
-        .eq("status", TaskStatus.SNOOZED.value)
-        .execute()
+async def get_snoozed_tasks(
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
+):
+    query = select(TaskModel).where(
+        and_(
+            TaskModel.user_id == user_id,
+            TaskModel.status == TaskStatus.SNOOZED
+        )
     )
-    return response.data
+    result = await session.execute(query)
+    tasks = result.scalars().all()
+    return tasks
 
 
 @router.post("/", response_model=Task)
-async def create_task(task: TaskCreate, user_id: str = Header(..., alias="x-user-id")):
-    task_data = task.model_dump()
-    task_data["user_id"] = user_id
-
-    # Convert enum to string value for database
-    task_data["source"] = task_data["source"].value
-    
+async def create_task(
+    task: TaskCreate, 
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
+):
     # Convert task_types enum list to string list for JSONB storage
-    if "task_types" in task_data and task_data["task_types"]:
-        task_data["task_types"] = [tt.value for tt in task_data["task_types"]]
+    task_types_str = []
+    if task.task_types:
+        task_types_str = [tt.value for tt in task.task_types]
 
-    response = supabase.table("tasks").insert(task_data).execute()
-    return response.data[0]
+    # Create new task instance
+    db_task = TaskModel(
+        user_id=user_id,
+        title=task.title,
+        description=task.description,
+        priority=task.priority,
+        completed=task.completed,
+        status=task.status,
+        snoozed_until=task.snoozed_until,
+        source=task.source,
+        source_image_id=task.source_image_id,
+        ai_confidence=task.ai_confidence,
+        ai_provider=task.ai_provider,
+        task_types=task_types_str,
+    )
+
+    session.add(db_task)
+    await session.commit()
+    await session.refresh(db_task)
+    return db_task
 
 
 @router.get("/{task_id}", response_model=Task)
-async def get_task(task_id: int, user_id: str = Header(..., alias="x-user-id")):
-    response = (
-        supabase.table("tasks")
-        .select("*")
-        .eq("id", task_id)
-        .eq("user_id", user_id)
-        .execute()
+async def get_task(
+    task_id: int, 
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
+):
+    query = select(TaskModel).where(
+        and_(
+            TaskModel.id == task_id,
+            TaskModel.user_id == user_id
+        )
     )
-    if not response.data:
+    result = await session.execute(query)
+    task = result.scalar_one_or_none()
+    
+    if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return response.data[0]
+    return task
 
 
 @router.put("/{task_id}", response_model=Task)
 async def update_task(
-    task_id: int, task: TaskUpdate, user_id: str = Header(..., alias="x-user-id")
+    task_id: int, 
+    task: TaskUpdate, 
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
 ):
-    task_data = {k: v for k, v in task.model_dump().items() if v is not None}
-
-    # Handle status transitions
-    if "completed" in task_data:
-        if task_data["completed"]:
-            task_data["status"] = TaskStatus.COMPLETED.value
-        else:
-            task_data["status"] = TaskStatus.ACTIVE.value
-            task_data["snoozed_until"] = None
-    
-    # Convert task_types enum list to string list for JSONB storage
-    if "task_types" in task_data and task_data["task_types"] is not None:
-        task_data["task_types"] = [tt.value for tt in task_data["task_types"]]
-
-    response = (
-        supabase.table("tasks")
-        .update(task_data)
-        .eq("id", task_id)
-        .eq("user_id", user_id)
-        .execute()
+    # Get existing task
+    query = select(TaskModel).where(
+        and_(
+            TaskModel.id == task_id,
+            TaskModel.user_id == user_id
+        )
     )
-    if not response.data:
+    result = await session.execute(query)
+    db_task = result.scalar_one_or_none()
+    
+    if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return response.data[0]
+    
+    # Update fields
+    task_data = task.model_dump(exclude_unset=True)
+    
+    for field, value in task_data.items():
+        if field == "task_types" and value is not None:
+            # Convert task_types enum list to string list for JSONB storage
+            setattr(db_task, field, [tt.value for tt in value])
+        elif field == "completed" and value is not None:
+            # Handle status transitions
+            setattr(db_task, field, value)
+            if value:
+                db_task.status = TaskStatus.COMPLETED
+            else:
+                db_task.status = TaskStatus.ACTIVE
+                db_task.snoozed_until = None
+        else:
+            setattr(db_task, field, value)
+    
+    await session.commit()
+    await session.refresh(db_task)
+    return db_task
 
 
 @router.delete("/{task_id}")
-async def delete_task(task_id: int, user_id: str = Header(..., alias="x-user-id")):
-    response = (
-        supabase.table("tasks")
-        .delete()
-        .eq("id", task_id)
-        .eq("user_id", user_id)
-        .execute()
+async def delete_task(
+    task_id: int, 
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
+):
+    # Get existing task
+    query = select(TaskModel).where(
+        and_(
+            TaskModel.id == task_id,
+            TaskModel.user_id == user_id
+        )
     )
-    if not response.data:
+    result = await session.execute(query)
+    db_task = result.scalar_one_or_none()
+    
+    if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
+    
+    await session.delete(db_task)
+    await session.commit()
     return {"message": "Task deleted successfully"}
 
 
@@ -139,74 +202,86 @@ async def snooze_task(
     task_id: int,
     snooze_request: SnoozeRequest,
     user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
 ):
+    # Get existing task
+    query = select(TaskModel).where(
+        and_(
+            TaskModel.id == task_id,
+            TaskModel.user_id == user_id
+        )
+    )
+    result = await session.execute(query)
+    db_task = result.scalar_one_or_none()
+    
+    if not db_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
     # If no date provided, snooze indefinitely (year 9999)
     snooze_until = snooze_request.snooze_until or datetime.max
-
-    update_data = {
-        "status": TaskStatus.SNOOZED.value,
-        "snoozed_until": snooze_until.isoformat(),
-    }
-
-    response = (
-        supabase.table("tasks")
-        .update(update_data)
-        .eq("id", task_id)
-        .eq("user_id", user_id)
-        .execute()
-    )
-    if not response.data:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return response.data[0]
+    
+    db_task.status = TaskStatus.SNOOZED
+    db_task.snoozed_until = snooze_until
+    
+    await session.commit()
+    await session.refresh(db_task)
+    return db_task
 
 
 @router.post("/{task_id}/unsnooze", response_model=Task)
-async def unsnooze_task(task_id: int, user_id: str = Header(..., alias="x-user-id")):
-    update_data = {"status": TaskStatus.ACTIVE.value, "snoozed_until": None}
-
-    response = (
-        supabase.table("tasks")
-        .update(update_data)
-        .eq("id", task_id)
-        .eq("user_id", user_id)
-        .execute()
+async def unsnooze_task(
+    task_id: int, 
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
+):
+    # Get existing task
+    query = select(TaskModel).where(
+        and_(
+            TaskModel.id == task_id,
+            TaskModel.user_id == user_id
+        )
     )
-    if not response.data:
+    result = await session.execute(query)
+    db_task = result.scalar_one_or_none()
+    
+    if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return response.data[0]
+    
+    db_task.status = TaskStatus.ACTIVE
+    db_task.snoozed_until = None
+    
+    await session.commit()
+    await session.refresh(db_task)
+    return db_task
 
 
 @router.post("/ai-generated", response_model=Task)
 async def create_ai_task(
-    task: AITaskCreate, user_id: str = Header(..., alias="x-user-id")
+    task: AITaskCreate, 
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
 ):
     """Create a task from AI image analysis with automatic priority based on confidence"""
-    task_data = task.model_dump()
-    task_data["user_id"] = user_id
-
-    # Convert enum to string value for database
-    task_data["source"] = task_data["source"].value
-
-    # Set priority based on AI confidence score
-    if task_data["ai_confidence"] >= 0.8:
-        task_data["priority"] = "high"
-    elif task_data["ai_confidence"] >= 0.6:
-        task_data["priority"] = "medium"
-    else:
-        task_data["priority"] = "low"
-
-    response = supabase.table("tasks").insert(task_data).execute()
-    return response.data[0]
+    created_task = await TaskService.create_single_ai_task(session, task, user_id)
+    if not created_task:
+        raise HTTPException(status_code=500, detail="Failed to create AI task")
+    return created_task
 
 
 @router.get("/ai-generated/with-images", response_model=List[Task])
-async def get_ai_tasks_with_images(user_id: str = Header(..., alias="x-user-id")):
+async def get_ai_tasks_with_images(
+    user_id: str = Header(..., alias="x-user-id"),
+    session: AsyncSession = Depends(get_session_dependency),
+):
     """Get all AI-generated tasks with their source image details"""
-    response = (
-        supabase.table("tasks")
-        .select("*, images!source_image_id(*)")
-        .eq("user_id", user_id)
-        .eq("source", "ai_generated")
-        .execute()
+    # Note: For now, return tasks without image joins
+    # TODO: Add proper join with Image model when needed
+    query = select(TaskModel).where(
+        and_(
+            TaskModel.user_id == user_id,
+            TaskModel.source == TaskSource.AI_GENERATED
+        )
     )
-    return response.data
+    result = await session.execute(query)
+    tasks = result.scalars().all()
+    return tasks

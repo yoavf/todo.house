@@ -45,6 +45,18 @@ class ImageConfig(BaseSettings):
     )
 
 
+class DatabaseConfig(BaseSettings):
+    """Database configuration settings."""
+
+    model_config = SettingsConfigDict(env_prefix="")
+
+    database_url: str = Field(default="", description="Database connection URL")
+    pool_size: int = Field(default=10, description="Connection pool size")
+    max_overflow: int = Field(default=20, description="Maximum pool overflow")
+    pool_pre_ping: bool = Field(default=True, description="Enable pool pre-ping")
+    echo: bool = Field(default=False, description="Enable SQL logging")
+
+
 class AppConfig(BaseSettings):
     """Main application configuration."""
 
@@ -59,6 +71,7 @@ class AppConfig(BaseSettings):
 app_config = AppConfig()
 ai_config = AIConfig()
 image_config = ImageConfig()
+database_config = DatabaseConfig()
 
 
 # Backward compatibility wrapper
@@ -70,6 +83,7 @@ class Config:
         self.supabase_key = app_config.supabase_key
         self.ai = ai_config
         self.image = image_config
+        self.database = database_config
 
 
 # Global configuration instance

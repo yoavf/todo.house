@@ -407,10 +407,10 @@ class TestImageProcessingService:
         assert isinstance(prompt, str)
         assert len(prompt) > 0
         assert "home maintenance expert" in prompt.lower()
-        assert "json" in prompt.lower()
         assert "tasks" in prompt.lower()
         assert "priority" in prompt.lower()
         assert "category" in prompt.lower()
+        assert "task_types" in prompt.lower()
 
     def test_generate_prompt_with_context(self):
         """Test prompt generation with custom context."""
@@ -435,12 +435,14 @@ class TestImageProcessingService:
         assert "reasoning" in prompt
         assert "analysis_summary" in prompt
 
-        # Check for JSON structure specification
-        assert '"tasks"' in prompt
-        assert '"analysis_summary"' in prompt
+        # Check for task_types list
+        assert "interior" in prompt
+        assert "exterior" in prompt
+        assert "electricity" in prompt
+        assert "plumbing" in prompt
 
         # Check for priority levels
-        assert "high|medium|low" in prompt
+        assert "high, medium, low" in prompt
 
         # Check for focus areas
         assert "visible maintenance needs" in prompt.lower()

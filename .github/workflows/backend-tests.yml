@@ -43,18 +43,24 @@ jobs:
     - name: Run type checking
       run: uv run mypy app/
 
-    - name: Run unit tests
-      run: uv run pytest tests/test_*_unit.py -v --tb=short
+    - name: Run tests
+      run: uv run pytest -v --tb=short
       env:
+        DATABASE_URL: sqlite+aiosqlite:///:memory:
         SUPABASE_URL: http://localhost:54321
         SUPABASE_KEY: test-key-for-ci
+        STORAGE_BUCKET_NAME: test-images
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key-for-ci' }}
 
     - name: Generate coverage report
       run: |
-        uv run pytest tests/test_*_unit.py --cov=app --cov-report=xml --cov-report=html
+        uv run pytest --cov=app --cov-report=xml --cov-report=html
       env:
+        DATABASE_URL: sqlite+aiosqlite:///:memory:
         SUPABASE_URL: http://localhost:54321
         SUPABASE_KEY: test-key-for-ci
+        STORAGE_BUCKET_NAME: test-images
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key-for-ci' }}
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5

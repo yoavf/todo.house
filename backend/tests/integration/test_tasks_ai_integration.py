@@ -9,23 +9,24 @@ class TestTasksAIIntegration:
     """Integration tests for AI-generated task functionality."""
 
     @pytest.mark.asyncio
-    async def test_create_ai_task_endpoint(self, client, setup_test_user):
+    async def test_create_ai_task_endpoint(self, client, setup_test_user, db_session):
         """Test creating an AI-generated task through the dedicated endpoint."""
         # First create an image record
-        from app.database import supabase
+        from app.database import Image as ImageModel
 
         image_id = str(uuid.uuid4())
-        supabase.table("images").insert(
-            {
-                "id": image_id,
-                "user_id": setup_test_user,
-                "filename": "test.jpg",
-                "content_type": "image/jpeg",
-                "file_size": 1024,
-                "storage_path": f"images/{setup_test_user}/{image_id}",
-                "analysis_status": "completed",
-            }
-        ).execute()
+        db_image = ImageModel(
+            id=image_id,
+            user_id=setup_test_user,
+            filename="test.jpg",
+            content_type="image/jpeg",
+            file_size=1024,
+            storage_path=f"images/{setup_test_user}/{image_id}",
+            analysis_status="completed",
+        )
+        db_session.add(db_image)
+        await db_session.commit()
+        await db_session.refresh(db_image)
 
         task_data = {
             "title": "Clean bathroom grout",
@@ -51,23 +52,24 @@ class TestTasksAIIntegration:
         assert data["ai_provider"] == "gemini"
 
     @pytest.mark.asyncio
-    async def test_create_ai_task_low_confidence(self, client, setup_test_user):
+    async def test_create_ai_task_low_confidence(self, client, setup_test_user, db_session):
         """Test that low confidence AI tasks get low priority."""
         # First create an image record
-        from app.database import supabase
+        from app.database import Image as ImageModel
 
         image_id = str(uuid.uuid4())
-        supabase.table("images").insert(
-            {
-                "id": image_id,
-                "user_id": setup_test_user,
-                "filename": "test2.jpg",
-                "content_type": "image/jpeg",
-                "file_size": 2048,
-                "storage_path": f"images/{setup_test_user}/{image_id}",
-                "analysis_status": "completed",
-            }
-        ).execute()
+        db_image = ImageModel(
+            id=image_id,
+            user_id=setup_test_user,
+            filename="test2.jpg",
+            content_type="image/jpeg",
+            file_size=2048,
+            storage_path=f"images/{setup_test_user}/{image_id}",
+            analysis_status="completed",
+        )
+        db_session.add(db_image)
+        await db_session.commit()
+        await db_session.refresh(db_image)
 
         task_data = {
             "title": "Check appliance",
@@ -89,7 +91,7 @@ class TestTasksAIIntegration:
         assert data["priority"] == "low"
 
     @pytest.mark.asyncio
-    async def test_filter_tasks_by_source(self, client, setup_test_user):
+    async def test_filter_tasks_by_source(self, client, setup_test_user, db_session):
         """Test filtering tasks by source (manual vs ai_generated)."""
         # Create a manual task
         manual_task = {
@@ -102,20 +104,21 @@ class TestTasksAIIntegration:
         )
 
         # Create an AI task (first create image record)
-        from app.database import supabase
+        from app.database import Image as ImageModel
 
         image_id = str(uuid.uuid4())
-        supabase.table("images").insert(
-            {
-                "id": image_id,
-                "user_id": setup_test_user,
-                "filename": "test3.jpg",
-                "content_type": "image/jpeg",
-                "file_size": 3072,
-                "storage_path": f"images/{setup_test_user}/{image_id}",
-                "analysis_status": "completed",
-            }
-        ).execute()
+        db_image = ImageModel(
+            id=image_id,
+            user_id=setup_test_user,
+            filename="test3.jpg",
+            content_type="image/jpeg",
+            file_size=3072,
+            storage_path=f"images/{setup_test_user}/{image_id}",
+            analysis_status="completed",
+        )
+        db_session.add(db_image)
+        await db_session.commit()
+        await db_session.refresh(db_image)
 
         ai_task = {
             "title": "AI task",
@@ -154,25 +157,25 @@ class TestTasksAIIntegration:
         assert tasks[0]["source"] == "manual"
 
     @pytest.mark.asyncio
-    async def test_get_ai_tasks_with_images(self, client, setup_test_user):
+    async def test_get_ai_tasks_with_images(self, client, setup_test_user, db_session):
         """Test getting AI tasks with their source image details."""
         # First, we need to create an image record
         # In a real scenario, this would be done by the image upload endpoint
-        from app.database import supabase
+        from app.database import Image as ImageModel
 
         image_id = str(uuid.uuid4())
-        image_data = {
-            "id": image_id,
-            "user_id": setup_test_user,
-            "filename": "test.jpg",
-            "content_type": "image/jpeg",
-            "file_size": 1024,
-            "storage_path": f"images/{image_id}.jpg",
-            "analysis_status": "completed",
-        }
-
-        # Insert test image
-        supabase.table("images").insert(image_data).execute()
+        db_image = ImageModel(
+            id=image_id,
+            user_id=setup_test_user,
+            filename="test.jpg",
+            content_type="image/jpeg",
+            file_size=1024,
+            storage_path=f"images/{image_id}.jpg",
+            analysis_status="completed",
+        )
+        db_session.add(db_image)
+        await db_session.commit()
+        await db_session.refresh(db_image)
 
         # Create AI task linked to the image
         task_data = {
@@ -205,8 +208,7 @@ class TestTasksAIIntegration:
         # Note: The actual image data in the response depends on Supabase's
         # foreign key expansion behavior
 
-        # Cleanup
-        supabase.table("images").delete().eq("id", image_id).execute()
+        # Cleanup is handled by test transaction rollback
 
     @pytest.mark.asyncio
     async def test_create_regular_task_has_manual_source(self, client, setup_test_user):
