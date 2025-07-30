@@ -169,7 +169,7 @@ jobs:
           
           # Copy screenshots from temp location
           mkdir -p "$SCREENSHOT_DIR"
-          cp -r /tmp/pr-screenshots/* "$SCREENSHOT_DIR/"
+          cp -r /tmp/pr-screenshots/. "$SCREENSHOT_DIR/"
           
           # Update latest symlink
           rm -f "pr-${PR_NUMBER}/latest"
