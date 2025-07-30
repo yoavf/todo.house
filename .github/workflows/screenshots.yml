@@ -133,6 +133,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
+          # Stash any local changes (from Playwright install)
+          git stash --include-untracked
+          
           # Create unique folder for this PR
           PR_NUMBER="${{ github.event.pull_request.number || github.run_number }}"
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
