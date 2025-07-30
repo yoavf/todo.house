@@ -192,14 +192,14 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             
-            // Define the expected screenshots
+            // Define the expected screenshots (with numeric prefixes as saved by the script)
             const screenshots = [
-              'desktop-home.png',
-              'desktop-add-todo.png',
-              'desktop-hover.png',
-              'mobile-home.png',
-              'mobile-add-todo.png',
-              'mobile-actions.png'
+              '01-desktop-home.png',
+              '02-desktop-add-todo.png',
+              '03-desktop-todo-hover.png',
+              '04-mobile-home.png',
+              '05-mobile-add-todo.png',
+              '06-mobile-actions.png'
             ];
             
             const pr = context.issue.number;
@@ -215,7 +215,7 @@ jobs:
               comment += '### Desktop Views\n\n<table><tr>\n';
               desktop.forEach((s, i) => {
                 if (i > 0 && i % 2 === 0) comment += '</tr><tr>\n';
-                const name = s.replace('.png', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const name = s.replace('.png', '').replace(/^\d+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 comment += `<td align="center"><b>${name}</b><br>`;
                 comment += `<img src="${baseUrl}/${s}" width="400" alt="${name}"></td>\n`;
               });
@@ -228,7 +228,7 @@ jobs:
               comment += '### Mobile Views\n\n<table><tr>\n';
               mobile.forEach((s, i) => {
                 if (i > 0 && i % 3 === 0) comment += '</tr><tr>\n';
-                const name = s.replace('.png', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const name = s.replace('.png', '').replace(/^\d+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 comment += `<td align="center"><b>${name}</b><br>`;
                 comment += `<img src="${baseUrl}/${s}" width="200" alt="${name}"></td>\n`;
               });
