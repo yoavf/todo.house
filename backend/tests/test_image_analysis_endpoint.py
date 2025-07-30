@@ -7,10 +7,19 @@ import pytest_asyncio
 from PIL import Image
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
+from unittest.mock import patch
 from app.database import User as UserModel
 
 # Use a valid UUID for testing
 TEST_USER_ID = str(uuid.uuid4())
+
+
+@pytest.fixture(autouse=True)
+def mock_ai_provider():
+    """Mock the AI provider to prevent real API calls during tests."""
+    with patch('app.images.config.ai.gemini_api_key', None):
+        # This ensures create_image_processing_service won't create a real provider
+        yield
 
 
 @pytest_asyncio.fixture
@@ -66,16 +75,13 @@ async def test_analyze_image_with_valid_image(client: AsyncClient, setup_test_us
         data={"generate_tasks": "true"},
     )
 
-    # Should succeed or return service unavailable if AI not configured
-    assert response.status_code in [200, 503]
-
-    if response.status_code == 200:
-        data = response.json()
-        assert "analysis_summary" in data
-        assert "tasks" in data
-        assert "processing_time" in data
-        assert "provider_used" in data
-        assert isinstance(data["tasks"], list)
+    # Without AI provider configured, should return 200 with no tasks
+    assert response.status_code == 200
+    data = response.json()
+    assert "analysis_summary" in data
+    assert "tasks" in data
+    assert data["tasks"] == []  # No tasks generated without AI provider
+    assert data["provider_used"] == "none"
 
 
 @pytest.mark.asyncio
@@ -179,5 +185,10 @@ async def test_analyze_image_with_prompt_override(client: AsyncClient, setup_tes
         data={"generate_tasks": "true", "prompt_override": "Custom test prompt"},
     )
 
-    # Should succeed or return service unavailable
-    assert response.status_code in [200, 503]
+    # Without AI provider configured, should return 200 with no tasks
+    assert response.status_code == 200
+    data = response.json()
+    assert "analysis_summary" in data
+    assert "tasks" in data
+    assert data["tasks"] == []  # No tasks generated without AI provider
+    assert data["provider_used"] == "none"
