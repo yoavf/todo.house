@@ -18,16 +18,25 @@ TEST_USER_EMAIL = "test-user@todo.house"
 
 def create_user():
     """Create test user if it doesn't exist"""
-    print(f"👤 Creating user {TEST_USER_ID}...")
+    print(f"👤 Checking/creating user {TEST_USER_ID}...")
     
     try:
-        # Check if user exists
+        # First, let's see what's in the users table
+        print("🔍 Checking users table...")
+        all_users = supabase.table("users").select("id, email").execute()
+        print(f"Found {len(all_users.data)} users in table")
+        for user in all_users.data[:5]:  # Show first 5
+            print(f"  - {user['id']}: {user.get('email', 'NO EMAIL')}")
+        
+        # Check if our user exists
         existing = supabase.table("users").select("*").eq("id", TEST_USER_ID).execute()
         
         if existing.data:
-            print("ℹ️  User already exists")
+            print(f"ℹ️  User already exists: {existing.data[0]}")
             return True
-            
+        
+        print("➕ User not found, creating...")
+        
         # Create user
         user_data = {
             "id": TEST_USER_ID,
@@ -36,12 +45,13 @@ def create_user():
         }
         
         result = supabase.table("users").insert(user_data).execute()
-        print("✅ User created successfully")
+        print(f"✅ User created successfully: {result.data}")
         return True
         
     except Exception as e:
-        print(f"❌ Failed to create user: {e}")
-        # Try to continue anyway
+        print(f"❌ Failed during user operation: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def create_tasks():

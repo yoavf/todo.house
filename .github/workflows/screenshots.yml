@@ -99,10 +99,12 @@ jobs:
             sleep 2
           done
           
-          # Seed test data using Python script with same Supabase client
+          # Seed test data using Python script that bypasses RLS
           cd backend
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }} \
           TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000 \
-          uv run python ../scripts/seed_data.py
+          uv run python ../scripts/bypass_rls_seed.py
           cd ..
           
           # Wait a bit for data to propagate
