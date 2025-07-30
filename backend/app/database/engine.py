@@ -21,15 +21,29 @@ def create_engine() -> AsyncEngine:
     if not config.database.database_url:
         raise ValueError("DATABASE_URL environment variable is required")
     
-    # Create engine with connection pool settings
+    # Check if using SQLite
+    is_sqlite = "sqlite" in config.database.database_url
+    
+    # Create engine with appropriate settings
+    engine_kwargs = {
+        "echo": config.database.echo,
+    }
+    
+    if is_sqlite:
+        # SQLite doesn't support connection pooling parameters
+        engine_kwargs["poolclass"] = NullPool
+    else:
+        # PostgreSQL/other databases support connection pooling
+        engine_kwargs["pool_size"] = config.database.pool_size
+        engine_kwargs["max_overflow"] = config.database.max_overflow
+        engine_kwargs["pool_pre_ping"] = config.database.pool_pre_ping
+        # Use NullPool for testing environments to avoid connection issues
+        if "test" in config.database.database_url:
+            engine_kwargs["poolclass"] = NullPool
+    
     engine = create_async_engine(
         config.database.database_url,
-        echo=config.database.echo,
-        pool_size=config.database.pool_size,
-        max_overflow=config.database.max_overflow,
-        pool_pre_ping=config.database.pool_pre_ping,
-        # Use NullPool for testing environments to avoid connection issues
-        poolclass=NullPool if "test" in config.database.database_url else None,
+        **engine_kwargs
     )
     
     logger.info(f"Created database engine for URL: {config.database.database_url.split('@')[0]}@***")
