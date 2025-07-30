@@ -38,7 +38,11 @@ jobs:
       - name: Install frontend dependencies
         run: |
           pnpm install --frozen-lockfile
-          cd frontend && pnpm install --frozen-lockfile
+          # Ensure Next.js is installed in the frontend directory
+          cd frontend
+          pnpm install --frozen-lockfile
+          # Verify Next.js installation
+          pnpm list next
       
       - name: Install backend dependencies
         run: |
