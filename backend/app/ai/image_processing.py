@@ -629,7 +629,7 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
         # Note: We need a session here, but we don't have access to it in this context
         # This would need to be refactored to pass session from the caller
         # For now, return the task data without creating in DB
-        created_tasks = []  # type: List[Dict[str, Any]]
+        created_tasks: List[Dict[str, Any]] = []
         for task in ai_tasks:
             created_tasks.append(task.model_dump())
 
@@ -645,4 +645,4 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
         logger.info(
             f"Created {len(created_tasks)} tasks from AI analysis for user {user_id}"
         )
-        return created_tasks  # type: ignore[return-value]
+        return created_tasks
