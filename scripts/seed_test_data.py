@@ -15,8 +15,7 @@ sys.path.insert(0, str(backend_path))
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from app.database.models import User, Task
-from app.database.base import Base
+from app.database import User, Task, Base
 
 # Configuration
 TEST_USER_ID = os.getenv("NEXT_PUBLIC_TEST_USER_ID", "550e8400-e29b-41d4-a716-446655440000")

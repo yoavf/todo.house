@@ -36,7 +36,9 @@ jobs:
           enable-cache: true
       
       - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          cd frontend && pnpm install --frozen-lockfile
       
       - name: Install backend dependencies
         run: |
@@ -97,7 +99,7 @@ jobs:
           # Wait for services
           echo "⏳ Waiting for backend..."
           for i in {1..30}; do
-            if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+            if curl -s http://localhost:8000/api/health > /dev/null 2>&1; then
               echo "✅ Backend is ready!"
               break
             fi
