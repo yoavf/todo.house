@@ -59,7 +59,10 @@ async def seed_data():
             else:
                 print("✅ Test user already exists")
                 # Clear existing tasks for clean screenshots
-                for task in existing_user.tasks:
+                existing_tasks = await session.execute(
+                    select(Task).where(Task.user_id == existing_user.id)
+                )
+                for task in existing_tasks.scalars():
                     await session.delete(task)
                 print("🧹 Cleared existing tasks")
             
