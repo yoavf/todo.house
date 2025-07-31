@@ -2,7 +2,9 @@
 
 from datetime import datetime
 from typing import List, Optional
-from sqlalchemy import String, DateTime, Integer, Boolean, Text, JSON, Enum, ForeignKey
+import uuid
+from sqlalchemy import String, DateTime, Integer, Boolean, Text, JSON, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -32,7 +34,7 @@ class User(Base):
     
     __tablename__ = "users"
     
-    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     
     # Relationships
@@ -46,27 +48,27 @@ class Task(Base):
     __tablename__ = "tasks"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[str] = mapped_column(String(255), ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    priority: Mapped[TaskPriority] = mapped_column(
-        Enum(TaskPriority), 
-        default=TaskPriority.MEDIUM,
+    priority: Mapped[str] = mapped_column(
+        String(20), 
+        default=TaskPriority.MEDIUM.value,
         nullable=False
     )
     completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    status: Mapped[TaskStatus] = mapped_column(
-        Enum(TaskStatus), 
-        default=TaskStatus.ACTIVE,
+    status: Mapped[str] = mapped_column(
+        String(20), 
+        default=TaskStatus.ACTIVE.value,
         nullable=False
     )
     snoozed_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    source: Mapped[TaskSource] = mapped_column(
-        Enum(TaskSource), 
-        default=TaskSource.MANUAL,
+    source: Mapped[str] = mapped_column(
+        String(20), 
+        default=TaskSource.MANUAL.value,
         nullable=False
     )
-    source_image_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    source_image_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
     ai_confidence: Mapped[Optional[float]] = mapped_column(nullable=True)
     ai_provider: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     task_types: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True, default=list)
@@ -80,8 +82,8 @@ class Image(Base):
     
     __tablename__ = "images"
     
-    id: Mapped[str] = mapped_column(String(255), primary_key=True)
-    user_id: Mapped[str] = mapped_column(String(255), ForeignKey("users.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     content_type: Mapped[str] = mapped_column(String(100), nullable=False)
     file_size: Mapped[int] = mapped_column(Integer, nullable=False)

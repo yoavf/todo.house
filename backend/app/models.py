@@ -3,6 +3,7 @@ from typing import Optional, Literal, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from enum import Enum
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ class TaskBase(BaseModel):
 
 class TaskCreate(TaskBase):
     source: TaskSource = TaskSource.MANUAL
-    source_image_id: Optional[str] = None
+    source_image_id: Optional[uuid.UUID] = None
     ai_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
     ai_provider: Optional[str] = None
 
@@ -63,9 +64,9 @@ class TaskUpdate(BaseModel):
 
 class Task(TaskBase):
     id: int
-    user_id: str
+    user_id: uuid.UUID
     source: TaskSource = TaskSource.MANUAL
-    source_image_id: Optional[str] = None
+    source_image_id: Optional[uuid.UUID] = None
     ai_confidence: Optional[float] = None
     ai_provider: Optional[str] = None
     created_at: datetime
@@ -101,7 +102,7 @@ class AITaskCreate(TaskCreate):
     """Special model for AI-generated task creation with required AI fields"""
 
     source: Literal[TaskSource.AI_GENERATED] = TaskSource.AI_GENERATED
-    source_image_id: str = Field(..., description="UUID of the source image")
+    source_image_id: uuid.UUID = Field(..., description="UUID of the source image")
     ai_confidence: float = Field(..., ge=0.0, le=1.0, description="AI confidence score")
     ai_provider: str = Field(..., description="AI provider that generated this task")
 
@@ -121,7 +122,7 @@ class GeneratedTask(BaseModel):
 class ImageAnalysisResponse(BaseModel):
     """Response model for image analysis endpoint"""
 
-    image_id: Optional[str] = Field(None, description="UUID of stored image")
+    image_id: Optional[uuid.UUID] = Field(None, description="UUID of stored image")
     tasks: List[GeneratedTask] = Field(default_factory=list)
     analysis_summary: str = Field(
         ..., description="Summary of what was observed in the image"

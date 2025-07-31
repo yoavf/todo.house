@@ -14,6 +14,8 @@ todo.house is a modern task management application that allows users to create, 
 - Task snoozing with datetime scheduling
 - Real-time task updates and management
 - User-specific task isolation
+- AI-powered task generation from uploaded images
+- Task type categorization (interior, exterior, electricity, plumbing, etc.)
 
 ## Future Features (Post-MVP)
 Features tracked in `/docs/todos.md` with priority levels:
@@ -25,8 +27,10 @@ Features tracked in `/docs/todos.md` with priority levels:
 Full-stack application with:
 - **Frontend**: Next.js React application with TypeScript
 - **Backend**: FastAPI Python API with Pydantic models
-- **Database**: Supabase (PostgreSQL) with row-level security
-- **Authentication**: Supabase Auth integration
+- **Database**: PostgreSQL with SQLAlchemy ORM and Alembic migrations
+- **Storage**: Supabase Storage for image uploads
+- **AI Integration**: Google Gemini for image analysis and task generation
+- **Authentication**: Header-based user identification (auth coming post-MVP)
 
 ## Target Users
 Individuals and teams looking for a clean, efficient task management solution with modern web technologies.

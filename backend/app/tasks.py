@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, Query, Depends
 from typing import List, Optional
 from datetime import datetime
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from .models import (
@@ -18,10 +19,18 @@ from .services.task_service import TaskService
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
+def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
+    """Convert user_id header to UUID"""
+    try:
+        return uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+
 # For now, we'll use a header for user_id (we'll add proper auth later)
 @router.get("/", response_model=List[Task])
 async def get_tasks(
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     status: Optional[TaskStatus] = Query(None, description="Filter by status"),
     source: Optional[TaskSource] = Query(
         None, description="Filter by source (manual or ai_generated)"
@@ -29,7 +38,7 @@ async def get_tasks(
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Build query conditions
-    conditions = [TaskModel.user_id == user_id]
+    conditions = [TaskModel.user_id == user_uuid]
     
     if status:
         conditions.append(TaskModel.status == status)
@@ -47,12 +56,12 @@ async def get_tasks(
 
 @router.get("/active", response_model=List[Task])
 async def get_active_tasks(
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     query = select(TaskModel).where(
         and_(
-            TaskModel.user_id == user_id,
+            TaskModel.user_id == user_uuid,
             TaskModel.status == TaskStatus.ACTIVE
         )
     )
@@ -63,12 +72,12 @@ async def get_active_tasks(
 
 @router.get("/snoozed", response_model=List[Task])
 async def get_snoozed_tasks(
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     query = select(TaskModel).where(
         and_(
-            TaskModel.user_id == user_id,
+            TaskModel.user_id == user_uuid,
             TaskModel.status == TaskStatus.SNOOZED
         )
     )
@@ -80,7 +89,7 @@ async def get_snoozed_tasks(
 @router.post("/", response_model=Task)
 async def create_task(
     task: TaskCreate, 
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Convert task_types enum list to string list for JSONB storage
@@ -90,7 +99,7 @@ async def create_task(
 
     # Create new task instance
     db_task = TaskModel(
-        user_id=user_id,
+        user_id=user_uuid,
         title=task.title,
         description=task.description,
         priority=task.priority,
@@ -113,13 +122,13 @@ async def create_task(
 @router.get("/{task_id}", response_model=Task)
 async def get_task(
     task_id: int, 
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     query = select(TaskModel).where(
         and_(
             TaskModel.id == task_id,
-            TaskModel.user_id == user_id
+            TaskModel.user_id == user_uuid
         )
     )
     result = await session.execute(query)
@@ -134,14 +143,14 @@ async def get_task(
 async def update_task(
     task_id: int, 
     task: TaskUpdate, 
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Get existing task
     query = select(TaskModel).where(
         and_(
             TaskModel.id == task_id,
-            TaskModel.user_id == user_id
+            TaskModel.user_id == user_uuid
         )
     )
     result = await session.execute(query)
@@ -176,14 +185,14 @@ async def update_task(
 @router.delete("/{task_id}")
 async def delete_task(
     task_id: int, 
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Get existing task
     query = select(TaskModel).where(
         and_(
             TaskModel.id == task_id,
-            TaskModel.user_id == user_id
+            TaskModel.user_id == user_uuid
         )
     )
     result = await session.execute(query)
@@ -201,14 +210,14 @@ async def delete_task(
 async def snooze_task(
     task_id: int,
     snooze_request: SnoozeRequest,
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Get existing task
     query = select(TaskModel).where(
         and_(
             TaskModel.id == task_id,
-            TaskModel.user_id == user_id
+            TaskModel.user_id == user_uuid
         )
     )
     result = await session.execute(query)
@@ -231,14 +240,14 @@ async def snooze_task(
 @router.post("/{task_id}/unsnooze", response_model=Task)
 async def unsnooze_task(
     task_id: int, 
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Get existing task
     query = select(TaskModel).where(
         and_(
             TaskModel.id == task_id,
-            TaskModel.user_id == user_id
+            TaskModel.user_id == user_uuid
         )
     )
     result = await session.execute(query)
@@ -258,11 +267,11 @@ async def unsnooze_task(
 @router.post("/ai-generated", response_model=Task)
 async def create_ai_task(
     task: AITaskCreate, 
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     """Create a task from AI image analysis with automatic priority based on confidence"""
-    created_task = await TaskService.create_single_ai_task(session, task, user_id)
+    created_task = await TaskService.create_single_ai_task(session, task, user_uuid)
     if not created_task:
         raise HTTPException(status_code=500, detail="Failed to create AI task")
     return created_task
@@ -270,7 +279,7 @@ async def create_ai_task(
 
 @router.get("/ai-generated/with-images", response_model=List[Task])
 async def get_ai_tasks_with_images(
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     """Get all AI-generated tasks with their source image details"""
@@ -278,7 +287,7 @@ async def get_ai_tasks_with_images(
     # TODO: Add proper join with Image model when needed
     query = select(TaskModel).where(
         and_(
-            TaskModel.user_id == user_id,
+            TaskModel.user_id == user_uuid,
             TaskModel.source == TaskSource.AI_GENERATED
         )
     )

@@ -4,6 +4,7 @@ import io
 import logging
 import asyncio
 import time
+import uuid
 from typing import Tuple, Dict, Any, Optional, List
 from PIL import Image
 
@@ -578,7 +579,7 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
         self,
         analysis_result: Dict[str, Any],
         user_id: str,
-        source_image_id: str,
+        source_image_id: uuid.UUID,
         provider_name: str,
     ) -> List[Dict[str, Any]]:
         """
@@ -637,7 +638,7 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
         self.processing_logger.log_task_creation(
             user_id=user_id,
             tasks_created=len(created_tasks),
-            source_image_id=source_image_id,
+            source_image_id=str(source_image_id),
             ai_confidence=ai_confidence,
             provider=provider_name
         )

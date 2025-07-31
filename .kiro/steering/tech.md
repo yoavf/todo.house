@@ -14,7 +14,10 @@
 
 ## Backend Stack
 - **Framework**: FastAPI with Python 3.13+
-- **Database**: Supabase (PostgreSQL) with real-time capabilities
+- **Database**: PostgreSQL (via Supabase or self-hosted)
+- **ORM**: SQLAlchemy 2.0 with async support
+- **Migrations**: Alembic for database schema management
+- **Storage**: Supabase Storage for file uploads
 - **Validation**: Pydantic models for request/response validation
 - **Server**: Uvicorn with auto-reload for development
 - **Environment**: python-dotenv for configuration management
@@ -72,6 +75,11 @@ uv run uvicorn app.main:app --reload  # Start server
 uv run pytest            # Run tests
 uv run ruff check --fix   # Lint and fix
 uv run mypy              # Type checking
+
+# Database migrations
+uv run alembic upgrade head     # Apply migrations
+uv run alembic revision --autogenerate -m "Description"  # Create migration
+uv run alembic current         # Check current version
 ```
 
 ### Frontend Development
@@ -84,5 +92,7 @@ pnpm lint               # Run linting
 
 ## Environment Configuration
 - Backend uses `.env`, `.env.test` files for configuration
-- Required environment variables: `SUPABASE_URL`, `SUPABASE_KEY`
+- Frontend uses `.env.local` for configuration
+- Required backend variables: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_KEY`
+- Required frontend variables: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_TEST_USER_ID`
 - Test environment automatically loads `.env.test` with override
