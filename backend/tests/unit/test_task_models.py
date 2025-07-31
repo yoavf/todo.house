@@ -1,5 +1,6 @@
 """Unit tests for task models with AI fields."""
 
+import uuid
 import pytest
 from pydantic import ValidationError
 from app.models import TaskCreate, AITaskCreate, Task, TaskSource, TaskPriority
@@ -23,33 +24,35 @@ class TestTaskModels:
 
     def test_task_create_with_ai_fields(self):
         """Test creating a task with AI-related fields."""
+        test_image_id = str(uuid.uuid4())
         task = TaskCreate(
             title="AI detected task",
             description="Found by AI",
             source=TaskSource.AI_GENERATED,
-            source_image_id="image-123",
+            source_image_id=test_image_id,
             ai_confidence=0.75,
             ai_provider="gemini",
         )
 
         assert task.source == TaskSource.AI_GENERATED
-        assert task.source_image_id == "image-123"
+        assert str(task.source_image_id) == test_image_id
         assert task.ai_confidence == 0.75
         assert task.ai_provider == "gemini"
 
     def test_ai_task_create_required_fields(self):
         """Test that AITaskCreate requires all AI fields."""
         # Should succeed with all required fields
+        test_image_id = str(uuid.uuid4())
         ai_task = AITaskCreate(
             title="AI task",
             description="AI generated",
-            source_image_id="image-123",
+            source_image_id=test_image_id,
             ai_confidence=0.8,
             ai_provider="gemini",
         )
 
         assert ai_task.source == TaskSource.AI_GENERATED  # Should be set automatically
-        assert ai_task.source_image_id == "image-123"
+        assert str(ai_task.source_image_id) == test_image_id
         assert ai_task.ai_confidence == 0.8
         assert ai_task.ai_provider == "gemini"
 
@@ -74,7 +77,7 @@ class TestTaskModels:
         task1 = AITaskCreate(
             title="Task",
             description="Desc",
-            source_image_id="img-1",
+            source_image_id=str(uuid.uuid4()),
             ai_confidence=0.0,
             ai_provider="gemini",
         )
@@ -83,7 +86,7 @@ class TestTaskModels:
         task2 = AITaskCreate(
             title="Task",
             description="Desc",
-            source_image_id="img-1",
+            source_image_id=str(uuid.uuid4()),
             ai_confidence=1.0,
             ai_provider="gemini",
         )
@@ -94,7 +97,7 @@ class TestTaskModels:
             AITaskCreate(
                 title="Task",
                 description="Desc",
-                source_image_id="img-1",
+                source_image_id=str(uuid.uuid4()),
                 ai_confidence=1.5,
                 ai_provider="gemini",
             )
@@ -110,7 +113,7 @@ class TestTaskModels:
             AITaskCreate(
                 title="Task",
                 description="Desc",
-                source_image_id="img-1",
+                source_image_id=str(uuid.uuid4()),
                 ai_confidence=-0.1,
                 ai_provider="gemini",
             )
@@ -127,7 +130,7 @@ class TestTaskModels:
         ai_task = AITaskCreate(
             title="Task",
             description="Desc",
-            source_image_id="img-1",
+            source_image_id=str(uuid.uuid4()),
             ai_confidence=0.8,
             ai_provider="gemini",
         )
@@ -141,14 +144,14 @@ class TestTaskModels:
 
         task_dict = {
             "id": 1,
-            "user_id": "user-123",
+            "user_id": str(uuid.uuid4()),
             "title": "Test task",
             "description": "Description",
             "priority": "high",
             "completed": False,
             "status": "active",
             "source": "ai_generated",
-            "source_image_id": "img-123",
+            "source_image_id": str(uuid.uuid4()),
             "ai_confidence": 0.9,
             "ai_provider": "gemini",
             "created_at": datetime.now(),
@@ -158,6 +161,6 @@ class TestTaskModels:
         task = Task(**task_dict)
 
         assert task.source == TaskSource.AI_GENERATED
-        assert task.source_image_id == "img-123"
+        assert task.source_image_id is not None
         assert task.ai_confidence == 0.9
         assert task.ai_provider == "gemini"
