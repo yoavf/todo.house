@@ -199,7 +199,7 @@ jobs:
               '03-desktop-todo-hover.png',
               '04-mobile-home.png',
               '05-mobile-add-todo.png',
-              '06-mobile-actions.png'
+              '06-mobile-todo-actions.png'
             ];
             
             const pr = context.issue.number;
