@@ -107,7 +107,7 @@ async def _create_tasks_from_analysis(
     processing_service: ImageProcessingService,
     analysis_result: Dict[str, Any],
     user_id: str,
-    image_id: Optional[str],
+    image_id: Optional[uuid.UUID],
     session: AsyncSession,
 ) -> None:
     """
@@ -120,11 +120,16 @@ async def _create_tasks_from_analysis(
         image_id: Optional image record ID
     """
     try:
+        # Only create tasks if we have an image_id
+        if not image_id:
+            logger.warning("Cannot create tasks without image_id")
+            return
+            
         # Use the proper service method to create tasks
         created_tasks = await processing_service.create_tasks_from_analysis(
             analysis_result=analysis_result,
             user_id=user_id,
-            source_image_id=image_id or "",
+            source_image_id=image_id,
             provider_name=analysis_result.get("provider_used", "unknown"),
         )
         created_count = len(created_tasks)
@@ -185,7 +190,7 @@ def _create_error_response(
 
 
 def _build_analysis_response(
-    analysis_result: Dict[str, Any], image_id: Optional[str]
+    analysis_result: Dict[str, Any], image_id: Optional[uuid.UUID]
 ) -> ImageAnalysisResponse:
     """
     Build the final analysis response from results.
@@ -384,7 +389,7 @@ async def analyze_image(
 
 async def store_image_record(
     user_id: str, filename: str, content_type: str, file_size: int, image_data: bytes, session: AsyncSession
-) -> str:
+) -> uuid.UUID:
     """
     Store image record in database and file in Supabase storage.
 
@@ -402,7 +407,7 @@ async def store_image_record(
         Exception: If database operation fails
     """
     try:
-        image_id = str(uuid.uuid4())
+        image_id = uuid.uuid4()
         storage_path = f"images/{user_id}/{image_id}"
 
         # Store the actual image file in Supabase storage
@@ -446,7 +451,7 @@ async def store_image_record(
 
 
 async def update_image_analysis_status(
-    image_id: str, status: str, session: AsyncSession, analysis_result: Optional[Dict[str, Any]] = None
+    image_id: uuid.UUID, status: str, session: AsyncSession, analysis_result: Optional[Dict[str, Any]] = None
 ) -> None:
     """
     Update image analysis status in database.
@@ -478,7 +483,7 @@ async def update_image_analysis_status(
 
 @router.get("/{image_id}")
 async def get_image(
-    image_id: str,
+    image_id: uuid.UUID,
     user_id: str = Header(..., alias="x-user-id"),
     session: AsyncSession = Depends(get_session_dependency),
 ):

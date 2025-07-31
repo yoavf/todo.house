@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, Query, Depends
 from typing import List, Optional
 from datetime import datetime
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from .models import (
@@ -18,10 +19,18 @@ from .services.task_service import TaskService
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
+def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
+    """Convert user_id header to UUID"""
+    try:
+        return uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+
 # For now, we'll use a header for user_id (we'll add proper auth later)
 @router.get("/", response_model=List[Task])
 async def get_tasks(
-    user_id: str = Header(..., alias="x-user-id"),
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
     status: Optional[TaskStatus] = Query(None, description="Filter by status"),
     source: Optional[TaskSource] = Query(
         None, description="Filter by source (manual or ai_generated)"
@@ -29,7 +38,7 @@ async def get_tasks(
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Build query conditions
-    conditions = [TaskModel.user_id == user_id]
+    conditions = [TaskModel.user_id == user_uuid]
     
     if status:
         conditions.append(TaskModel.status == status)
