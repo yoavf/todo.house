@@ -119,12 +119,12 @@ async def _create_tasks_from_analysis(
         user_id: User identifier
         image_id: Optional image record ID
     """
+    # Only create tasks if we have an image_id
+    if not image_id:
+        logger.warning("Cannot create tasks without image_id")
+        return
+
     try:
-        # Only create tasks if we have an image_id
-        if not image_id:
-            logger.warning("Cannot create tasks without image_id")
-            return
-            
         # Use the proper service method to create tasks
         created_tasks = await processing_service.create_tasks_from_analysis(
             analysis_result=analysis_result,
