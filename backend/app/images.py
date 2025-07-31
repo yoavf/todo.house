@@ -431,7 +431,7 @@ async def store_image_record(
         # Create SQLAlchemy model instance
         db_image = ImageModel(
             id=image_id,
-            user_id=user_id,
+            user_id=uuid.UUID(user_id),
             filename=filename,
             content_type=content_type,
             file_size=file_size,

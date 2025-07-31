@@ -58,7 +58,7 @@ def upgrade() -> None:
         sa.Column('source_image_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('ai_confidence', sa.Float(), nullable=True),
         sa.Column('ai_provider', sa.String(length=100), nullable=True),
-        sa.Column('task_types', sa.JSON(), nullable=True),
+        sa.Column('task_types', sa.JSON(), nullable=True, server_default='[]'),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
