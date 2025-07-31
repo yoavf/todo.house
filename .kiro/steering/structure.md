@@ -33,9 +33,20 @@ backend/
 ├── app/
 │   ├── __init__.py     # Package initialization
 │   ├── main.py         # FastAPI application entry point
-│   ├── models.py       # Pydantic data models
-│   ├── database.py     # Supabase client configuration
-│   └── tasks.py        # Task-related API routes
+│   ├── models.py       # Pydantic data models and enums
+│   ├── database.py     # Database session management
+│   ├── database/       # SQLAlchemy models and configuration
+│   │   ├── __init__.py # Export models and database utilities
+│   │   ├── models.py   # SQLAlchemy ORM models
+│   │   └── engine.py   # Database engine configuration
+│   ├── tasks.py        # Task-related API routes
+│   ├── images.py       # Image upload and analysis routes
+│   └── storage.py      # Supabase storage integration
+├── alembic/
+│   ├── versions/       # Database migration files
+│   │   └── 001_initial_schema.py
+│   ├── env.py          # Alembic environment configuration
+│   └── alembic.ini     # Alembic configuration
 ├── tests/
 │   ├── conftest.py     # Pytest configuration and fixtures
 │   ├── test_*.py       # Test files (unit and integration)
@@ -43,12 +54,10 @@ backend/
 │   ├── unit/           # Unit tests
 │   └── integration/    # Integration tests
 ├── supabase/
-│   ├── migrations/     # Database migration files
 │   └── config.toml     # Supabase configuration
 ├── pyproject.toml      # Python project configuration
-├── pytest.ini         # Pytest configuration
-├── .env.example        # Environment variables template
-└── main.py             # Alternative entry point
+├── pytest.ini          # Pytest configuration
+└── .env.example        # Environment variables template
 ```
 
 ## Key Conventions
@@ -63,9 +72,10 @@ backend/
 - **Frontend**: Absolute imports with `@/` alias for src directory
 
 ### API Structure
-- **Routes**: Organized by feature (tasks, users, etc.)
-- **Models**: Separate files for Pydantic models with clear inheritance
-- **Database**: Single client instance exported from `database.py`
+- **Routes**: Organized by feature (tasks, images, etc.)
+- **Models**: Pydantic models in `models.py`, SQLAlchemy models in `database/models.py`
+- **Database**: Session management via dependency injection
+- **IDs**: UUIDs for all primary keys (users, images) except tasks (integer)
 
 ### Testing Structure (MVP Approach)
 - **MVP Testing**: Focus on happy-path backend tests only
@@ -76,9 +86,10 @@ backend/
 - **Edge cases**: Document in `/docs/todos.md` rather than implementing now
 
 ### Configuration Management
-- **Environment files**: `.env` for development, `.env.test` for testing
+- **Environment files**: `.env` for development, `.env.test` for testing, `.env.local` for frontend
 - **Secrets**: Never commit actual credentials, use `.env.example` templates
-- **Database**: Supabase migrations in `backend/supabase/migrations/`
+- **Database**: Alembic migrations in `backend/alembic/versions/`
+- **Storage**: Supabase storage for file uploads (images)
 
 ### Code Organization Principles
 - **Separation of concerns**: Models, routes, and database logic in separate files

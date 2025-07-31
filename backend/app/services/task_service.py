@@ -1,4 +1,5 @@
 from typing import List, Optional
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..models import TaskPriority, AITaskCreate
 from ..database import Task as TaskModel
@@ -26,7 +27,7 @@ class TaskService:
 
     @staticmethod
     async def create_ai_tasks(
-        session: AsyncSession, tasks: List[AITaskCreate], user_id: str
+        session: AsyncSession, tasks: List[AITaskCreate], user_id: uuid.UUID
     ) -> List[TaskModel]:
         """
         Create multiple AI-generated tasks with automatic prioritization.
@@ -84,7 +85,7 @@ class TaskService:
 
     @staticmethod
     async def create_single_ai_task(
-        session: AsyncSession, task: AITaskCreate, user_id: str
+        session: AsyncSession, task: AITaskCreate, user_id: uuid.UUID
     ) -> Optional[TaskModel]:
         """
         Create a single AI-generated task with automatic prioritization.

@@ -1,5 +1,6 @@
 """Unit tests for TaskService with AI integration."""
 
+import uuid
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from app.services.task_service import TaskService
@@ -48,13 +49,13 @@ class TestTaskService:
             title="Fix leaky faucet",
             description="Kitchen faucet is dripping",
             source=TaskSource.AI_GENERATED,
-            source_image_id="image-123",
+            source_image_id=str(uuid.uuid4()),
             ai_confidence=0.85,
             ai_provider="gemini",
         )
 
         # Execute
-        result = await TaskService.create_ai_tasks(mock_session, [task], "user-123")
+        result = await TaskService.create_ai_tasks(mock_session, [task], uuid.uuid4())
 
         # Verify
         assert len(result) == 1
@@ -85,7 +86,7 @@ class TestTaskService:
                 title="Task 1",
                 description="High confidence task",
                 source=TaskSource.AI_GENERATED,
-                source_image_id="image-123",
+                source_image_id=str(uuid.uuid4()),
                 ai_confidence=0.9,
                 ai_provider="gemini",
             ),
@@ -93,7 +94,7 @@ class TestTaskService:
                 title="Task 2",
                 description="Medium confidence task",
                 source=TaskSource.AI_GENERATED,
-                source_image_id="image-123",
+                source_image_id=str(uuid.uuid4()),
                 ai_confidence=0.7,
                 ai_provider="gemini",
             ),
@@ -101,14 +102,14 @@ class TestTaskService:
                 title="Task 3",
                 description="Low confidence task",
                 source=TaskSource.AI_GENERATED,
-                source_image_id="image-123",
+                source_image_id=str(uuid.uuid4()),
                 ai_confidence=0.4,
                 ai_provider="gemini",
             ),
         ]
 
         # Execute
-        result = await TaskService.create_ai_tasks(mock_session, tasks, "user-123")
+        result = await TaskService.create_ai_tasks(mock_session, tasks, uuid.uuid4())
 
         # Verify
         assert len(result) == 3
@@ -138,13 +139,13 @@ class TestTaskService:
             description="High confidence but low priority",
             priority=TaskPriority.LOW,  # Explicitly set
             source=TaskSource.AI_GENERATED,
-            source_image_id="image-123",
+            source_image_id=str(uuid.uuid4()),
             ai_confidence=0.9,  # High confidence
             ai_provider="gemini",
         )
 
         # Execute
-        await TaskService.create_ai_tasks(mock_session, [task], "user-123")
+        await TaskService.create_ai_tasks(mock_session, [task], uuid.uuid4())
 
         # Verify the explicit priority was kept
         added_task = mock_session.add.call_args[0][0]
@@ -163,12 +164,12 @@ class TestTaskService:
             title="Single task",
             description="Test single task creation",
             source=TaskSource.AI_GENERATED,
-            source_image_id="image-123",
+            source_image_id=str(uuid.uuid4()),
             ai_confidence=0.75,
             ai_provider="gemini",
         )
 
-        result = await TaskService.create_single_ai_task(mock_session, task, "user-123")
+        result = await TaskService.create_single_ai_task(mock_session, task, uuid.uuid4())
 
         assert result is not None
         assert isinstance(result, TaskModel)

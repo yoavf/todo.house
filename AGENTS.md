@@ -44,11 +44,17 @@ todohouse/
 │   │   ├── __init__.py
 │   │   ├── main.py    # FastAPI app entry point
 │   │   ├── database.py # Database setup
-│   │   ├── database/   # SQLAlchemy components
+│   │   ├── database/   # SQLAlchemy models and engine
+│   │   ├── models.py   # Pydantic models and enums
+│   │   ├── tasks.py    # Task endpoints
+│   │   ├── images.py   # Image endpoints
 │   │   └── storage.py  # Storage abstraction
+│   ├── alembic/       # Database migrations
+│   │   └── versions/  # Migration files
 │   ├── pyproject.toml # Python dependencies (uv)
 │   └── .env          # Environment variables
 ├── frontend/         # Next.js application
+│   └── .env.local    # Frontend environment variables
 ├── shared/          # Shared types and utilities
 ├── package.json     # Root workspace configuration
 └── README.md
@@ -72,6 +78,29 @@ todohouse/
 - **Supabase Storage**: For file uploads and image storage
 - **Next.js**: React framework for the frontend application
 - **TypeScript**: For type safety across the frontend
+- **Alembic**: Database migration tool for managing schema changes
+
+## Database Architecture
+
+### Key Design Decisions
+
+1. **UUIDs for all IDs**: Using PostgreSQL UUID type for user_id, image_id, etc. for security and scalability
+2. **String-based Enums**: Storing enums (priority, status, source) as strings rather than PostgreSQL enum types for flexibility during development
+3. **Standard Audit Columns**: All tables have `created_at` and `updated_at` timestamps
+4. **JSON for Arrays**: Using JSON type for `task_types` array to avoid complexity of normalized junction tables
+
+### Database Setup
+
+```bash
+# Run migrations on a new database
+cd backend && uv run alembic upgrade head
+
+# Create a new migration after model changes
+cd backend && uv run alembic revision --autogenerate -m "Description of changes"
+
+# Check current migration status
+cd backend && uv run alembic current
+```
 
 ## Getting Started
 
@@ -89,7 +118,30 @@ npm run dev:frontend  # Next.js app on :3000
 
 ## Environment Setup
 
-Create `.env` files in both backend and frontend directories with necessary environment variables for Supabase connection and API configuration.
+### Backend (.env)
+```bash
+# Database Configuration (SQLAlchemy)
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:54322/postgres
+
+# Supabase Configuration (for storage)
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_KEY=your-anon-key
+
+# AI Provider Configuration (optional)
+GEMINI_API_KEY=your-api-key
+GEMINI_MODEL=gemini-2.5-flash
+DEFAULT_AI_PROVIDER=gemini
+
+# Logging
+LOG_LEVEL=INFO
+ENABLE_JSON_LOGGING=true
+```
+
+### Frontend (.env.local)
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000
+```
 
 ### Virtual Environment
 
@@ -227,3 +279,7 @@ async def test_create_todo_success(client, test_user_id):
 - Frontend: Use shadcn components whenever possible, with tailwind
 - **Backend tests are mandatory** but keep them simple during MVP - just verify the happy path works
 - **Frontend tests are optional during MVP** - use the `todo-tracker-pm` agent to create [P1] GitHub issues for post-MVP testing
+
+## Development Memory
+
+- When writing commit messages, do not include ghost fixes: meaning, if since the last commit you introduced a bug, and then fixed it, and are then committing again, that bug has no meaning in the codebase, it was never there, and shouldn't be mentioned.

@@ -1,57 +1,28 @@
 name: Claude Code Review
 
 on:
-  # Manual trigger via GitHub Actions UI
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: 'PR number to review'
-        required: true
-        type: number
-  
-  # Trigger when a PR is labeled with "claude-review"
+  # Trigger only when a PR is labeled
   pull_request:
     types: [labeled]
-    
-  # Optional: Uncomment to enable automatic reviews on all PRs
-  # pull_request:
-  #   types: [opened, synchronize]
-  #   paths-ignore:
-  #     - '**/*.md'
 
 jobs:
   claude-review:
-    # Only run if triggered manually or if the "claude-review" label was added
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && github.event.label.name == 'claude-review')
+    # Only run if the "claude-review" label was just added
+    if: github.event.label.name == 'claude-review'
 
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write
+      issues: write
       id-token: write
 
     steps:
-      - name: Get PR context for manual trigger
-        id: get-pr
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: ${{ github.event.inputs.pr_number }}
-            });
-            core.setOutput('pr_head_sha', pr.data.head.sha);
-            core.setOutput('pr_number', ${{ github.event.inputs.pr_number }});
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && steps.get-pr.outputs.pr_head_sha || github.event.pull_request.head.sha }}
-          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
@@ -63,11 +34,11 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           
-          # Pass PR number for manual triggers
-          pr_number: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
+          # Use agent mode for automated workflows
+          mode: agent
 
           # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
-          # model: "claude-opus-4-20250514"
+          # anthropic_model: "claude-opus-4-20250514"
 
           # Direct prompt for automated review (no @claude mention needed)
           direct_prompt: |
@@ -105,4 +76,3 @@ jobs:
 
           # Allow Claude to use tools for code inspection only
           allowed_tools: "Bash(cat),Bash(grep),Bash(find),Read,Grep"
-

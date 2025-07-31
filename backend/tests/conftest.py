@@ -72,7 +72,7 @@ async def setup_test_user(test_user_id, db_session):
     """
     # Create test user using SQLAlchemy
     db_user = UserModel(
-        id=test_user_id,
+        id=uuid.UUID(test_user_id),
         email=f"test-{test_user_id}@example.com",
     )
     
