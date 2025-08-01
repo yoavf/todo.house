@@ -162,7 +162,7 @@ async function takeScreenshots() {
         await mobilePage.waitForTimeout(1000);
         
         await mobilePage.screenshot({
-          path: path.join(screenshotsDir, '06-mobile-add-task-maknual.png'),
+          path: path.join(screenshotsDir, '06-mobile-add-task-manual.png'),
           fullPage: false,
         });
         console.log('✅ Captured mobile add task');
