@@ -195,11 +195,11 @@ jobs:
             // Define the expected screenshots (with numeric prefixes as saved by the script)
             const screenshots = [
               '01-desktop-home.png',
-              '02-desktop-add-todo.png',
-              '03-desktop-todo-hover.png',
+              '02-desktop-add-task.png',
+              '03-desktop-task-hover.png',
               '04-mobile-home.png',
-              '05-mobile-add-todo.png',
-              '06-mobile-todo-actions.png'
+              '05-mobile-add-task.png',
+              '06-mobile-task-actions.png'
             ];
             
             const pr = context.issue.number;
