@@ -91,8 +91,8 @@ async def seed_data():
             tasks = [
                 create_task_with_timestamps(
                     TEST_USER_ID,
-                    "Review pull request #42",
-                    "Review the new authentication feature implementation and provide feedback",
+                    "Fix leaky kitchen faucet",
+                    "The kitchen faucet has been dripping - need to replace the washer or cartridge",
                     False,
                     "high",
                     "active",
@@ -100,8 +100,8 @@ async def seed_data():
                 ),
                 create_task_with_timestamps(
                     TEST_USER_ID,
-                    "Update API documentation",
-                    "Add the new endpoints to the Swagger documentation",
+                    "Clean gutters before winter",
+                    "Remove leaves and debris from gutters and downspouts to prevent ice dams",
                     False,
                     "medium",
                     "active",
@@ -109,8 +109,8 @@ async def seed_data():
                 ),
                 create_task_with_timestamps(
                     TEST_USER_ID,
-                    "Fix database migration issue",
-                    "Investigate and fix the failing migration in the CI pipeline",
+                    "Schedule HVAC annual maintenance",
+                    "Call HVAC company to schedule yearly inspection and filter replacement",
                     False,
                     "high",
                     "active",
@@ -118,8 +118,8 @@ async def seed_data():
                 ),
                 create_task_with_timestamps(
                     TEST_USER_ID,
-                    "Write unit tests for auth module",
-                    "Add comprehensive unit tests for the authentication module",
+                    "Replace smoke detector batteries",
+                    "Test all smoke detectors and replace batteries in hallway and bedroom units",
                     True,
                     "medium",
                     "completed",
@@ -127,8 +127,8 @@ async def seed_data():
                 ),
                 create_task_with_timestamps(
                     TEST_USER_ID,
-                    "Deploy to staging environment",
-                    "Deploy the latest changes to the staging environment for QA testing",
+                    "Reseal bathroom caulk",
+                    "Remove old caulk around tub and reseal to prevent water damage",
                     True,
                     "low",
                     "completed",
@@ -136,8 +136,8 @@ async def seed_data():
                 ),
                 create_task_with_timestamps(
                     TEST_USER_ID,
-                    "Research new UI component library",
-                    "Evaluate different component libraries for the upcoming redesign",
+                    "Organize garage storage",
+                    "Install wall hooks and shelving to better organize tools and seasonal items",
                     False,
                     "low",
                     "active",

@@ -42,11 +42,11 @@ async function takeScreenshots() {
     
     // Wait for content
     try {
-      await desktopPage.waitForSelector('[data-testid="todo-item"], [data-testid="empty-state"], text="No todos yet"', { 
+      await desktopPage.waitForSelector('[data-testid="task-item"], [data-testid="empty-state"], text="No tasks yet"', { 
         timeout: 10000 
       });
     } catch (error) {
-      console.log('⚠️  Could not detect todo content, continuing...');
+      console.log('⚠️  Could not detect task content, continuing...');
     }
     
     // 1. Desktop home view
@@ -56,46 +56,46 @@ async function takeScreenshots() {
     });
     console.log('✅ Captured desktop home');
     
-    // 2. Desktop with add todo dialog
-    const addButton = await desktopPage.$('button:has-text("Add Todo"), [data-testid="add-todo-button"], button[aria-label="Add todo"]');
+    // 2. Desktop with add task dialog
+    const addButton = await desktopPage.$('button:has-text("New Task"), [data-testid="new-task-button"]');
     
     if (addButton) {
       await addButton.click();
       await desktopPage.waitForTimeout(1000);
       
       // Fill form
-      const titleInput = await desktopPage.$('input[placeholder*="title" i], input[name="title"], [data-testid="todo-title-input"]');
+      const titleInput = await desktopPage.$('input[placeholder*="title" i], input[name="title"], [data-testid="task-title-input"]');
       if (titleInput) {
         await titleInput.fill('Review pull request #42');
         
-        const descInput = await desktopPage.$('textarea[placeholder*="description" i], textarea[name="description"], [data-testid="todo-description-input"]');
+        const descInput = await desktopPage.$('textarea[placeholder*="description" i], textarea[name="description"], [data-testid="task-description-input"]');
         if (descInput) {
           await descInput.fill('Review the new feature implementation and provide feedback');
         }
       }
       
       await desktopPage.screenshot({
-        path: path.join(screenshotsDir, '02-desktop-add-todo.png'),
+        path: path.join(screenshotsDir, '02-desktop-add-task.png'),
         fullPage: false,
       });
-      console.log('✅ Captured desktop add todo');
+      console.log('✅ Captured desktop add task');
       
       // Close dialog
       await desktopPage.keyboard.press('Escape');
       await desktopPage.waitForTimeout(1000);
     }
     
-    // 3. Desktop with todo hover
-    const todoItem = await desktopPage.$('[data-testid="todo-item"], .todo-item, li:has-text("todo")');
-    if (todoItem) {
-      await todoItem.hover();
+    // 3. Desktop with task hover
+    const taskItem = await desktopPage.$('[data-testid="task-item"], .task-item, li:has-text("task")');
+    if (taskItem) {
+      await taskItem.hover();
       await desktopPage.waitForTimeout(500);
       
       await desktopPage.screenshot({
-        path: path.join(screenshotsDir, '03-desktop-todo-hover.png'),
+        path: path.join(screenshotsDir, '03-desktop-task-hover.png'),
         fullPage: false,
       });
-      console.log('✅ Captured desktop todo hover');
+      console.log('✅ Captured desktop task hover');
     }
     
     await desktopContext.close();
@@ -128,11 +128,11 @@ async function takeScreenshots() {
     
     // Wait for content
     try {
-      await mobilePage.waitForSelector('[data-testid="todo-item"], [data-testid="empty-state"], text="No todos yet"', { 
+      await mobilePage.waitForSelector('[data-testid="task-item"], [data-testid="empty-state"], text="No tasks yet"', { 
         timeout: 10000 
       });
     } catch (error) {
-      console.log('⚠️  Could not detect todo content on mobile, continuing...');
+      console.log('⚠️  Could not detect task content on mobile, continuing...');
     }
     
     // 4. Mobile home
@@ -142,36 +142,36 @@ async function takeScreenshots() {
     });
     console.log('✅ Captured mobile home');
     
-    // 5. Mobile add todo
-    const mobileAddButton = await mobilePage.$('button:has-text("Add Todo"), [data-testid="add-todo-button"], button[aria-label="Add todo"]');
+    // 5. Mobile add task
+    const mobileAddButton = await mobilePage.$('button:has-text("Add task"), [data-testid="add-task-button"], button[aria-label="Add task"]');
     if (mobileAddButton) {
       await mobileAddButton.click();
       await mobilePage.waitForTimeout(1000);
       
       await mobilePage.screenshot({
-        path: path.join(screenshotsDir, '05-mobile-add-todo.png'),
+        path: path.join(screenshotsDir, '05-mobile-add-task.png'),
         fullPage: false,
       });
-      console.log('✅ Captured mobile add todo');
+      console.log('✅ Captured mobile add task');
       
       await mobilePage.keyboard.press('Escape');
       await mobilePage.waitForTimeout(1000);
     }
     
-    // 6. Mobile todo actions
-    const mobileTodo = await mobilePage.$('[data-testid="todo-item"], .todo-item');
-    if (mobileTodo) {
-      const box = await mobileTodo.boundingBox();
+    // 6. Mobile task actions
+    const mobiletask = await mobilePage.$('[data-testid="task-item"], .task-item');
+    if (mobiletask) {
+      const box = await mobiletask.boundingBox();
       if (box) {
         // Tap to show actions
         await mobilePage.touchscreen.tap(box.x + box.width - 50, box.y + box.height / 2);
         await mobilePage.waitForTimeout(500);
         
         await mobilePage.screenshot({
-          path: path.join(screenshotsDir, '06-mobile-todo-actions.png'),
+          path: path.join(screenshotsDir, '06-mobile-task-actions.png'),
           fullPage: false,
         });
-        console.log('✅ Captured mobile todo actions');
+        console.log('✅ Captured mobile task actions');
       }
     }
     
