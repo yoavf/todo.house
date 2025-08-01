@@ -72,6 +72,9 @@ lerna-debug.log*
 # Coverage reports
 coverage/
 *.lcov
+htmlcov/
+.coverage
+.coverage.*
 
 # Build outputs
 dist/

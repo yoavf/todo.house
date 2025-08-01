@@ -10,7 +10,7 @@ import os
 # Initialize structured logging
 setup_logging(
     log_level=os.getenv("LOG_LEVEL", "INFO"),
-    enable_json=os.getenv("ENABLE_JSON_LOGGING", "true").lower() == "true"
+    enable_json=os.getenv("ENABLE_JSON_LOGGING", "true").lower() == "true",
 )
 
 app = FastAPI(title="todo.house API", version="1.0.0")
@@ -39,7 +39,7 @@ async def health_check():
     try:
         # Check if env vars are loaded
         database_url = os.getenv("DATABASE_URL")
-        
+
         if not database_url:
             return {"status": "error", "message": "Missing DATABASE_URL"}
 
@@ -47,7 +47,7 @@ async def health_check():
         async with get_session() as session:
             # Simple query to test connection
             await session.execute(text("SELECT 1"))
-            
+
         return {
             "status": "healthy",
             "database": "connected",

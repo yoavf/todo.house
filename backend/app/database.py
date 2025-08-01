@@ -11,10 +11,9 @@ __all__ = [
     "get_session",
     "get_session_dependency",
     "get_engine",
-    
     # SQLAlchemy models
     "Base",
-    "User", 
+    "User",
     "Task",
-    "Image"
+    "Image",
 ]

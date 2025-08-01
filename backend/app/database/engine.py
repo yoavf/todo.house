@@ -14,21 +14,21 @@ _engine: AsyncEngine | None = None
 def create_engine() -> AsyncEngine:
     """
     Create and configure SQLAlchemy async engine.
-    
+
     Returns:
         Configured async SQLAlchemy engine
     """
     if not config.database.database_url:
         raise ValueError("DATABASE_URL environment variable is required")
-    
+
     # Check if using SQLite
     is_sqlite = "sqlite" in config.database.database_url
-    
+
     # Create engine with appropriate settings
     engine_kwargs = {
         "echo": config.database.echo,
     }
-    
+
     if is_sqlite:
         # SQLite doesn't support connection pooling parameters
         engine_kwargs["poolclass"] = NullPool
@@ -40,20 +40,19 @@ def create_engine() -> AsyncEngine:
         # Use NullPool for testing environments to avoid connection issues
         if "test" in config.database.database_url:
             engine_kwargs["poolclass"] = NullPool
-    
-    engine = create_async_engine(
-        config.database.database_url,
-        **engine_kwargs
+
+    engine = create_async_engine(config.database.database_url, **engine_kwargs)
+
+    logger.info(
+        f"Created database engine for URL: {config.database.database_url.split('@')[0]}@***"
     )
-    
-    logger.info(f"Created database engine for URL: {config.database.database_url.split('@')[0]}@***")
     return engine
 
 
 def get_engine() -> AsyncEngine:
     """
     Get the global database engine instance.
-    
+
     Returns:
         The global async SQLAlchemy engine
     """

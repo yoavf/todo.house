@@ -52,7 +52,9 @@ class TestTasksAIIntegration:
         assert data["ai_provider"] == "gemini"
 
     @pytest.mark.asyncio
-    async def test_create_ai_task_low_confidence(self, client, setup_test_user, db_session):
+    async def test_create_ai_task_low_confidence(
+        self, client, setup_test_user, db_session
+    ):
         """Test that low confidence AI tasks get low priority."""
         # First create an image record
         from app.database import Image as ImageModel

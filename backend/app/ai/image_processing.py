@@ -197,21 +197,22 @@ class ImageProcessingService:
         try:
             # Step 1: Validate and preprocess image
             logger.info(f"Starting image analysis for user {user_id}")
-            
+
             try:
-                processed_data, metadata = await self.preprocessor.validate_and_preprocess(
-                    image_data
-                )
-                
+                (
+                    processed_data,
+                    metadata,
+                ) = await self.preprocessor.validate_and_preprocess(image_data)
+
                 # Log successful validation
                 self.processing_logger.log_image_validation(
                     user_id=user_id,
                     validation_result="success",
                     original_size=metadata["original_size"],
                     processed_size=metadata["processed_size"],
-                    compression_ratio=metadata.get("compression_ratio")
+                    compression_ratio=metadata.get("compression_ratio"),
                 )
-                
+
                 logger.info(
                     f"Image preprocessed: {metadata['original_size']} -> {metadata['processed_size']} bytes"
                 )
@@ -221,7 +222,7 @@ class ImageProcessingService:
                     user_id=user_id,
                     validation_result="failed",
                     original_size=len(image_data),
-                    error_message=str(e)
+                    error_message=str(e),
                 )
                 raise
 
@@ -233,25 +234,25 @@ class ImageProcessingService:
                 self.processing_logger.log_ai_request_start(
                     user_id=user_id,
                     provider=self.ai_provider.get_provider_name(),
-                    model=getattr(self.ai_provider, 'model', 'unknown'),
+                    model=getattr(self.ai_provider, "model", "unknown"),
                     image_size=len(processed_data),
-                    prompt_length=len(prompt)
+                    prompt_length=len(prompt),
                 )
-                
+
                 analysis_result = await self._analyze_with_retry(processed_data, prompt)
                 retry_count = analysis_result.get("retry_count", 0)
-                
+
                 # Log AI request completion
                 self.processing_logger.log_ai_request_complete(
                     user_id=user_id,
                     provider=self.ai_provider.get_provider_name(),
-                    model=getattr(self.ai_provider, 'model', 'unknown'),
+                    model=getattr(self.ai_provider, "model", "unknown"),
                     processing_time=analysis_result.get("processing_time", 0.0),
                     tokens_used=analysis_result.get("tokens_used"),
                     cost_estimate=analysis_result.get("cost_estimate"),
                     tasks_generated=len(analysis_result.get("tasks", [])),
                     retry_count=retry_count,
-                    success=True
+                    success=True,
                 )
 
             # Step 3: Process results
@@ -261,8 +262,10 @@ class ImageProcessingService:
                 tasks = analysis_result.get("tasks", [])
                 # Log task confidence values for debugging
                 for i, task in enumerate(tasks):
-                    logger.info(f"Task {i}: '{task.get('title', 'Unknown')}' has confidence: {task.get('confidence', 'MISSING')}")
-                
+                    logger.info(
+                        f"Task {i}: '{task.get('title', 'Unknown')}' has confidence: {task.get('confidence', 'MISSING')}"
+                    )
+
                 result = {
                     "image_metadata": metadata,
                     "analysis_summary": analysis_result.get(
@@ -290,7 +293,7 @@ class ImageProcessingService:
                 user_id=user_id,
                 total_processing_time=processing_time,
                 tasks_generated=len(result["tasks"]),
-                success=True
+                success=True,
             )
 
             logger.info(
@@ -303,16 +306,16 @@ class ImageProcessingService:
             raise
         except Exception as e:
             processing_time = time.time() - start_time
-            
+
             # Log pipeline failure
             self.processing_logger.log_processing_pipeline_complete(
                 user_id=user_id,
                 total_processing_time=processing_time,
                 tasks_generated=0,
                 success=False,
-                error_message=str(e)
+                error_message=str(e),
             )
-            
+
             logger.error(f"Image processing failed after {processing_time:.2f}s: {e}")
             raise ImageProcessingError(f"Image processing failed: {str(e)}") from e
 
@@ -612,7 +615,7 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
                     logger.warning(
                         f"Invalid task type '{tt}', skipping. Valid types are: {[t.value for t in TaskType]}"
                     )
-            
+
             # Create AITaskCreate model
             ai_task = AITaskCreate(
                 title=task_data["title"],
@@ -621,7 +624,9 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
                 task_types=task_types,
                 source=TaskSource.AI_GENERATED,
                 source_image_id=source_image_id,
-                ai_confidence=task_data.get("confidence", ai_confidence or 0.5),  # Use task-specific confidence if available
+                ai_confidence=task_data.get(
+                    "confidence", ai_confidence or 0.5
+                ),  # Use task-specific confidence if available
                 ai_provider=provider_name,
             )
             ai_tasks.append(ai_task)
@@ -640,7 +645,7 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
             tasks_created=len(created_tasks),
             source_image_id=str(source_image_id),
             ai_confidence=ai_confidence,
-            provider=provider_name
+            provider=provider_name,
         )
 
         logger.info(

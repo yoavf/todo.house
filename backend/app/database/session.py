@@ -15,7 +15,7 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
     """
     Get the global session factory.
-    
+
     Returns:
         Async session factory
     """
@@ -34,7 +34,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Get a database session with automatic cleanup.
-    
+
     Yields:
         Database session
     """
@@ -52,7 +52,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 async def get_session_dependency() -> AsyncGenerator[AsyncSession, None]:
     """
     FastAPI dependency for database sessions.
-    
+
     Yields:
         Database session
     """

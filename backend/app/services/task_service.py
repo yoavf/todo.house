@@ -76,7 +76,7 @@ class TaskService:
 
         # Commit all tasks at once
         await session.commit()
-        
+
         # Refresh to get IDs and timestamps
         for db_task in created_tasks:
             await session.refresh(db_task)

@@ -60,15 +60,17 @@ class TestTaskService:
         # Verify
         assert len(result) == 1
         assert isinstance(result[0], TaskModel)
-        
+
         # Verify database calls
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
-        
+
         # Check the task that was added
         added_task = mock_session.add.call_args[0][0]
         assert added_task.title == "Fix leaky faucet"
-        assert added_task.priority == TaskPriority.HIGH  # Should be high due to confidence 0.85
+        assert (
+            added_task.priority == TaskPriority.HIGH
+        )  # Should be high due to confidence 0.85
         assert added_task.ai_confidence == 0.85
 
     @pytest.mark.asyncio
@@ -113,11 +115,11 @@ class TestTaskService:
 
         # Verify
         assert len(result) == 3
-        
+
         # Verify database calls
         assert mock_session.add.call_count == 3
         mock_session.commit.assert_called_once()
-        
+
         # Check priorities set on added tasks
         added_tasks = [call[0][0] for call in mock_session.add.call_args_list]
         assert added_tasks[0].priority == TaskPriority.HIGH
@@ -169,11 +171,13 @@ class TestTaskService:
             ai_provider="gemini",
         )
 
-        result = await TaskService.create_single_ai_task(mock_session, task, uuid.uuid4())
+        result = await TaskService.create_single_ai_task(
+            mock_session, task, uuid.uuid4()
+        )
 
         assert result is not None
         assert isinstance(result, TaskModel)
-        
+
         # Should have added exactly one task
         mock_session.add.assert_called_once()
         added_task = mock_session.add.call_args[0][0]

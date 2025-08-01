@@ -25,9 +25,9 @@ async def test_engine():
         connect_args={"check_same_thread": False},
         echo=False,
     )
-    
+
     yield engine
-    
+
     # Cleanup
     await engine.dispose()
 
@@ -48,12 +48,12 @@ async def db_session(test_session_factory, test_engine):
     # Create tables for each test
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     async with test_session_factory() as session:
         yield session
         await session.rollback()
-        
-    # Drop tables after test  
+
+    # Drop tables after test
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
@@ -75,7 +75,7 @@ async def setup_test_user(test_user_id, db_session):
         id=uuid.UUID(test_user_id),
         email=f"test-{test_user_id}@example.com",
     )
-    
+
     db_session.add(db_user)
     await db_session.commit()
     await db_session.refresh(db_user)
@@ -94,17 +94,18 @@ async def client(db_session):
     ensuring test isolation. The 'async with' statement ensures
     proper cleanup after each test.
     """
+
     # Override the database session dependency
     def override_get_db():
         return db_session
-    
+
     app.dependency_overrides[get_session_dependency] = override_get_db
-    
+
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
         yield ac
-    
+
     # Clean up the override
     app.dependency_overrides.clear()
 

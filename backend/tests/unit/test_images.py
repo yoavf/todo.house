@@ -17,24 +17,26 @@ class TestCreateTasksFromAnalysis:
         mock_processing_service = MagicMock(spec=ImageProcessingService)
         mock_processing_service.create_tasks_from_analysis = AsyncMock()
         mock_session = AsyncMock()
-        
+
         # Mock logger to verify warning is logged
-        with patch('app.images.logger') as mock_logger:
+        with patch("app.images.logger") as mock_logger:
             # Call the function with no image_id
             await _create_tasks_from_analysis(
                 processing_service=mock_processing_service,
                 analysis_result={"tasks": [{"title": "Test task"}]},
                 user_id="test-user-123",
                 image_id=None,  # This is the key test case
-                session=mock_session
+                session=mock_session,
             )
-            
+
             # Verify that create_tasks_from_analysis was NOT called
             mock_processing_service.create_tasks_from_analysis.assert_not_called()
-            
+
             # Verify that a warning was logged
-            mock_logger.warning.assert_called_once_with("Cannot create tasks without image_id")
-            
+            mock_logger.warning.assert_called_once_with(
+                "Cannot create tasks without image_id"
+            )
+
             # Verify that update_image_analysis_status was NOT called
             # (The function returns early, so nothing else should happen)
 
@@ -44,41 +46,40 @@ class TestCreateTasksFromAnalysis:
         # Create mocks
         mock_processing_service = MagicMock(spec=ImageProcessingService)
         mock_processing_service.create_tasks_from_analysis = AsyncMock(
-            return_value=[
-                {"id": 1, "title": "Task 1"},
-                {"id": 2, "title": "Task 2"}
-            ]
+            return_value=[{"id": 1, "title": "Task 1"}, {"id": 2, "title": "Task 2"}]
         )
         mock_session = AsyncMock()
-        
+
         # Valid image_id
         test_image_id = uuid.uuid4()
-        
+
         # Mock the update_image_analysis_status function
-        with patch('app.images.update_image_analysis_status', new=AsyncMock()) as mock_update:
+        with patch(
+            "app.images.update_image_analysis_status", new=AsyncMock()
+        ) as mock_update:
             # Call the function with valid image_id
             await _create_tasks_from_analysis(
                 processing_service=mock_processing_service,
                 analysis_result={
                     "tasks": [{"title": "Test task"}],
-                    "provider_used": "gemini"
+                    "provider_used": "gemini",
                 },
                 user_id="test-user-123",
                 image_id=test_image_id,
-                session=mock_session
+                session=mock_session,
             )
-            
+
             # Verify that create_tasks_from_analysis WAS called
             mock_processing_service.create_tasks_from_analysis.assert_called_once_with(
                 analysis_result={
                     "tasks": [{"title": "Test task"}],
-                    "provider_used": "gemini"
+                    "provider_used": "gemini",
                 },
                 user_id="test-user-123",
                 source_image_id=test_image_id,
-                provider_name="gemini"
+                provider_name="gemini",
             )
-            
+
             # Verify that update_image_analysis_status WAS called
             mock_update.assert_called_once()
 
@@ -89,19 +90,19 @@ class TestCreateTasksFromAnalysis:
         mock_processing_service = MagicMock(spec=ImageProcessingService)
         mock_processing_service.create_tasks_from_analysis = AsyncMock(return_value=[])
         mock_session = AsyncMock()
-        
+
         test_image_id = uuid.uuid4()
-        
-        with patch('app.images.update_image_analysis_status', new=AsyncMock()):
+
+        with patch("app.images.update_image_analysis_status", new=AsyncMock()):
             # Call with analysis_result missing provider_used
             await _create_tasks_from_analysis(
                 processing_service=mock_processing_service,
                 analysis_result={"tasks": []},  # No provider_used key
                 user_id="test-user-123",
                 image_id=test_image_id,
-                session=mock_session
+                session=mock_session,
             )
-            
+
             # Verify it uses "unknown" as default
             mock_processing_service.create_tasks_from_analysis.assert_called_once()
             call_args = mock_processing_service.create_tasks_from_analysis.call_args

@@ -185,7 +185,7 @@ class TestGeminiProvider:
             with patch.object(provider, "_make_api_call", return_value=mock_response):
                 with pytest.raises(AIProviderError) as exc_info:
                     await provider.analyze_image(b"fake_image", "test prompt")
-                
+
                 assert "Invalid JSON response from Gemini" in str(exc_info.value)
 
     @pytest.mark.asyncio
