@@ -1,0 +1,73 @@
+name: Cleanup PR Screenshots
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout screenshots branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-screenshots
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Delete PR screenshots
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          
+          # Check if PR directory exists
+          if [ -d "pr-${PR_NUMBER}" ]; then
+            echo "🗑️ Removing screenshots for PR #${PR_NUMBER}"
+            
+            # Configure git
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            
+            # Remove the entire PR directory
+            git rm -rf "pr-${PR_NUMBER}"
+            
+            # Commit and push
+            git commit -m "Cleanup: Remove screenshots for merged/closed PR #${PR_NUMBER}"
+            git push origin gh-screenshots
+            
+            echo "✅ Screenshots removed successfully"
+          else
+            echo "ℹ️ No screenshots found for PR #${PR_NUMBER}"
+          fi
+      
+      - name: Delete screenshot comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.issue.number;
+            
+            // Find the screenshot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: pr,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const botComment = comments.find(c => 
+              c.user.type === 'Bot' && 
+              c.body.includes('📸 TodoHouse Screenshots')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.deleteComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              console.log('✅ Screenshot comment deleted');
+            } else {
+              console.log('ℹ️ No screenshot comment found');
+            }

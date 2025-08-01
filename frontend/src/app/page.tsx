@@ -75,7 +75,11 @@ export default function DashboardPage() {
 					<AddTaskModal
 						onTaskCreated={refetch}
 						trigger={
-							<Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+							<Button
+								size="lg"
+								className="bg-blue-600 hover:bg-blue-700"
+								date-testid="new-task-button"
+							>
 								<Plus className="h-5 w-5 mr-2" />
 								New Task
 							</Button>
