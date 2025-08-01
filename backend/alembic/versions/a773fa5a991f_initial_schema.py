@@ -8,7 +8,6 @@ Create Date: 2025-08-01 18:21:06.297918
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "a773fa5a991f"
@@ -77,16 +76,16 @@ def upgrade() -> None:
         sa.Column("completed", sa.Boolean(), nullable=False),
         sa.Column("status", sa.String(length=20), nullable=False),
         sa.Column("snoozed_until", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("schedule", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column("schedule", sa.JSON(), nullable=True),
         sa.Column("show_after", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("content", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column("metrics", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column("content", sa.JSON(), nullable=True),
+        sa.Column("metrics", sa.JSON(), nullable=True),
         sa.Column("source", sa.String(length=20), nullable=False),
         sa.Column("source_image_id", sa.UUID(), nullable=True),
         sa.Column("ai_confidence", sa.Float(), nullable=True),
         sa.Column("ai_provider", sa.String(length=100), nullable=True),
         sa.Column("task_types", sa.JSON(), nullable=True),
-        sa.Column("tags", sa.ARRAY(sa.String()), nullable=True),
+        sa.Column("tags", sa.JSON(), nullable=True),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
