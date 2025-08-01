@@ -14,7 +14,35 @@ from ..models import TaskStatus, TaskPriority, TaskSource
 
 
 class JSONType(TypeDecorator):
-    """A JSON type that uses JSONB for PostgreSQL and JSON for other databases."""
+    """
+    Cross-database JSON column type for SQLAlchemy models.
+
+    This type decorator automatically uses the PostgreSQL `JSONB` type when connected to a PostgreSQL
+    database, and falls back to the generic `JSON` type for other databases (such as SQLite or MySQL).
+    This ensures that your models can store and query JSON data efficiently and portably across
+    different database backends.
+
+    - `JSONB` (PostgreSQL): Stores JSON data in a decomposed binary format, allowing for efficient
+      indexing and advanced querying. Recommended for production use with PostgreSQL.
+    - `JSON` (Other DBs): Stores JSON data as plain text. Supported by most modern databases, but
+      may have limited indexing/query capabilities compared to `JSONB`.
+
+    Usage example:
+
+        from sqlalchemy.orm import Mapped, mapped_column
+        from .models import JSONType
+
+        class MyModel(Base):
+            __tablename__ = "my_model"
+            id: Mapped[int] = mapped_column(primary_key=True)
+            data: Mapped[dict] = mapped_column(JSONType, nullable=True)
+
+    Notes:
+        - Use this type for columns that need to store arbitrary JSON data and require compatibility
+          across different database engines.
+        - For PostgreSQL, `JSONB` is preferred over `JSON` due to better performance and features.
+        - For lists of strings or other simple arrays, consider using the native ARRAY type if supported.
+    """
 
     impl = JSON
     cache_ok = True

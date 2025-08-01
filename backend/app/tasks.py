@@ -105,6 +105,12 @@ async def create_task(
         ai_confidence=task.ai_confidence,
         ai_provider=task.ai_provider,
         task_types=task_types_str,
+        # Enhanced fields
+        schedule=task.schedule,  # Will be a dict due to the validator
+        show_after=task.show_after,
+        content=task.content,  # Will be a dict due to the validator
+        metrics=task.metrics,
+        tags=task.tags,
     )
 
     session.add(db_task)
