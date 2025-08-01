@@ -149,6 +149,7 @@ export function AddTaskModal({ onTaskCreated, trigger }: AddTaskModalProps) {
 						<Card
 							className="cursor-pointer hover:shadow-md transition-shadow border-dashed"
 							onClick={() => setMode("manual")}
+							data-testid="manual-task-entry-trigger"
 						>
 							<CardContent className="flex flex-col items-center justify-center p-8 text-center">
 								<div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">

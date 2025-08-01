@@ -199,7 +199,7 @@ jobs:
               '03-desktop-task-hover.png',
               '04-mobile-home.png',
               '05-mobile-add-task.png',
-              '06-mobile-task-actions.png'
+              '06-mobile-add-task-manual.png',
             ];
             
             const pr = context.issue.number;

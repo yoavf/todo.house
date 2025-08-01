@@ -143,7 +143,7 @@ async function takeScreenshots() {
     console.log('✅ Captured mobile home');
     
     // 5. Mobile add task
-    const mobileAddButton = await mobilePage.$('button:has-text("Add task"), [data-testid="add-task-button"], button[aria-label="Add task"]');
+    const mobileAddButton = await mobilePage.$('button:has-text("New Task"), [data-testid="new-task-button"]');
     if (mobileAddButton) {
       await mobileAddButton.click();
       await mobilePage.waitForTimeout(1000);
@@ -153,7 +153,22 @@ async function takeScreenshots() {
         fullPage: false,
       });
       console.log('✅ Captured mobile add task');
-      
+        
+      // 6. Mobile add task - manual entry form
+
+      const mobileManualAddButton = await mobilePage.$('[data-testid="manual-task-entry-trigger"]');
+      if (mobileManualAddButton) {
+        await mobileManualAddButton.click();
+        await mobilePage.waitForTimeout(1000);
+        
+        await mobilePage.screenshot({
+          path: path.join(screenshotsDir, '06-mobile-add-task-maknual.png'),
+          fullPage: false,
+        });
+        console.log('✅ Captured mobile add task');
+      }
+        
+    
       await mobilePage.keyboard.press('Escape');
       await mobilePage.waitForTimeout(1000);
     }
