@@ -143,9 +143,13 @@ def generate_correlation_id() -> str:
     return str(uuid.uuid4())
 
 
-def set_correlation_id(corr_id: str) -> None:
-    """Set correlation ID for current context."""
-    correlation_id.set(corr_id)
+def set_correlation_id(corr_id: str):
+    """Set correlation ID for current context.
+    
+    Returns:
+        Token that can be used to reset the correlation ID to its previous value.
+    """
+    return correlation_id.set(corr_id)
 
 
 def get_correlation_id() -> Optional[str]:

@@ -3,6 +3,7 @@
 import json
 import logging
 from unittest.mock import patch
+import pytest
 
 from app.logging_config import (
     StructuredFormatter,
@@ -13,7 +14,18 @@ from app.logging_config import (
     generate_correlation_id,
     set_correlation_id,
     get_correlation_id,
+    correlation_id,
 )
+
+
+@pytest.fixture
+def reset_correlation_id():
+    """Fixture to ensure correlation ID is reset after each test."""
+    # Capture initial state
+    initial_token = correlation_id.set(None)
+    yield
+    # Reset to initial state
+    correlation_id.reset(initial_token)
 
 
 class TestStructuredFormatter:
@@ -54,29 +66,33 @@ class TestStructuredFormatter:
     def test_log_with_correlation_id(self):
         """Test log formatting with correlation ID."""
         formatter = StructuredFormatter()
-        correlation_id = "test-correlation-id"
+        test_correlation_id = "test-correlation-id"
 
-        # Set correlation ID
-        set_correlation_id(correlation_id)
+        # Set correlation ID and capture token for cleanup
+        token = set_correlation_id(test_correlation_id)
+        
+        try:
+            # Create and format log record
+            record = logging.LogRecord(
+                name="test_logger",
+                level=logging.INFO,
+                pathname="test.py",
+                lineno=42,
+                msg="Test message",
+                args=(),
+                exc_info=None,
+            )
+            record.module = "test_module"
+            record.funcName = "test_function"
 
-        # Create and format log record
-        record = logging.LogRecord(
-            name="test_logger",
-            level=logging.INFO,
-            pathname="test.py",
-            lineno=42,
-            msg="Test message",
-            args=(),
-            exc_info=None,
-        )
-        record.module = "test_module"
-        record.funcName = "test_function"
+            formatted = formatter.format(record)
+            log_data = json.loads(formatted)
 
-        formatted = formatter.format(record)
-        log_data = json.loads(formatted)
-
-        # Verify correlation ID is included
-        assert log_data["correlation_id"] == correlation_id
+            # Verify correlation ID is included
+            assert log_data["correlation_id"] == test_correlation_id
+        finally:
+            # Reset correlation ID to previous value
+            correlation_id.reset(token)
 
     def test_log_with_extra_fields(self):
         """Test log formatting with extra fields."""
@@ -265,37 +281,55 @@ class TestCorrelationId:
 
     def test_generate_correlation_id(self):
         """Test correlation ID generation."""
-        correlation_id = generate_correlation_id()
+        generated_id = generate_correlation_id()
 
         # Should be a valid UUID string
-        assert isinstance(correlation_id, str)
-        assert len(correlation_id) == 36  # UUID format
-        assert correlation_id.count("-") == 4
+        assert isinstance(generated_id, str)
+        assert len(generated_id) == 36  # UUID format
+        assert generated_id.count("-") == 4
 
     def test_set_and_get_correlation_id(self):
         """Test setting and getting correlation ID."""
         test_id = "test-correlation-id"
 
-        # Set correlation ID
-        set_correlation_id(test_id)
-
-        # Get correlation ID
-        retrieved_id = get_correlation_id()
-
-        assert retrieved_id == test_id
+        # Set correlation ID and capture token
+        token = set_correlation_id(test_id)
+        
+        try:
+            # Get correlation ID
+            retrieved_id = get_correlation_id()
+            assert retrieved_id == test_id
+        finally:
+            # Reset to previous value
+            correlation_id.reset(token)
 
     def test_correlation_id_isolation(self):
         """Test that correlation IDs are isolated between contexts."""
         # This test would need to be run in different async contexts
         # to properly test isolation, but we can at least test the basic functionality
-
+        
+        # Capture initial state
+        initial_id = get_correlation_id()
+        
         # Set a value
-        set_correlation_id("test-id")
-        assert get_correlation_id() == "test-id"
-
-        # Set a different value
-        set_correlation_id("different-id")
-        assert get_correlation_id() == "different-id"
+        token1 = set_correlation_id("test-id")
+        try:
+            assert get_correlation_id() == "test-id"
+            
+            # Set a different value
+            token2 = set_correlation_id("different-id")
+            try:
+                assert get_correlation_id() == "different-id"
+            finally:
+                correlation_id.reset(token2)
+                
+            # Should be back to first value
+            assert get_correlation_id() == "test-id"
+        finally:
+            correlation_id.reset(token1)
+            
+        # Should be back to initial state
+        assert get_correlation_id() == initial_id
 
 
 class TestLoggingSetup:
