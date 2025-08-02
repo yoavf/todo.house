@@ -4,6 +4,7 @@ from sqlalchemy import text
 from .database import get_session
 from .tasks import router as tasks_router
 from .images import router as images_router
+from .locations import router as locations_router
 from .logging_config import setup_logging
 import os
 
@@ -27,6 +28,7 @@ app.add_middleware(
 # Include routers
 app.include_router(tasks_router)
 app.include_router(images_router)
+app.include_router(locations_router)
 
 
 @app.get("/")
