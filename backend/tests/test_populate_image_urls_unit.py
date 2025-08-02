@@ -1,4 +1,4 @@
-"""Unit tests for populate_task_image_urls function."""
+"""Unit tests for populate_task_related_data function."""
 
 import pytest
 import uuid
@@ -6,17 +6,18 @@ from unittest.mock import Mock, AsyncMock, patch
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 
-from app.tasks import populate_task_image_urls
+from app.tasks import populate_task_related_data
 from app.models import Task, TaskStatus, TaskPriority, TaskSource
 
 
 class MockTaskModel:
     """Mock TaskModel for testing."""
 
-    def __init__(self, id=None, title="Test Task", source_image_id=None):
+    def __init__(self, id=None, title="Test Task", source_image_id=None, location_id=None):
         self.id = id if id is not None else 1
         self.title = title
         self.source_image_id = source_image_id
+        self.location_id = location_id
         self.description = "Test description"
         self.status = TaskStatus.ACTIVE
         self.priority = TaskPriority.MEDIUM
@@ -43,14 +44,14 @@ class MockImageModel:
 
 
 @pytest.mark.unit
-async def test_populate_task_image_urls_no_images():
-    """Test populate_task_image_urls with tasks that have no images."""
+async def test_populate_task_related_data_no_images():
+    """Test populate_task_related_data with tasks that have no images."""
     # Create tasks without image IDs
     tasks = [MockTaskModel(id=1, title="Task 1"), MockTaskModel(id=2, title="Task 2")]
 
     session = AsyncMock()
 
-    result = await populate_task_image_urls(tasks, session)
+    result = await populate_task_related_data(tasks, session)
 
     # Should return tasks without any image URLs
     assert len(result) == 2
@@ -63,8 +64,8 @@ async def test_populate_task_image_urls_no_images():
 
 
 @pytest.mark.unit
-async def test_populate_task_image_urls_with_images():
-    """Test populate_task_image_urls with tasks that have images."""
+async def test_populate_task_related_data_with_images():
+    """Test populate_task_related_data with tasks that have images."""
     image_id1 = uuid.uuid4()
     image_id2 = uuid.uuid4()
 
@@ -88,7 +89,7 @@ async def test_populate_task_image_urls_with_images():
     session.execute.return_value = mock_result
 
     # No need to mock storage anymore - the function uses proxy URLs
-    result = await populate_task_image_urls(tasks, session)
+    result = await populate_task_related_data(tasks, session)
 
     # Verify results
     assert len(result) == 3
@@ -101,8 +102,8 @@ async def test_populate_task_image_urls_with_images():
 
 
 @pytest.mark.unit
-async def test_populate_task_image_urls_database_error():
-    """Test populate_task_image_urls handles database errors gracefully."""
+async def test_populate_task_related_data_database_error():
+    """Test populate_task_related_data handles database errors gracefully."""
     image_id = uuid.uuid4()
     tasks = [MockTaskModel(id=1, title="Task 1", source_image_id=image_id)]
 
@@ -111,7 +112,11 @@ async def test_populate_task_image_urls_database_error():
     session.execute.side_effect = SQLAlchemyError("Database connection failed")
 
     with patch("app.tasks.logger") as mock_logger:
+<<<<<<< HEAD
         result = await populate_task_image_urls(tasks, session)
+=======
+        result = await populate_task_related_data(tasks, session)
+>>>>>>> d780f39 (ruff/format/fix/mypy/tests)
 
     # Should return tasks without URLs
     assert len(result) == 1
@@ -126,8 +131,8 @@ async def test_populate_task_image_urls_database_error():
 
 
 @pytest.mark.unit
-async def test_populate_task_image_urls_storage_error():
-    """Test populate_task_image_urls handles storage errors gracefully."""
+async def test_populate_task_related_data_storage_error():
+    """Test populate_task_related_data handles storage errors gracefully."""
     image_id = uuid.uuid4()
     tasks = [MockTaskModel(id=1, title="Task 1", source_image_id=image_id)]
 
@@ -140,7 +145,7 @@ async def test_populate_task_image_urls_storage_error():
 
     # The current implementation uses proxy URLs which don't raise exceptions
     # It should always generate the proxy URL successfully
-    result = await populate_task_image_urls(tasks, session)
+    result = await populate_task_related_data(tasks, session)
 
     # Should return task with proxy URLs (no storage errors anymore)
     assert len(result) == 1
@@ -149,7 +154,7 @@ async def test_populate_task_image_urls_storage_error():
 
 
 @pytest.mark.unit
-async def test_populate_task_image_urls_caching():
+async def test_populate_task_related_data_caching():
     """Test that URL caching works correctly for duplicate storage paths."""
     image_id1 = uuid.uuid4()
     image_id2 = uuid.uuid4()
@@ -174,7 +179,7 @@ async def test_populate_task_image_urls_caching():
     session.execute.return_value = mock_result
 
     # No need to mock storage anymore - the function uses proxy URLs
-    result = await populate_task_image_urls(tasks, session)
+    result = await populate_task_related_data(tasks, session)
 
     # Verify both tasks have their own proxy URLs (based on image ID, not storage path)
     assert result[0].image_url == f"/api/images/proxy/{image_id1}"

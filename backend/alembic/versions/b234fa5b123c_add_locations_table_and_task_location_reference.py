@@ -26,8 +26,10 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("location_type", sa.String(length=50), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
-        sa.Column("metadata", JSONType(), nullable=True),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
+        sa.Column("location_metadata", JSONType(), nullable=True),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -46,16 +48,13 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    
+
     # Create index on user_id and is_active for efficient queries
     op.create_index("idx_locations_user_active", "locations", ["user_id", "is_active"])
-    
+
     # Add location_id column to tasks table
-    op.add_column(
-        "tasks",
-        sa.Column("location_id", sa.UUID(), nullable=True)
-    )
-    
+    op.add_column("tasks", sa.Column("location_id", sa.UUID(), nullable=True))
+
     # Create foreign key constraint
     op.create_foreign_key(
         "fk_tasks_location_id",
@@ -69,12 +68,12 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Drop foreign key constraint
     op.drop_constraint("fk_tasks_location_id", "tasks", type_="foreignkey")
-    
+
     # Remove location_id column from tasks
     op.drop_column("tasks", "location_id")
-    
+
     # Drop index
     op.drop_index("idx_locations_user_active", table_name="locations")
-    
+
     # Drop locations table
     op.drop_table("locations")

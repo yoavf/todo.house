@@ -82,7 +82,9 @@ class User(Base):
     # Relationships
     tasks: Mapped[List["Task"]] = relationship("Task", back_populates="user")
     images: Mapped[List["Image"]] = relationship("Image", back_populates="user")
-    locations: Mapped[List["Location"]] = relationship("Location", back_populates="user")
+    locations: Mapped[List["Location"]] = relationship(
+        "Location", back_populates="user"
+    )
 
 
 class Location(Base):
@@ -100,7 +102,7 @@ class Location(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     location_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONType, nullable=True)
+    location_metadata: Mapped[Optional[dict]] = mapped_column(JSONType, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="locations")
@@ -162,7 +164,9 @@ class Task(Base):
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="tasks")
-    location: Mapped[Optional["Location"]] = relationship("Location", back_populates="tasks")
+    location: Mapped[Optional["Location"]] = relationship(
+        "Location", back_populates="tasks"
+    )
 
 
 class Image(Base):

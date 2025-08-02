@@ -331,35 +331,36 @@ class ImageAnalysisError(BaseModel):
 # Location models
 class LocationBase(BaseModel):
     """Base model for location data"""
-    
+
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     location_type: Optional[LocationType] = None
     is_active: bool = True
-    metadata: Optional[Dict[str, Any]] = None
+    location_metadata: Optional[Dict[str, Any]] = None
 
 
 class LocationCreate(LocationBase):
     """Model for creating a new location"""
+
     pass
 
 
 class LocationUpdate(BaseModel):
     """Model for updating an existing location"""
-    
+
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     location_type: Optional[LocationType] = None
     is_active: Optional[bool] = None
-    metadata: Optional[Dict[str, Any]] = None
+    location_metadata: Optional[Dict[str, Any]] = None
 
 
 class Location(LocationBase):
     """Model for location response"""
-    
+
     id: uuid.UUID
     user_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)

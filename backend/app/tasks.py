@@ -59,7 +59,7 @@ async def populate_task_related_data(
     """
     # Get all unique image IDs
     image_ids = [task.source_image_id for task in tasks if task.source_image_id]
-    
+
     # Get all unique location IDs
     location_ids = [task.location_id for task in tasks if task.location_id]
 
@@ -76,23 +76,23 @@ async def populate_task_related_data(
                 error_type=type(e).__name__,
                 error_message=str(e),
                 image_count=len(image_ids),
-                task_count=len(tasks)
+                task_count=len(tasks),
             )
-    
+
     # Fetch all locations in one query with error handling
     locations: Dict[uuid.UUID, LocationModel] = {}
     if location_ids:
         try:
-            query = select(LocationModel).where(LocationModel.id.in_(location_ids))
-            result = await session.execute(query)
-            locations = {loc.id: loc for loc in result.scalars()}
+            location_query = select(LocationModel).where(LocationModel.id.in_(location_ids))
+            location_result = await session.execute(location_query)
+            locations = {loc.id: loc for loc in location_result.scalars().all()}
         except SQLAlchemyError as e:
             logger.error(
                 "Failed to fetch locations from database",
                 error_type=type(e).__name__,
                 error_message=str(e),
                 location_count=len(location_ids),
-                task_count=len(tasks)
+                task_count=len(tasks),
             )
 
     # Cache for storage URLs to avoid duplicate calls
@@ -135,10 +135,11 @@ async def populate_task_related_data(
                     task_id=str(task.id),
                 )
                 # Task will be returned without image URLs
-        
+
         # Populate location data if available
         if task.location_id and task.location_id in locations:
             from .models import Location
+
             task_dict["location"] = Location.model_validate(locations[task.location_id])
 
         # Add snooze options to all tasks
@@ -243,7 +244,7 @@ async def create_task(
     session.add(db_task)
     await session.commit()
     await session.refresh(db_task)
-    
+
     # Populate related data before returning
     tasks_with_data = await populate_task_related_data([db_task], session)
     return tasks_with_data[0]
@@ -307,7 +308,7 @@ async def update_task(
 
     await session.commit()
     await session.refresh(db_task)
-    
+
     # Populate related data before returning
     tasks_with_data = await populate_task_related_data([db_task], session)
     return tasks_with_data[0]
@@ -376,7 +377,7 @@ async def snooze_task(
 
     await session.commit()
     await session.refresh(db_task)
-    
+
     # Populate related data before returning
     tasks_with_data = await populate_task_related_data([db_task], session, locale)
     return tasks_with_data[0]
@@ -403,7 +404,7 @@ async def unsnooze_task(
 
     await session.commit()
     await session.refresh(db_task)
-    
+
     # Populate related data before returning
     tasks_with_data = await populate_task_related_data([db_task], session)
     return tasks_with_data[0]
