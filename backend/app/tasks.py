@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Header, Query, Depends
-from typing import List, Optional
+from typing import List, Optional, Sequence
 from datetime import datetime
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,8 +13,9 @@ from .models import (
     AITaskCreate,
     TaskSource,
 )
-from .database import get_session_dependency, Task as TaskModel
+from .database import get_session_dependency, Task as TaskModel, Image as ImageModel
 from .services.task_service import TaskService
+from .storage import storage
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -25,6 +26,48 @@ def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
         return uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+
+async def populate_task_image_urls(
+    tasks: Sequence[TaskModel], session: AsyncSession
+) -> List[Task]:
+    """
+    Populate image URLs for tasks that have source_image_id.
+
+    Args:
+        tasks: List of task models from database
+        session: Database session
+
+    Returns:
+        List of Task models with populated image URLs
+    """
+    # Get all unique image IDs
+    image_ids = [task.source_image_id for task in tasks if task.source_image_id]
+
+    if not image_ids:
+        # No images to fetch, return tasks as-is
+        return [Task.model_validate(task) for task in tasks]
+
+    # Fetch all images in one query
+    query = select(ImageModel).where(ImageModel.id.in_(image_ids))
+    result = await session.execute(query)
+    images = {img.id: img for img in result.scalars()}
+
+    # Convert tasks and populate image URLs
+    task_models = []
+    for task in tasks:
+        task_dict = Task.model_validate(task).model_dump()
+
+        if task.source_image_id and task.source_image_id in images:
+            image = images[task.source_image_id]
+            # Get public URLs from storage
+            task_dict["image_url"] = storage.get_public_url(image.storage_path)
+            # For now, use the same URL for thumbnail (could be optimized later)
+            task_dict["thumbnail_url"] = storage.get_public_url(image.storage_path)
+
+        task_models.append(Task(**task_dict))
+
+    return task_models
 
 
 # For now, we'll use a header for user_id (we'll add proper auth later)
@@ -51,7 +94,8 @@ async def get_tasks(
     result = await session.execute(query)
     tasks = result.scalars().all()
 
-    return tasks
+    # Populate image URLs
+    return await populate_task_image_urls(tasks, session)
 
 
 @router.get("/active", response_model=List[Task])
@@ -64,7 +108,7 @@ async def get_active_tasks(
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    return tasks
+    return await populate_task_image_urls(tasks, session)
 
 
 @router.get("/snoozed", response_model=List[Task])
@@ -77,7 +121,7 @@ async def get_snoozed_tasks(
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    return tasks
+    return await populate_task_image_urls(tasks, session)
 
 
 @router.post("/", response_model=Task)
@@ -133,7 +177,10 @@ async def get_task(
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return task
+
+    # Populate image URLs for single task
+    tasks_with_urls = await populate_task_image_urls([task], session)
+    return tasks_with_urls[0]
 
 
 @router.put("/{task_id}", response_model=Task)

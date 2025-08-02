@@ -70,7 +70,7 @@ class TestStructuredFormatter:
 
         # Set correlation ID and capture token for cleanup
         token = set_correlation_id(test_correlation_id)
-        
+
         try:
             # Create and format log record
             record = logging.LogRecord(
@@ -294,7 +294,7 @@ class TestCorrelationId:
 
         # Set correlation ID and capture token
         token = set_correlation_id(test_id)
-        
+
         try:
             # Get correlation ID
             retrieved_id = get_correlation_id()
@@ -307,27 +307,27 @@ class TestCorrelationId:
         """Test that correlation IDs are isolated between contexts."""
         # This test would need to be run in different async contexts
         # to properly test isolation, but we can at least test the basic functionality
-        
+
         # Capture initial state
         initial_id = get_correlation_id()
-        
+
         # Set a value
         token1 = set_correlation_id("test-id")
         try:
             assert get_correlation_id() == "test-id"
-            
+
             # Set a different value
             token2 = set_correlation_id("different-id")
             try:
                 assert get_correlation_id() == "different-id"
             finally:
                 correlation_id.reset(token2)
-                
+
             # Should be back to first value
             assert get_correlation_id() == "test-id"
         finally:
             correlation_id.reset(token1)
-            
+
         # Should be back to initial state
         assert get_correlation_id() == initial_id
 

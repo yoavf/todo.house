@@ -145,7 +145,7 @@ def generate_correlation_id() -> str:
 
 def set_correlation_id(corr_id: str):
     """Set correlation ID for current context.
-    
+
     Returns:
         Token that can be used to reset the correlation ID to its previous value.
     """
