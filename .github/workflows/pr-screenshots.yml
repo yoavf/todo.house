@@ -1,0 +1,123 @@
+name: PR Screenshots
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install frontend dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          # Ensure Next.js is installed in the frontend directory
+          cd frontend
+          pnpm install --frozen-lockfile
+          # Verify Next.js installation
+          pnpm list next
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          uv sync
+
+      - name: Setup test environment
+        run: |
+          echo "🔧 Setting up test environment..."
+          
+          # Backend environment with SQLite for testing
+          cat > backend/.env << EOF
+          DATABASE_URL=sqlite+aiosqlite:///./test_screenshots.db
+          SUPABASE_URL=${{ secrets.SUPABASE_URL || '' }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY || '' }}
+          ENVIRONMENT=test
+          EOF
+          
+          # Frontend environment
+          cat > frontend/.env.local << EOF
+          NEXT_PUBLIC_API_URL=http://localhost:8000
+          NEXT_PUBLIC_TEST_USER_ID=550e8400-e29b-41d4-a716-446655440000
+          EOF
+
+      - name: Run database migrations
+        run: |
+          cd backend
+          # Check if migrations exist
+          if [ -d "alembic/versions" ] && [ "$(ls -A alembic/versions/*.py 2>/dev/null)" ]; then
+            echo "Running database migrations..."
+            uv run alembic upgrade head
+          else
+            echo "No migrations found, initializing database..."
+            # Create tables directly if no migrations exist
+            uv run python ../scripts/init_db.py
+          fi
+
+      - name: Start services
+        run: |
+          # Start backend
+          cd backend
+          uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          cd ..
+          
+          # Start frontend (without Turbopack due to CI issues)
+          cd frontend
+          npx next dev &
+          cd ..
+          
+          # Wait for services
+          echo "⏳ Waiting for backend..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/api/health > /dev/null 2>&1; then
+              echo "✅ Backend is ready!"
+              break
+            fi
+            sleep 2
+          done
+          
+          echo "⏳ Waiting for frontend..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Frontend is ready!"
+              break
+            fi
+            sleep 2
+          done
+          
+          # Seed test data
+          cd backend
+          uv run python ../scripts/seed_test_data.py
+          cd ..
+      
+      - name: Auto PR Screenshots
+        uses: yoavf/auto-pr-screenshots-action@v1.0.2-beta
+        with:
+          url: http://localhost:3000
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          show-attribution: true
