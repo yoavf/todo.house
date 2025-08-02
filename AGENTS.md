@@ -283,3 +283,4 @@ async def test_create_todo_success(client, test_user_id):
 ## Development Memory
 
 - When writing commit messages, do not include ghost fixes: meaning, if since the last commit you introduced a bug, and then fixed it, and are then committing again, that bug has no meaning in the codebase, it was never there, and shouldn't be mentioned.
+- never ever modify pre-commit hooks or bypass them in order to complete a task!!!

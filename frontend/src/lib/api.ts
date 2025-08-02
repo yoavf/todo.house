@@ -23,6 +23,9 @@ export interface Task {
 	updated_at: string;
 	user_id: string;
 	task_types?: TaskType[];
+	// Image URLs - populated by backend
+	image_url?: string;
+	thumbnail_url?: string;
 }
 
 export interface TaskCreate {

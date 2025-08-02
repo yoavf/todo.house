@@ -26,9 +26,9 @@ def test_schedule_serialization_for_storage():
     # Create a task with OnceSchedule
     once_schedule = OnceSchedule(
         type=ScheduleType.ONCE,
-        date=datetime(2025, 8, 15, 10, 0, 0, tzinfo=timezone.utc)
+        date=datetime(2025, 8, 15, 10, 0, 0, tzinfo=timezone.utc),
     )
-    
+
     task = TaskCreate(
         title="Test Task with Schedule",
         description="Testing schedule serialization",
@@ -36,20 +36,20 @@ def test_schedule_serialization_for_storage():
         schedule=once_schedule,
         source=TaskSource.MANUAL,
     )
-    
+
     # The validator should convert it to dict for storage
     assert isinstance(task.schedule, dict)
     assert task.schedule["type"] == ScheduleType.ONCE.value
     assert "date" in task.schedule
-    
+
     # Test that TaskUpdate also serializes properly
     task_update = TaskUpdate(
         schedule=OnceSchedule(
             type=ScheduleType.ONCE,
-            date=datetime(2025, 9, 1, 10, 0, 0, tzinfo=timezone.utc)
+            date=datetime(2025, 9, 1, 10, 0, 0, tzinfo=timezone.utc),
         )
     )
-    
+
     assert isinstance(task_update.schedule, dict)
     assert task_update.schedule["type"] == ScheduleType.ONCE.value
 
@@ -61,16 +61,16 @@ def test_recurring_schedule_serialization():
         type=ScheduleType.RECURRING,
         pattern=RecurringPattern.INTERVAL,
         interval_days=7,
-        next_occurrence=datetime(2025, 8, 10, 10, 0, 0, tzinfo=timezone.utc)
+        next_occurrence=datetime(2025, 8, 10, 10, 0, 0, tzinfo=timezone.utc),
     )
-    
+
     task = TaskCreate(
         title="Weekly Task",
         description="Recurring every week",
         schedule=recurring_schedule,
         source=TaskSource.MANUAL,
     )
-    
+
     # Should be converted to dict
     assert isinstance(task.schedule, dict)
     assert task.schedule["type"] == ScheduleType.RECURRING.value
@@ -88,14 +88,14 @@ def test_content_serialization_for_storage():
         images=[{"url": "https://example.com/img.jpg", "caption": "Example"}],
         videos=[{"url": "https://youtube.com/watch", "title": "Tutorial"}],
     )
-    
+
     task = TaskCreate(
         title="How-to Task",
         description="Task with how-to content",
         content=how_to_content,
         source=TaskSource.MANUAL,
     )
-    
+
     # Should be converted to dict
     assert isinstance(task.content, dict)
     assert task.content["type"] == ContentType.HOW_TO_GUIDE.value
@@ -111,16 +111,16 @@ def test_checklist_content_serialization():
         items=[
             ChecklistItem(text="First item", completed=False),
             ChecklistItem(text="Second item", completed=True),
-        ]
+        ],
     )
-    
+
     task = TaskCreate(
         title="Checklist Task",
         description="Task with checklist",
         content=checklist_content,
         source=TaskSource.MANUAL,
     )
-    
+
     # Should be converted to dict
     assert isinstance(task.content, dict)
     assert task.content["type"] == ContentType.CHECKLIST.value
@@ -141,14 +141,14 @@ def test_shopping_list_content_serialization():
         store="Grocery Store",
         estimated_cost=25.50,
     )
-    
+
     task = TaskCreate(
         title="Shopping Task",
         description="Grocery shopping",
         content=shopping_content,
         source=TaskSource.MANUAL,
     )
-    
+
     # Should be converted to dict
     assert isinstance(task.content, dict)
     assert task.content["type"] == ContentType.SHOPPING_LIST.value
@@ -167,8 +167,6 @@ def test_null_fields_handling():
         content=None,
         source=TaskSource.MANUAL,
     )
-    
+
     assert task.schedule is None
     assert task.content is None
-
-

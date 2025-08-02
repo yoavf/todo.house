@@ -48,12 +48,14 @@ def create_engine() -> AsyncEngine:
     try:
         url = make_url(config.database.database_url)
         # Build a safe representation showing only database type, host, and database name
-        safe_url = f"{url.drivername}://***:***@{url.host or 'localhost'}/{url.database or ''}"
+        safe_url = (
+            f"{url.drivername}://***:***@{url.host or 'localhost'}/{url.database or ''}"
+        )
         logger.info(f"Created database engine for: {safe_url}")
     except Exception:
         # If URL parsing fails, just log a generic message
         logger.info("Created database engine (credentials masked)")
-    
+
     return engine
 
 
