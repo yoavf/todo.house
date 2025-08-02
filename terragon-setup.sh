@@ -14,14 +14,14 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Add UV to PATH - UV installs to ~/.local/bin, not ~/.cargo
 export PATH="$HOME/.local/bin:$PATH"
 
-# Install Node.js if not present (required for pnpm)
+# Install Node.js if not present
 if ! command -v node &> /dev/null; then
     echo "Installing Node.js..."
     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt-get install -y nodejs
 fi
 
-# Install pnpm globally
+# Install pnpm globally (required by the project)
 echo "Installing pnpm..."
 npm install -g pnpm
 
@@ -33,11 +33,11 @@ fi
 
 # Install project dependencies
 echo "Installing all project dependencies..."
-pnpm run install:all
+npm run install:all
 
 # Setup husky hooks (for pre-commit checks)
 echo "Setting up git hooks..."
-cd /workspace && pnpm run prepare
+cd /workspace && npm run prepare
 
 # Create necessary environment files if they don't exist
 echo "Setting up environment files..."
@@ -88,7 +88,10 @@ echo "🧪 Testing:"
 echo "  npm run test:backend           # Run all backend tests"
 echo "  npm run test:backend:unit      # Run backend unit tests only"
 echo "  npm run test:backend:integration # Run backend integration tests"
+echo "  npm run test:backend:watch     # Run backend tests in watch mode"
 echo "  npm run test:frontend          # Run frontend tests"
+echo "  npm run test:frontend:unit     # Run frontend unit tests only"
+echo "  npm run test:frontend:watch    # Run frontend tests in watch mode"
 echo ""
 echo "🔍 Code Quality:"
 echo "  npm run lint:backend           # Lint backend code (ruff)"
@@ -96,10 +99,12 @@ echo "  npm run lint:backend:fix       # Auto-fix backend linting issues"
 echo "  npm run typecheck:backend      # Type check backend (mypy)"
 echo "  cd frontend && pnpm lint       # Lint frontend code (biome)"
 echo "  cd frontend && pnpm lint:fix   # Auto-fix frontend linting issues"
+echo "  cd frontend && pnpm exec tsc --noEmit  # Type check frontend"
 echo ""
 echo "📦 Database:"
 echo "  cd backend && uv run alembic upgrade head  # Run migrations"
 echo "  cd backend && uv run alembic revision --autogenerate -m 'description'  # Create migration"
+echo "  cd backend && uv run alembic current       # Check current migration status"
 echo ""
 echo "⚠️  Note: Pre-commit hooks are active!"
 echo "  - Python files: ruff, mypy, and unit tests will run automatically"
