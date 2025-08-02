@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Header, Query, Depends
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Dict
 from datetime import datetime
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
+from sqlalchemy.exc import SQLAlchemyError
 from .models import (
     Task,
     TaskCreate,
@@ -16,8 +17,10 @@ from .models import (
 from .database import get_session_dependency, Task as TaskModel, Image as ImageModel
 from .services.task_service import TaskService
 from .storage import storage
+from .logging_config import StructuredLogger
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
+logger = StructuredLogger(__name__)
 
 
 def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
@@ -34,12 +37,23 @@ async def populate_task_image_urls(
     """
     Populate image URLs for tasks that have source_image_id.
 
+    This function:
+    1. Fetches all unique images in a single database query for performance
+    2. Caches storage URLs to avoid duplicate API calls
+    3. Handles database and storage errors gracefully
+    
     Args:
         tasks: List of task models from database
         session: Database session
 
     Returns:
-        List of Task models with populated image URLs
+        List of Task models with populated image URLs where available.
+        Tasks without images or with errors will be returned without URLs.
+
+    Error Handling:
+        - Database query failures: Logs error and returns tasks without URLs
+        - Storage URL generation failures: Logs warning and skips URL for that task
+        - Individual task failures don't affect other tasks
     """
     # Get all unique image IDs
     image_ids = [task.source_image_id for task in tasks if task.source_image_id]
@@ -48,11 +62,26 @@ async def populate_task_image_urls(
         # No images to fetch, return tasks as-is
         return [Task.model_validate(task) for task in tasks]
 
-    # Fetch all images in one query
-    query = select(ImageModel).where(ImageModel.id.in_(image_ids))
-    result = await session.execute(query)
-    images = {img.id: img for img in result.scalars()}
+    # Fetch all images in one query with error handling
+    images: Dict[uuid.UUID, ImageModel] = {}
+    try:
+        query = select(ImageModel).where(ImageModel.id.in_(image_ids))
+        result = await session.execute(query)
+        images = {img.id: img for img in result.scalars()}
+    except SQLAlchemyError as e:
+        logger.error(
+            "Failed to fetch images from database",
+            error_type=type(e).__name__,
+            error_message=str(e),
+            image_count=len(image_ids),
+            task_count=len(tasks)
+        )
+        # Return tasks without URLs rather than failing completely
+        return [Task.model_validate(task) for task in tasks]
 
+    # Cache for storage URLs to avoid duplicate calls
+    url_cache: Dict[str, str] = {}
+    
     # Convert tasks and populate image URLs
     task_models = []
     for task in tasks:
@@ -60,10 +89,31 @@ async def populate_task_image_urls(
 
         if task.source_image_id and task.source_image_id in images:
             image = images[task.source_image_id]
-            # Get public URLs from storage
-            task_dict["image_url"] = storage.get_public_url(image.storage_path)
-            # For now, use the same URL for thumbnail (could be optimized later)
-            task_dict["thumbnail_url"] = storage.get_public_url(image.storage_path)
+            
+            # Get or cache the public URL with error handling
+            try:
+                if image.storage_path not in url_cache:
+                    # Generate and cache the URL
+                    public_url = storage.get_public_url(image.storage_path)
+                    url_cache[image.storage_path] = public_url
+                
+                # Use cached URL
+                public_url = url_cache[image.storage_path]
+                task_dict["image_url"] = public_url
+                # For now, use the same URL for thumbnail (could be optimized later)
+                task_dict["thumbnail_url"] = public_url
+                
+            except Exception as e:
+                # Log error but don't fail the entire operation
+                logger.warning(
+                    "Failed to generate storage URL for image",
+                    error_type=type(e).__name__,
+                    error_message=str(e),
+                    image_id=str(image.id),
+                    storage_path=image.storage_path,
+                    task_id=str(task.id)
+                )
+                # Task will be returned without image URLs
 
         task_models.append(Task(**task_dict))
 
