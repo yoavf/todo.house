@@ -14,6 +14,7 @@ from .models import (
     TaskSource,
 )
 from .database import get_session_dependency, Task as TaskModel, Image as ImageModel
+from .database.models import Location as LocationModel
 from .services.task_service import TaskService
 from .services.snooze_service import SnoozeService, SnoozeOption
 from .logging_config import StructuredLogger
@@ -30,14 +31,14 @@ def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
 
 
-async def populate_task_image_urls(
+async def populate_task_related_data(
     tasks: Sequence[TaskModel], session: AsyncSession, locale_str: str = "en_US"
 ) -> List[Task]:
     """
-    Populate image URLs and snooze options for tasks.
+    Populate image URLs, snooze options, and location data for tasks.
 
     This function:
-    1. Fetches all unique images in a single database query for performance
+    1. Fetches all unique images and locations in single database queries for performance
     2. Caches storage URLs to avoid duplicate API calls
     3. Calculates snooze options based on locale
     4. Handles database and storage errors gracefully
@@ -48,40 +49,55 @@ async def populate_task_image_urls(
         locale_str: Locale string for calculating snooze options
 
     Returns:
-        List of Task models with populated image URLs and snooze options.
-        Tasks without images or with errors will be returned without URLs.
+        List of Task models with populated image URLs, snooze options, and location data.
+        Tasks without images/locations or with errors will be returned without those fields.
 
     Error Handling:
-        - Database query failures: Logs error and returns tasks without URLs
+        - Database query failures: Logs error and returns tasks without extra data
         - Storage URL generation failures: Logs warning and skips URL for that task
         - Individual task failures don't affect other tasks
     """
     # Get all unique image IDs
     image_ids = [task.source_image_id for task in tasks if task.source_image_id]
-
-    if not image_ids:
-        # No images to fetch, return tasks as-is
-        return [Task.model_validate(task) for task in tasks]
+    
+    # Get all unique location IDs
+    location_ids = [task.location_id for task in tasks if task.location_id]
 
     # Fetch all images in one query with error handling
     images: Dict[uuid.UUID, ImageModel] = {}
-    try:
-        query = select(ImageModel).where(ImageModel.id.in_(image_ids))
-        result = await session.execute(query)
-        images = {img.id: img for img in result.scalars()}
-    except SQLAlchemyError as e:
-        logger.error(
-            "Failed to fetch images from database",
-            error_type=type(e).__name__,
-            error_message=str(e),
-            image_count=len(image_ids),
-            task_count=len(tasks),
-        )
-        # Return tasks without URLs rather than failing completely
-        return [Task.model_validate(task) for task in tasks]
+    if image_ids:
+        try:
+            query = select(ImageModel).where(ImageModel.id.in_(image_ids))
+            result = await session.execute(query)
+            images = {img.id: img for img in result.scalars()}
+        except SQLAlchemyError as e:
+            logger.error(
+                "Failed to fetch images from database",
+                error_type=type(e).__name__,
+                error_message=str(e),
+                image_count=len(image_ids),
+                task_count=len(tasks)
+            )
+    
+    # Fetch all locations in one query with error handling
+    locations: Dict[uuid.UUID, LocationModel] = {}
+    if location_ids:
+        try:
+            query = select(LocationModel).where(LocationModel.id.in_(location_ids))
+            result = await session.execute(query)
+            locations = {loc.id: loc for loc in result.scalars()}
+        except SQLAlchemyError as e:
+            logger.error(
+                "Failed to fetch locations from database",
+                error_type=type(e).__name__,
+                error_message=str(e),
+                location_count=len(location_ids),
+                task_count=len(tasks)
+            )
 
     # Cache for storage URLs to avoid duplicate calls
-
+    url_cache: Dict[str, str] = {}
+    
     # Calculate snooze options once for all tasks
     snooze_options = SnoozeService.calculate_snooze_options(locale_str=locale_str)
     # Convert datetime objects to ISO strings for JSON serialization
@@ -92,12 +108,13 @@ async def populate_task_image_urls(
             "label": data["label"],
             "description": data["description"],
         }
-
-    # Convert tasks and populate image URLs and snooze options
+    
+    # Convert tasks and populate image URLs, location data, and snooze options
     task_models = []
     for task in tasks:
         task_dict = Task.model_validate(task).model_dump()
 
+        # Populate image URLs if available
         if task.source_image_id and task.source_image_id in images:
             image = images[task.source_image_id]
 
@@ -118,6 +135,11 @@ async def populate_task_image_urls(
                     task_id=str(task.id),
                 )
                 # Task will be returned without image URLs
+        
+        # Populate location data if available
+        if task.location_id and task.location_id in locations:
+            from .models import Location
+            task_dict["location"] = Location.model_validate(locations[task.location_id])
 
         # Add snooze options to all tasks
         task_dict["snooze_options"] = serializable_snooze_options
@@ -152,8 +174,8 @@ async def get_tasks(
     result = await session.execute(query)
     tasks = result.scalars().all()
 
-    # Populate image URLs and snooze options
-    return await populate_task_image_urls(tasks, session, locale)
+    # Populate image URLs, location data, and snooze options
+    return await populate_task_related_data(tasks, session, locale)
 
 
 @router.get("/active", response_model=List[Task])
@@ -167,7 +189,7 @@ async def get_active_tasks(
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    return await populate_task_image_urls(tasks, session, locale)
+    return await populate_task_related_data(tasks, session, locale)
 
 
 @router.get("/snoozed", response_model=List[Task])
@@ -181,7 +203,7 @@ async def get_snoozed_tasks(
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    return await populate_task_image_urls(tasks, session, locale)
+    return await populate_task_related_data(tasks, session, locale)
 
 
 @router.post("/", response_model=Task)
@@ -209,6 +231,7 @@ async def create_task(
         ai_confidence=task.ai_confidence,
         ai_provider=task.ai_provider,
         task_types=task_types_str,
+        location_id=task.location_id,
         # Enhanced fields
         schedule=task.schedule,  # Will be a dict due to the validator
         show_after=task.show_after,
@@ -220,7 +243,10 @@ async def create_task(
     session.add(db_task)
     await session.commit()
     await session.refresh(db_task)
-    return db_task
+    
+    # Populate related data before returning
+    tasks_with_data = await populate_task_related_data([db_task], session)
+    return tasks_with_data[0]
 
 
 @router.get("/{task_id}", response_model=Task)
@@ -239,9 +265,9 @@ async def get_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # Populate image URLs and snooze options for single task
-    tasks_with_urls = await populate_task_image_urls([task], session, locale)
-    return tasks_with_urls[0]
+    # Populate image URLs, location data, and snooze options for single task
+    tasks_with_data = await populate_task_related_data([task], session, locale)
+    return tasks_with_data[0]
 
 
 @router.put("/{task_id}", response_model=Task)
@@ -281,7 +307,10 @@ async def update_task(
 
     await session.commit()
     await session.refresh(db_task)
-    return db_task
+    
+    # Populate related data before returning
+    tasks_with_data = await populate_task_related_data([db_task], session)
+    return tasks_with_data[0]
 
 
 @router.delete("/{task_id}")
@@ -347,10 +376,10 @@ async def snooze_task(
 
     await session.commit()
     await session.refresh(db_task)
-
-    # Return task with snooze options populated
-    tasks_with_options = await populate_task_image_urls([db_task], session, locale)
-    return tasks_with_options[0]
+    
+    # Populate related data before returning
+    tasks_with_data = await populate_task_related_data([db_task], session, locale)
+    return tasks_with_data[0]
 
 
 @router.post("/{task_id}/unsnooze", response_model=Task)
@@ -374,7 +403,10 @@ async def unsnooze_task(
 
     await session.commit()
     await session.refresh(db_task)
-    return db_task
+    
+    # Populate related data before returning
+    tasks_with_data = await populate_task_related_data([db_task], session)
+    return tasks_with_data[0]
 
 
 @router.post("/ai-generated", response_model=Task)
