@@ -9,7 +9,7 @@ from typing import Optional
 from datetime import datetime, timezone
 
 # Context variable for correlation ID
-correlation_id: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
+correlation_id: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
 
 
 class StructuredFormatter(logging.Formatter):
@@ -19,7 +19,7 @@ class StructuredFormatter(logging.Formatter):
         """Format log record as structured JSON."""
         # Base log structure
         log_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -34,7 +34,7 @@ class StructuredFormatter(logging.Formatter):
             log_entry["correlation_id"] = corr_id
 
         # Add extra fields from record
-        if hasattr(record, 'extra_fields'):
+        if hasattr(record, "extra_fields"):
             log_entry.update(record.extra_fields)
 
         # Add exception info if present
@@ -42,7 +42,9 @@ class StructuredFormatter(logging.Formatter):
             log_entry["exception"] = {
                 "type": record.exc_info[0].__name__ if record.exc_info[0] else None,
                 "message": str(record.exc_info[1]) if record.exc_info[1] else None,
-                "traceback": self.formatException(record.exc_info) if record.exc_info else None
+                "traceback": self.formatException(record.exc_info)
+                if record.exc_info
+                else None,
             }
 
         return json.dumps(log_entry, default=str, ensure_ascii=False)
@@ -57,19 +59,19 @@ class StructuredLogger:
     def _log_with_extra(self, level: int, message: str, **kwargs) -> None:
         """
         Log a message with additional structured fields.
-        
+
         Args:
             level (int): The logging level (e.g., logging.INFO, logging.ERROR).
             message (str): The log message.
             **kwargs: Additional fields to include in the log entry. Fields with a value of `None`
                 will be filtered out and not included in the log.
-                
+
         Behavior:
             - Filters out any `None` values from `**kwargs`.
             - Adds the remaining fields to the log entry under the `extra_fields` key.
         """
         extra_fields = {k: v for k, v in kwargs.items() if v is not None}
-        
+
         # Create a custom LogRecord with extra fields
         record = self.logger.makeRecord(
             name=self.logger.name,
@@ -78,10 +80,10 @@ class StructuredLogger:
             lno=0,
             msg=message,
             args=(),
-            exc_info=None
+            exc_info=None,
         )
         record.extra_fields = extra_fields
-        
+
         self.logger.handle(record)
 
     def info(self, message: str, **kwargs) -> None:
@@ -104,7 +106,7 @@ class StructuredLogger:
 def setup_logging(log_level: str = "INFO", enable_json: bool = True) -> None:
     """
     Configure structured logging for the application.
-    
+
     Args:
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
         enable_json: Whether to use JSON formatting
@@ -119,13 +121,13 @@ def setup_logging(log_level: str = "INFO", enable_json: bool = True) -> None:
 
     # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
-    
+
     if enable_json:
         console_handler.setFormatter(StructuredFormatter())
     else:
         # Fallback to standard formatting for development
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         console_handler.setFormatter(formatter)
 
@@ -141,9 +143,13 @@ def generate_correlation_id() -> str:
     return str(uuid.uuid4())
 
 
-def set_correlation_id(corr_id: str) -> None:
-    """Set correlation ID for current context."""
-    correlation_id.set(corr_id)
+def set_correlation_id(corr_id: str):
+    """Set correlation ID for current context.
+    
+    Returns:
+        Token that can be used to reset the correlation ID to its previous value.
+    """
+    return correlation_id.set(corr_id)
 
 
 def get_correlation_id() -> Optional[str]:
@@ -163,7 +169,7 @@ class ImageProcessingLogger:
         filename: str,
         file_size: int,
         content_type: str,
-        correlation_id: str
+        correlation_id: str,
     ) -> None:
         """Log image upload event."""
         self.logger.info(
@@ -173,7 +179,7 @@ class ImageProcessingLogger:
             filename=filename,
             file_size=file_size,
             content_type=content_type,
-            correlation_id=correlation_id
+            correlation_id=correlation_id,
         )
 
     def log_image_validation(
@@ -183,7 +189,7 @@ class ImageProcessingLogger:
         original_size: int,
         processed_size: Optional[int] = None,
         compression_ratio: Optional[float] = None,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> None:
         """Log image validation results."""
         self.logger.info(
@@ -194,7 +200,7 @@ class ImageProcessingLogger:
             original_size=original_size,
             processed_size=processed_size,
             compression_ratio=compression_ratio,
-            error_message=error_message
+            error_message=error_message,
         )
 
     def log_ai_request_start(
@@ -203,7 +209,7 @@ class ImageProcessingLogger:
         provider: str,
         model: str,
         image_size: int,
-        prompt_length: int
+        prompt_length: int,
     ) -> None:
         """Log AI provider request start."""
         self.logger.info(
@@ -213,7 +219,7 @@ class ImageProcessingLogger:
             provider=provider,
             model=model,
             image_size=image_size,
-            prompt_length=prompt_length
+            prompt_length=prompt_length,
         )
 
     def log_ai_request_complete(
@@ -226,7 +232,7 @@ class ImageProcessingLogger:
         cost_estimate: Optional[float] = None,
         tasks_generated: int = 0,
         retry_count: int = 0,
-        success: bool = True
+        success: bool = True,
     ) -> None:
         """Log AI provider request completion."""
         self.logger.info(
@@ -240,7 +246,7 @@ class ImageProcessingLogger:
             cost_estimate=cost_estimate,
             tasks_generated=tasks_generated,
             retry_count=retry_count,
-            success=success
+            success=success,
         )
 
     def log_ai_request_error(
@@ -250,7 +256,7 @@ class ImageProcessingLogger:
         error_type: str,
         error_message: str,
         retry_count: int,
-        processing_time: float
+        processing_time: float,
     ) -> None:
         """Log AI provider request error."""
         self.logger.error(
@@ -261,7 +267,7 @@ class ImageProcessingLogger:
             error_type=error_type,
             error_message=error_message,
             retry_count=retry_count,
-            processing_time=processing_time
+            processing_time=processing_time,
         )
 
     def log_task_creation(
@@ -270,7 +276,7 @@ class ImageProcessingLogger:
         tasks_created: int,
         source_image_id: str,
         ai_confidence: Optional[float] = None,
-        provider: str = "unknown"
+        provider: str = "unknown",
     ) -> None:
         """Log task creation from AI analysis."""
         self.logger.info(
@@ -280,7 +286,7 @@ class ImageProcessingLogger:
             tasks_created=tasks_created,
             source_image_id=source_image_id,
             ai_confidence=ai_confidence,
-            provider=provider
+            provider=provider,
         )
 
     def log_processing_pipeline_complete(
@@ -289,7 +295,7 @@ class ImageProcessingLogger:
         total_processing_time: float,
         tasks_generated: int,
         success: bool = True,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> None:
         """Log complete processing pipeline result."""
         self.logger.info(
@@ -299,7 +305,7 @@ class ImageProcessingLogger:
             total_processing_time=total_processing_time,
             tasks_generated=tasks_generated,
             success=success,
-            error_message=error_message
+            error_message=error_message,
         )
 
 
@@ -311,11 +317,7 @@ class AIProviderLogger:
         self.logger = StructuredLogger(f"ai_provider.{provider_name}")
 
     def log_request(
-        self,
-        request_id: str,
-        model: str,
-        prompt_length: int,
-        image_size: int
+        self, request_id: str, model: str, prompt_length: int, image_size: int
     ) -> None:
         """Log AI provider request."""
         self.logger.info(
@@ -325,7 +327,7 @@ class AIProviderLogger:
             request_id=request_id,
             model=model,
             prompt_length=prompt_length,
-            image_size=image_size
+            image_size=image_size,
         )
 
     def log_response(
@@ -336,7 +338,7 @@ class AIProviderLogger:
         tokens_used: Optional[int] = None,
         cost_estimate: Optional[float] = None,
         response_length: int = 0,
-        tasks_parsed: int = 0
+        tasks_parsed: int = 0,
     ) -> None:
         """Log AI provider response."""
         self.logger.info(
@@ -349,7 +351,7 @@ class AIProviderLogger:
             tokens_used=tokens_used,
             cost_estimate=cost_estimate,
             response_length=response_length,
-            tasks_parsed=tasks_parsed
+            tasks_parsed=tasks_parsed,
         )
 
     def log_error(
@@ -359,7 +361,7 @@ class AIProviderLogger:
         error_type: str,
         error_message: str,
         processing_time: float,
-        retry_attempt: int = 0
+        retry_attempt: int = 0,
     ) -> None:
         """Log AI provider error."""
         self.logger.error(
@@ -371,7 +373,7 @@ class AIProviderLogger:
             error_type=error_type,
             error_message=error_message,
             processing_time=processing_time,
-            retry_attempt=retry_attempt
+            retry_attempt=retry_attempt,
         )
 
     def log_rate_limit(
@@ -379,7 +381,7 @@ class AIProviderLogger:
         request_id: str,
         model: str,
         retry_after: Optional[int] = None,
-        retry_attempt: int = 0
+        retry_attempt: int = 0,
     ) -> None:
         """Log rate limit event."""
         self.logger.warning(
@@ -389,7 +391,7 @@ class AIProviderLogger:
             request_id=request_id,
             model=model,
             retry_after=retry_after,
-            retry_attempt=retry_attempt
+            retry_attempt=retry_attempt,
         )
 
     def log_usage_metrics(
@@ -399,7 +401,7 @@ class AIProviderLogger:
         failed_requests: int,
         total_tokens_used: int,
         total_cost_estimate: float,
-        average_response_time: float
+        average_response_time: float,
     ) -> None:
         """Log usage metrics summary."""
         self.logger.info(
@@ -412,7 +414,9 @@ class AIProviderLogger:
             total_tokens_used=total_tokens_used,
             total_cost_estimate=total_cost_estimate,
             average_response_time=average_response_time,
-            success_rate=successful_requests / requests_made if requests_made > 0 else 0
+            success_rate=successful_requests / requests_made
+            if requests_made > 0
+            else 0,
         )
 
 
@@ -423,12 +427,7 @@ class PromptTestingLogger:
         self.logger = StructuredLogger("prompt_testing")
 
     def log_prompt_test_start(
-        self,
-        test_id: str,
-        scenario: str,
-        prompt_length: int,
-        provider: str,
-        model: str
+        self, test_id: str, scenario: str, prompt_length: int, provider: str, model: str
     ) -> None:
         """Log start of prompt test."""
         self.logger.info(
@@ -438,7 +437,7 @@ class PromptTestingLogger:
             scenario=scenario,
             prompt_length=prompt_length,
             provider=provider,
-            model=model
+            model=model,
         )
 
     def log_prompt_test_complete(
@@ -449,7 +448,7 @@ class PromptTestingLogger:
         tasks_generated: int,
         accuracy_score: float,
         success: bool = True,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> None:
         """Log completion of prompt test."""
         self.logger.info(
@@ -461,7 +460,7 @@ class PromptTestingLogger:
             tasks_generated=tasks_generated,
             accuracy_score=accuracy_score,
             success=success,
-            error_message=error_message
+            error_message=error_message,
         )
 
     def log_prompt_comparison(
@@ -471,7 +470,7 @@ class PromptTestingLogger:
         prompt_count: int,
         best_accuracy: float,
         average_accuracy: float,
-        best_prompt_index: int
+        best_prompt_index: int,
     ) -> None:
         """Log prompt comparison results."""
         self.logger.info(
@@ -482,15 +481,11 @@ class PromptTestingLogger:
             prompt_count=prompt_count,
             best_accuracy=best_accuracy,
             average_accuracy=average_accuracy,
-            best_prompt_index=best_prompt_index
+            best_prompt_index=best_prompt_index,
         )
 
     def log_batch_test_start(
-        self,
-        batch_id: str,
-        test_count: int,
-        scenarios: list,
-        prompts: list
+        self, batch_id: str, test_count: int, scenarios: list, prompts: list
     ) -> None:
         """Log start of batch testing."""
         self.logger.info(
@@ -499,7 +494,7 @@ class PromptTestingLogger:
             batch_id=batch_id,
             test_count=test_count,
             scenario_count=len(scenarios),
-            prompt_count=len(prompts)
+            prompt_count=len(prompts),
         )
 
     def log_batch_test_complete(
@@ -508,7 +503,7 @@ class PromptTestingLogger:
         total_tests: int,
         successful_tests: int,
         average_accuracy: float,
-        total_processing_time: float
+        total_processing_time: float,
     ) -> None:
         """Log completion of batch testing."""
         self.logger.info(
@@ -519,7 +514,7 @@ class PromptTestingLogger:
             successful_tests=successful_tests,
             success_rate=successful_tests / total_tests if total_tests > 0 else 0,
             average_accuracy=average_accuracy,
-            total_processing_time=total_processing_time
+            total_processing_time=total_processing_time,
         )
 
     def log_prompt_evaluation(
@@ -532,7 +527,7 @@ class PromptTestingLogger:
         unexpected_tasks: list,
         accuracy_score: float,
         precision: float,
-        recall: float
+        recall: float,
     ) -> None:
         """Log detailed prompt evaluation metrics."""
         self.logger.info(
@@ -546,5 +541,5 @@ class PromptTestingLogger:
             unexpected_task_count=len(unexpected_tasks),
             accuracy_score=accuracy_score,
             precision=precision,
-            recall=recall
+            recall=recall,
         )

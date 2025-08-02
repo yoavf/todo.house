@@ -4,7 +4,16 @@ import logging
 import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form, status, Depends
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Header,
+    UploadFile,
+    File,
+    Form,
+    status,
+    Depends,
+)
 from fastapi.responses import JSONResponse
 
 from .models import ImageAnalysisResponse, ImageAnalysisError, GeneratedTask
@@ -22,7 +31,7 @@ from .storage import storage
 from .logging_config import (
     ImageProcessingLogger,
     generate_correlation_id,
-    set_correlation_id
+    set_correlation_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,7 +51,7 @@ async def _process_image_analysis(
 ) -> ImageAnalysisResponse:
     """
     Process image analysis workflow.
-    
+
     Args:
         image_data: Raw image bytes
         user_id: User identifier
@@ -50,7 +59,7 @@ async def _process_image_analysis(
         content_type: MIME type
         generate_tasks: Whether to generate tasks
         prompt_override: Optional custom prompt
-        
+
     Returns:
         ImageAnalysisResponse with analysis results
     """
@@ -59,7 +68,7 @@ async def _process_image_analysis(
 
     # Process and validate image first
     logger.info(f"Starting image analysis for user {user_id}, file: {filename}")
-    
+
     try:
         analysis_result = await processing_service.analyze_image_and_generate_tasks(
             image_data=image_data,
@@ -75,8 +84,8 @@ async def _process_image_analysis(
                 message=str(e),
                 error_code="INVALID_IMAGE",
                 details=None,
-                retry_after=None
-            ).model_dump()
+                retry_after=None,
+            ).model_dump(),
         )
 
     # Store image record after successful validation (if generating tasks)
@@ -96,7 +105,7 @@ async def _process_image_analysis(
             # Don't fail the entire request if storage fails
             # Just continue without storing the image
 
-    # Note: We no longer auto-create tasks here. 
+    # Note: We no longer auto-create tasks here.
     # Tasks should be created by the frontend when user confirms selection
 
     # Convert to response format and return
@@ -112,7 +121,7 @@ async def _create_tasks_from_analysis(
 ) -> None:
     """
     Create tasks from analysis results and update image status.
-    
+
     Args:
         processing_service: Image processing service instance
         analysis_result: AI analysis results
@@ -166,14 +175,14 @@ def _create_error_response(
 ) -> JSONResponse:
     """
     Create a standardized error response.
-    
+
     Args:
         error_code: Error code identifier
         message: Human-readable error message
         details: Additional error details
         status_code: HTTP status code
         retry_after: Optional retry delay in seconds
-        
+
     Returns:
         JSONResponse with error details
     """
@@ -194,20 +203,24 @@ def _build_analysis_response(
 ) -> ImageAnalysisResponse:
     """
     Build the final analysis response from results.
-    
+
     Args:
         analysis_result: AI analysis results
         image_id: Optional image record ID
-        
+
     Returns:
         Formatted ImageAnalysisResponse
     """
     # Convert tasks to response format
     generated_tasks = []
-    logger.info(f"Building response from analysis result with {len(analysis_result.get('tasks', []))} tasks")
+    logger.info(
+        f"Building response from analysis result with {len(analysis_result.get('tasks', []))} tasks"
+    )
     for task_data in analysis_result.get("tasks", []):
         task_confidence = task_data.get("confidence", 0.5)
-        logger.info(f"Task '{task_data.get('title', 'Unknown')}' has confidence: {task_confidence}")
+        logger.info(
+            f"Task '{task_data.get('title', 'Unknown')}' has confidence: {task_confidence}"
+        )
         generated_task = GeneratedTask(
             title=task_data.get("title", "Untitled task"),
             description=task_data.get("description", "No description"),
@@ -256,7 +269,8 @@ async def analyze_image(
     user_id: str = Header(..., alias="x-user-id"),
     image: UploadFile = File(..., description="Image file to analyze"),
     generate_tasks: bool = Form(
-        True, description="Whether to analyze image and suggest tasks (does not create tasks in DB)"
+        True,
+        description="Whether to analyze image and suggest tasks (does not create tasks in DB)",
     ),
     prompt_override: Optional[str] = Form(
         None, description="Custom prompt for testing"
@@ -293,7 +307,7 @@ async def analyze_image(
     # Generate correlation ID for request tracking
     correlation_id = generate_correlation_id()
     set_correlation_id(correlation_id)
-    
+
     # Validate file upload
     if not image.filename:
         raise HTTPException(
@@ -325,7 +339,7 @@ async def analyze_image(
         filename=image.filename,
         file_size=len(image_data),
         content_type=image.content_type or "application/octet-stream",
-        correlation_id=correlation_id
+        correlation_id=correlation_id,
     )
 
     try:
@@ -338,7 +352,7 @@ async def analyze_image(
             prompt_override=prompt_override,
             session=session,
         )
-        
+
         logger.info(f"Image analysis completed successfully for user {user_id}")
         return response
 
@@ -372,7 +386,7 @@ async def analyze_image(
             details={"processing_error": str(e)},
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-    
+
     except HTTPException:
         # Re-raise HTTPException as is (don't wrap it)
         raise
@@ -388,7 +402,12 @@ async def analyze_image(
 
 
 async def store_image_record(
-    user_id: str, filename: str, content_type: str, file_size: int, image_data: bytes, session: AsyncSession
+    user_id: str,
+    filename: str,
+    content_type: str,
+    file_size: int,
+    image_data: bytes,
+    session: AsyncSession,
 ) -> uuid.UUID:
     """
     Store image record in database and file in Supabase storage.
@@ -414,16 +433,14 @@ async def store_image_record(
         try:
             # Skip bucket creation - assume it exists
             # The bucket should be created manually in Supabase Studio
-            
+
             # Upload the image using named parameters as per documentation
-            
+
             # Upload bytes directly with named parameters
             await storage.upload(
-                file_data=image_data,
-                path=storage_path,
-                content_type=content_type
+                file_data=image_data, path=storage_path, content_type=content_type
             )
-            
+
         except Exception as e:
             logger.error(f"Failed to upload image to storage: {e}")
             raise e
@@ -451,7 +468,10 @@ async def store_image_record(
 
 
 async def update_image_analysis_status(
-    image_id: uuid.UUID, status: str, session: AsyncSession, analysis_result: Optional[Dict[str, Any]] = None
+    image_id: uuid.UUID,
+    status: str,
+    session: AsyncSession,
+    analysis_result: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Update image analysis status in database.
@@ -466,14 +486,14 @@ async def update_image_analysis_status(
         query = select(ImageModel).where(ImageModel.id == image_id)
         result = await session.execute(query)
         db_image = result.scalar_one_or_none()
-        
+
         if db_image:
             db_image.analysis_status = status
             db_image.processed_at = datetime.now()
-            
+
             if analysis_result:
                 db_image.analysis_result = analysis_result
-            
+
             await session.commit()
 
     except Exception as e:
@@ -489,14 +509,14 @@ async def get_image(
 ):
     """
     Get image URL and metadata by ID.
-    
+
     Args:
         image_id: UUID of the image
         user_id: User identifier from header
-        
+
     Returns:
         Image metadata including public URL
-        
+
     Raises:
         404: Image not found
         403: User doesn't have access to this image
@@ -504,27 +524,23 @@ async def get_image(
     try:
         # Fetch image record from database
         query = select(ImageModel).where(
-            and_(
-                ImageModel.id == image_id,
-                ImageModel.user_id == user_id
-            )
+            and_(ImageModel.id == image_id, ImageModel.user_id == user_id)
         )
         result = await session.execute(query)
         image_record = result.scalar_one_or_none()
-        
+
         if not image_record:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Image not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
             )
-        
+
         # Get public URL from Supabase storage
         storage_url = storage.get_public_url(image_record.storage_path)
-        
+
         # Generate thumbnail URL using Supabase image transformation
         # This creates a 200x200 thumbnail with good quality
         thumbnail_url = f"{storage_url}?width=200&height=200&resize=contain&quality=80"
-        
+
         return {
             "id": image_record.id,
             "url": storage_url,
@@ -535,14 +551,14 @@ async def get_image(
             "created_at": image_record.created_at,
             "analysis_status": image_record.analysis_status,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Failed to get image {image_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve image"
+            detail="Failed to retrieve image",
         )
 
 
@@ -558,7 +574,7 @@ async def health_check():
         # Check AI provider configuration
         ai_configured = bool(config.ai.gemini_api_key)
 
-        # Check database connectivity would require session here, but for simplicity 
+        # Check database connectivity would require session here, but for simplicity
         # we'll skip the DB check in the health endpoint for now
 
         return {

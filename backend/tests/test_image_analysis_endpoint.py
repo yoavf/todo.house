@@ -17,7 +17,7 @@ TEST_USER_ID = str(uuid.uuid4())
 @pytest.fixture(autouse=True)
 def mock_ai_provider():
     """Mock the AI provider to prevent real API calls during tests."""
-    with patch('app.images.config.ai.gemini_api_key', None):
+    with patch("app.images.config.ai.gemini_api_key", None):
         # This ensures create_image_processing_service won't create a real provider
         yield
 
@@ -30,13 +30,13 @@ async def setup_test_user(db_session: AsyncSession):
         id=uuid.UUID(TEST_USER_ID),
         email=f"test-{TEST_USER_ID}@example.com",
     )
-    
+
     db_session.add(db_user)
     await db_session.commit()
     await db_session.refresh(db_user)
-    
+
     yield TEST_USER_ID
-    
+
     # Cleanup is handled by the test transaction rollback
 
 
@@ -153,7 +153,7 @@ async def test_health_check_endpoint(client: AsyncClient):
     data = response.json()
     assert "status" in data
     assert data["status"] in ["healthy", "error"]
-    
+
     if data["status"] == "healthy":
         assert "database" in data
         assert "sqlalchemy" in data

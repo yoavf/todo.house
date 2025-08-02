@@ -1,11 +1,67 @@
 from datetime import datetime
-from typing import Optional, Literal, List, Dict, Any
-from pydantic import BaseModel, ConfigDict, Field, field_validator
 from enum import Enum
 import logging
 import uuid
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 logger = logging.getLogger(__name__)
+
+
+class EnhancedFieldsMixin:
+    """Mixin class for models with schedule and content fields that need JSON serialization."""
+    
+    @field_validator("schedule", "content", mode="after")
+    @classmethod
+    def convert_to_dict(cls, v):
+        """Convert Pydantic models to dicts for JSON storage."""
+        if v is None:
+            return v
+        if hasattr(v, "model_dump"):
+            # Use mode='json' to ensure enums are serialized as strings
+            return v.model_dump(mode='json')
+        return v
+
+    @field_validator("schedule", "content", mode="before")
+    @classmethod
+    def convert_from_dict(cls, v, info):
+        """Convert dicts back to Pydantic models when reading from database."""
+        if v is None or not isinstance(v, dict):
+            return v
+            
+        field_name = info.field_name
+        
+        try:
+            if field_name == "schedule":
+                schedule_type = v.get("type")
+                if schedule_type == ScheduleType.ONCE.value:
+                    # Parse ISO format date string if present
+                    if isinstance(v.get("date"), str):
+                        v = v.copy()
+                        v["date"] = datetime.fromisoformat(v["date"].replace("Z", "+00:00"))
+                    return OnceSchedule(**v)
+                elif schedule_type == ScheduleType.RECURRING.value:
+                    # Parse ISO format date string if present
+                    if isinstance(v.get("next_occurrence"), str):
+                        v = v.copy()
+                        v["next_occurrence"] = datetime.fromisoformat(v["next_occurrence"].replace("Z", "+00:00"))
+                    return RecurringSchedule(**v)
+                    
+            elif field_name == "content":
+                content_type = v.get("type")
+                if content_type == ContentType.HOW_TO_GUIDE.value:
+                    return HowToContent(**v)
+                elif content_type == ContentType.CHECKLIST.value:
+                    return ChecklistContent(**v)
+                elif content_type == ContentType.SHOPPING_LIST.value:
+                    return ShoppingListContent(**v)
+        except Exception as e:
+            logger.debug(f"Could not deserialize {field_name}: {e}")
+            # Return the dict as-is if deserialization fails
+            return v
+            
+        return v
 
 
 class TaskStatus(str, Enum):
@@ -35,7 +91,74 @@ class TaskType(str, Enum):
     REPAIR = "repair"
 
 
-class TaskBase(BaseModel):
+# Content type models
+class ContentType(str, Enum):
+    HOW_TO_GUIDE = "how_to_guide"
+    CHECKLIST = "checklist"
+    SHOPPING_LIST = "shopping_list"
+    NOTE = "note"
+    REFERENCE = "reference"
+
+
+class HowToContent(BaseModel):
+    type: Literal[ContentType.HOW_TO_GUIDE] = ContentType.HOW_TO_GUIDE
+    markdown: str
+    images: Optional[List[Dict[str, str]]] = None  # [{"url": "...", "caption": "..."}]
+    videos: Optional[List[Dict[str, str]]] = None  # [{"url": "...", "title": "..."}]
+    links: Optional[List[Dict[str, str]]] = None  # [{"url": "...", "text": "..."}]
+
+
+class ChecklistItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    text: str
+    completed: bool = False
+
+
+class ChecklistContent(BaseModel):
+    type: Literal[ContentType.CHECKLIST] = ContentType.CHECKLIST
+    items: List[ChecklistItem]
+
+
+class ShoppingListItem(BaseModel):
+    name: str
+    quantity: Optional[str] = None
+    purchased: bool = False
+
+
+class ShoppingListContent(BaseModel):
+    type: Literal[ContentType.SHOPPING_LIST] = ContentType.SHOPPING_LIST
+    items: List[ShoppingListItem]
+    store: Optional[str] = None
+    estimated_cost: Optional[float] = None
+
+
+# Schedule models
+class ScheduleType(str, Enum):
+    ONCE = "once"
+    RECURRING = "recurring"
+
+
+class OnceSchedule(BaseModel):
+    type: Literal[ScheduleType.ONCE] = ScheduleType.ONCE
+    date: datetime
+
+
+class RecurringPattern(str, Enum):
+    INTERVAL = "interval"
+    CRON = "cron"
+    CUSTOM = "custom"
+
+
+class RecurringSchedule(BaseModel):
+    type: Literal[ScheduleType.RECURRING] = ScheduleType.RECURRING
+    pattern: RecurringPattern
+    interval_days: Optional[int] = None
+    cron: Optional[str] = None
+    rules: Optional[Dict[str, Any]] = None
+    next_occurrence: Optional[datetime] = None
+
+
+class TaskBase(BaseModel, EnhancedFieldsMixin):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
     priority: TaskPriority = TaskPriority.MEDIUM
@@ -43,6 +166,15 @@ class TaskBase(BaseModel):
     status: TaskStatus = TaskStatus.ACTIVE
     snoozed_until: Optional[datetime] = None
     task_types: List[TaskType] = Field(default_factory=list)
+
+    # Enhanced fields
+    schedule: Optional[Union[OnceSchedule, RecurringSchedule, Dict[str, Any]]] = None
+    show_after: Optional[datetime] = None
+    content: Optional[
+        Union[HowToContent, ChecklistContent, ShoppingListContent, Dict[str, Any]]
+    ] = None
+    metrics: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
 
 
 class TaskCreate(TaskBase):
@@ -52,7 +184,7 @@ class TaskCreate(TaskBase):
     ai_provider: Optional[str] = None
 
 
-class TaskUpdate(BaseModel):
+class TaskUpdate(BaseModel, EnhancedFieldsMixin):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
     priority: Optional[TaskPriority] = None
@@ -60,6 +192,15 @@ class TaskUpdate(BaseModel):
     status: Optional[TaskStatus] = None
     snoozed_until: Optional[datetime] = None
     task_types: Optional[List[TaskType]] = None
+
+    # Enhanced fields
+    schedule: Optional[Union[OnceSchedule, RecurringSchedule, Dict[str, Any]]] = None
+    show_after: Optional[datetime] = None
+    content: Optional[
+        Union[HowToContent, ChecklistContent, ShoppingListContent, Dict[str, Any]]
+    ] = None
+    metrics: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
 
 
 class Task(TaskBase):
@@ -73,8 +214,8 @@ class Task(TaskBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-    
-    @field_validator('task_types', mode='before')
+
+    @field_validator("task_types", mode="before")
     @classmethod
     def parse_task_types(cls, v):
         """Parse task_types from database JSONB format to TaskType enum list."""
@@ -89,7 +230,9 @@ class Task(TaskBase):
                     try:
                         parsed.append(TaskType(item))
                     except ValueError:
-                        logger.warning(f"Invalid task type encountered during deserialization: {item}")
+                        logger.warning(
+                            f"Invalid task type encountered during deserialization: {item}"
+                        )
             return parsed
         return []
 
