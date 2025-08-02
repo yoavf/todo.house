@@ -2,6 +2,7 @@
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 from sqlalchemy.pool import NullPool
+from sqlalchemy.engine.url import make_url
 from ..config import config
 import logging
 
@@ -43,9 +44,16 @@ def create_engine() -> AsyncEngine:
 
     engine = create_async_engine(config.database.database_url, **engine_kwargs)
 
-    logger.info(
-        f"Created database engine for URL: {config.database.database_url.split('@')[0]}@***"
-    )
+    # Safely log database connection info without exposing credentials
+    try:
+        url = make_url(config.database.database_url)
+        # Build a safe representation showing only database type, host, and database name
+        safe_url = f"{url.drivername}://***:***@{url.host or 'localhost'}/{url.database or ''}"
+        logger.info(f"Created database engine for: {safe_url}")
+    except Exception:
+        # If URL parsing fails, just log a generic message
+        logger.info("Created database engine (credentials masked)")
+    
     return engine
 
 

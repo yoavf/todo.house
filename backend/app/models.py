@@ -9,6 +9,61 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 logger = logging.getLogger(__name__)
 
 
+class EnhancedFieldsMixin:
+    """Mixin class for models with schedule and content fields that need JSON serialization."""
+    
+    @field_validator("schedule", "content", mode="after")
+    @classmethod
+    def convert_to_dict(cls, v):
+        """Convert Pydantic models to dicts for JSON storage."""
+        if v is None:
+            return v
+        if hasattr(v, "model_dump"):
+            # Use mode='json' to ensure enums are serialized as strings
+            return v.model_dump(mode='json')
+        return v
+
+    @field_validator("schedule", "content", mode="before")
+    @classmethod
+    def convert_from_dict(cls, v, info):
+        """Convert dicts back to Pydantic models when reading from database."""
+        if v is None or not isinstance(v, dict):
+            return v
+            
+        field_name = info.field_name
+        
+        try:
+            if field_name == "schedule":
+                schedule_type = v.get("type")
+                if schedule_type == ScheduleType.ONCE.value:
+                    # Parse ISO format date string if present
+                    if isinstance(v.get("date"), str):
+                        v = v.copy()
+                        v["date"] = datetime.fromisoformat(v["date"].replace("Z", "+00:00"))
+                    return OnceSchedule(**v)
+                elif schedule_type == ScheduleType.RECURRING.value:
+                    # Parse ISO format date string if present
+                    if isinstance(v.get("next_occurrence"), str):
+                        v = v.copy()
+                        v["next_occurrence"] = datetime.fromisoformat(v["next_occurrence"].replace("Z", "+00:00"))
+                    return RecurringSchedule(**v)
+                    
+            elif field_name == "content":
+                content_type = v.get("type")
+                if content_type == ContentType.HOW_TO_GUIDE.value:
+                    return HowToContent(**v)
+                elif content_type == ContentType.CHECKLIST.value:
+                    return ChecklistContent(**v)
+                elif content_type == ContentType.SHOPPING_LIST.value:
+                    return ShoppingListContent(**v)
+        except Exception as e:
+            logger.debug(f"Could not deserialize {field_name}: {e}")
+            # Return the dict as-is if deserialization fails
+            return v
+            
+        return v
+
+
 class TaskStatus(str, Enum):
     ACTIVE = "active"
     SNOOZED = "snoozed"
@@ -103,7 +158,7 @@ class RecurringSchedule(BaseModel):
     next_occurrence: Optional[datetime] = None
 
 
-class TaskBase(BaseModel):
+class TaskBase(BaseModel, EnhancedFieldsMixin):
     title: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
     priority: TaskPriority = TaskPriority.MEDIUM
@@ -121,57 +176,6 @@ class TaskBase(BaseModel):
     metrics: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
 
-    @field_validator("schedule", "content", mode="after")
-    @classmethod
-    def convert_to_dict(cls, v):
-        """Convert Pydantic models to dicts for JSON storage."""
-        if v is None:
-            return v
-        if hasattr(v, "model_dump"):
-            # Use mode='json' to ensure enums are serialized as strings
-            return v.model_dump(mode='json')
-        return v
-
-    @field_validator("schedule", "content", mode="before")
-    @classmethod
-    def convert_from_dict(cls, v, info):
-        """Convert dicts back to Pydantic models when reading from database."""
-        if v is None or not isinstance(v, dict):
-            return v
-            
-        field_name = info.field_name
-        
-        try:
-            if field_name == "schedule":
-                schedule_type = v.get("type")
-                if schedule_type == ScheduleType.ONCE.value:
-                    # Parse ISO format date string if present
-                    if isinstance(v.get("date"), str):
-                        v = v.copy()
-                        v["date"] = datetime.fromisoformat(v["date"].replace("Z", "+00:00"))
-                    return OnceSchedule(**v)
-                elif schedule_type == ScheduleType.RECURRING.value:
-                    # Parse ISO format date string if present
-                    if isinstance(v.get("next_occurrence"), str):
-                        v = v.copy()
-                        v["next_occurrence"] = datetime.fromisoformat(v["next_occurrence"].replace("Z", "+00:00"))
-                    return RecurringSchedule(**v)
-                    
-            elif field_name == "content":
-                content_type = v.get("type")
-                if content_type == ContentType.HOW_TO_GUIDE.value:
-                    return HowToContent(**v)
-                elif content_type == ContentType.CHECKLIST.value:
-                    return ChecklistContent(**v)
-                elif content_type == ContentType.SHOPPING_LIST.value:
-                    return ShoppingListContent(**v)
-        except Exception as e:
-            logger.debug(f"Could not deserialize {field_name}: {e}")
-            # Return the dict as-is if deserialization fails
-            return v
-            
-        return v
-
 
 class TaskCreate(TaskBase):
     source: TaskSource = TaskSource.MANUAL
@@ -180,7 +184,7 @@ class TaskCreate(TaskBase):
     ai_provider: Optional[str] = None
 
 
-class TaskUpdate(BaseModel):
+class TaskUpdate(BaseModel, EnhancedFieldsMixin):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
     priority: Optional[TaskPriority] = None
@@ -197,57 +201,6 @@ class TaskUpdate(BaseModel):
     ] = None
     metrics: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
-
-    @field_validator("schedule", "content", mode="after")
-    @classmethod
-    def convert_to_dict(cls, v):
-        """Convert Pydantic models to dicts for JSON storage."""
-        if v is None:
-            return v
-        if hasattr(v, "model_dump"):
-            # Use mode='json' to ensure enums are serialized as strings
-            return v.model_dump(mode='json')
-        return v
-
-    @field_validator("schedule", "content", mode="before")
-    @classmethod
-    def convert_from_dict(cls, v, info):
-        """Convert dicts back to Pydantic models when reading from database."""
-        if v is None or not isinstance(v, dict):
-            return v
-            
-        field_name = info.field_name
-        
-        try:
-            if field_name == "schedule":
-                schedule_type = v.get("type")
-                if schedule_type == ScheduleType.ONCE.value:
-                    # Parse ISO format date string if present
-                    if isinstance(v.get("date"), str):
-                        v = v.copy()
-                        v["date"] = datetime.fromisoformat(v["date"].replace("Z", "+00:00"))
-                    return OnceSchedule(**v)
-                elif schedule_type == ScheduleType.RECURRING.value:
-                    # Parse ISO format date string if present
-                    if isinstance(v.get("next_occurrence"), str):
-                        v = v.copy()
-                        v["next_occurrence"] = datetime.fromisoformat(v["next_occurrence"].replace("Z", "+00:00"))
-                    return RecurringSchedule(**v)
-                    
-            elif field_name == "content":
-                content_type = v.get("type")
-                if content_type == ContentType.HOW_TO_GUIDE.value:
-                    return HowToContent(**v)
-                elif content_type == ContentType.CHECKLIST.value:
-                    return ChecklistContent(**v)
-                elif content_type == ContentType.SHOPPING_LIST.value:
-                    return ShoppingListContent(**v)
-        except Exception as e:
-            logger.debug(f"Could not deserialize {field_name}: {e}")
-            # Return the dict as-is if deserialization fails
-            return v
-            
-        return v
 
 
 class Task(TaskBase):
