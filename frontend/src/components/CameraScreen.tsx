@@ -26,6 +26,32 @@ export function CameraScreen({
 	const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
 		if (file) {
+			// Validate file type (only accept images)
+			const acceptedTypes = [
+				"image/jpeg",
+				"image/jpg",
+				"image/png",
+				"image/gif",
+				"image/webp",
+			];
+			if (!acceptedTypes.includes(file.type)) {
+				setError("Please select a valid image file (JPEG, PNG, GIF, or WebP)");
+				setSelectedFile(null);
+				setPreview(null);
+				event.target.value = ""; // Reset input
+				return;
+			}
+
+			// Validate file size (max 10MB)
+			const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+			if (file.size > maxSizeInBytes) {
+				setError("File size must be less than 10MB");
+				setSelectedFile(null);
+				setPreview(null);
+				event.target.value = ""; // Reset input
+				return;
+			}
+
 			setSelectedFile(file);
 			setError(null);
 
