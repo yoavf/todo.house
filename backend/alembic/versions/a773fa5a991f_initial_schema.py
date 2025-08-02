@@ -8,6 +8,7 @@ Create Date: 2025-08-01 18:21:06.297918
 
 from alembic import op
 import sqlalchemy as sa
+from app.database.models import JSONType
 
 # revision identifiers, used by Alembic.
 revision = "a773fa5a991f"
@@ -46,7 +47,7 @@ def upgrade() -> None:
         sa.Column("file_size", sa.Integer(), nullable=False),
         sa.Column("storage_path", sa.String(length=500), nullable=False),
         sa.Column("analysis_status", sa.String(length=50), nullable=False),
-        sa.Column("analysis_result", sa.JSON(), nullable=True),
+        sa.Column("analysis_result", JSONType(), nullable=True),
         sa.Column("processed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column(
             "created_at",
@@ -76,10 +77,10 @@ def upgrade() -> None:
         sa.Column("completed", sa.Boolean(), nullable=False),
         sa.Column("status", sa.String(length=20), nullable=False),
         sa.Column("snoozed_until", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("schedule", sa.JSON(), nullable=True),
+        sa.Column("schedule", JSONType(), nullable=True),
         sa.Column("show_after", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("content", sa.JSON(), nullable=True),
-        sa.Column("metrics", sa.JSON(), nullable=True),
+        sa.Column("content", JSONType(), nullable=True),
+        sa.Column("metrics", JSONType(), nullable=True),
         sa.Column("source", sa.String(length=20), nullable=False),
         sa.Column("source_image_id", sa.UUID(), nullable=True),
         sa.Column("ai_confidence", sa.Float(), nullable=True),
