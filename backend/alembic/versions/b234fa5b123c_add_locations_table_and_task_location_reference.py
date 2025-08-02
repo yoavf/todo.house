@@ -18,6 +18,10 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Get the bind to check the database dialect
+    bind = op.get_bind()
+    dialect_name = bind.dialect.name
+    
     # Create locations table
     op.create_table(
         "locations",
@@ -33,13 +37,13 @@ def upgrade() -> None:
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
+            server_default=sa.text("CURRENT_TIMESTAMP" if dialect_name == "sqlite" else "now()"),
             nullable=False,
         ),
         sa.Column(
             "updated_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
+            server_default=sa.text("CURRENT_TIMESTAMP" if dialect_name == "sqlite" else "now()"),
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
@@ -52,25 +56,45 @@ def upgrade() -> None:
     # Create index on user_id and is_active for efficient queries
     op.create_index("idx_locations_user_active", "locations", ["user_id", "is_active"])
 
-    # Add location_id column to tasks table
-    op.add_column("tasks", sa.Column("location_id", sa.UUID(), nullable=True))
-
-    # Create foreign key constraint
-    op.create_foreign_key(
-        "fk_tasks_location_id",
-        "tasks",
-        "locations",
-        ["location_id"],
-        ["id"],
-    )
+    # Handle adding column and foreign key differently for SQLite
+    if dialect_name == "sqlite":
+        # For SQLite, we need to use batch mode to add foreign key
+        with op.batch_alter_table("tasks") as batch_op:
+            batch_op.add_column(sa.Column("location_id", sa.UUID(), nullable=True))
+            # Note: SQLite doesn't enforce foreign keys by default, but we add them for consistency
+            batch_op.create_foreign_key(
+                "fk_tasks_location_id",
+                "locations",
+                ["location_id"],
+                ["id"],
+            )
+    else:
+        # For PostgreSQL and other databases
+        op.add_column("tasks", sa.Column("location_id", sa.UUID(), nullable=True))
+        op.create_foreign_key(
+            "fk_tasks_location_id",
+            "tasks",
+            "locations",
+            ["location_id"],
+            ["id"],
+        )
 
 
 def downgrade() -> None:
-    # Drop foreign key constraint
-    op.drop_constraint("fk_tasks_location_id", "tasks", type_="foreignkey")
-
-    # Remove location_id column from tasks
-    op.drop_column("tasks", "location_id")
+    # Get the bind to check the database dialect
+    bind = op.get_bind()
+    dialect_name = bind.dialect.name
+    
+    # Handle dropping column and foreign key differently for SQLite
+    if dialect_name == "sqlite":
+        # For SQLite, use batch mode
+        with op.batch_alter_table("tasks") as batch_op:
+            batch_op.drop_constraint("fk_tasks_location_id", type_="foreignkey")
+            batch_op.drop_column("location_id")
+    else:
+        # For PostgreSQL and other databases
+        op.drop_constraint("fk_tasks_location_id", "tasks", type_="foreignkey")
+        op.drop_column("tasks", "location_id")
 
     # Drop index
     op.drop_index("idx_locations_user_active", table_name="locations")

@@ -281,3 +281,4 @@ async def test_create_todo_success(client, test_user_id):
 - never ever modify pre-commit hooks or bypass them in order to complete a task!!!
 - **NEVER BYPASS PRE COMMIT HOOK!!!! ***NEVER***
 - Comments should explain the "why" when it's not obvious, not document the development history
+- When adding DB migrations and other, make sure we have a sqlite fallback for CI/tests
