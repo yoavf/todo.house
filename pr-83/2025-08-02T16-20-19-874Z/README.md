@@ -1,0 +1,7 @@
+# Screenshots for PR #83
+
+Generated on: 2025-08-02T16:20:20.622Z
+
+## Screenshots
+- desktop-home (chromium)
+- mobile-home (chromium)
