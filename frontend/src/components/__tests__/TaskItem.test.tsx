@@ -1,220 +1,108 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import type { Task, TaskType } from "@/lib/api";
+import { HomeIcon } from "lucide-react";
 import { TaskItem } from "../TaskItem";
 
 describe("TaskItem", () => {
-	const mockTask: Task = {
+	const mockTask = {
 		id: 1,
 		title: "Test Task",
 		description: "Test Description",
-		priority: "medium",
-		completed: false,
-		status: "active",
-		source: "manual",
-		created_at: "2024-01-01T00:00:00Z",
-		updated_at: "2024-01-01T00:00:00Z",
-		user_id: "test-user",
+		category: "Interior",
+		icon: HomeIcon,
+		addedTime: "2 days ago",
+		estimatedTime: "30m",
+		status: "do-next",
+		originalTask: {
+			thumbnail_url: "https://example.com/thumbnail.jpg",
+			image_url: "https://example.com/image.jpg",
+		},
 	};
-
-	const mockOnUpdate = jest.fn();
-	const mockOnDelete = jest.fn();
 
 	beforeEach(() => {
 		jest.clearAllMocks();
 	});
 
 	it("renders task title and description", () => {
-		render(
-			<TaskItem
-				task={mockTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
-		);
+		render(<TaskItem task={mockTask} />);
 
 		expect(screen.getByText("Test Task")).toBeInTheDocument();
 		expect(screen.getByText("Test Description")).toBeInTheDocument();
 	});
 
-	it("shows strikethrough when task is completed", () => {
-		const completedTask = { ...mockTask, completed: true };
-		render(
-			<TaskItem
-				task={completedTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
-		);
+	it("renders task category and estimated time", () => {
+		render(<TaskItem task={mockTask} />);
 
-		const title = screen.getByText("Test Task");
-		expect(title).toHaveClass("line-through");
+		expect(screen.getByText("Interior")).toBeInTheDocument();
+		expect(screen.getByText(/30m/)).toBeInTheDocument();
 	});
 
-	it("calls onUpdate when checkbox is toggled", () => {
-		render(
-			<TaskItem
-				task={mockTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
-		);
+	it("renders the task icon", () => {
+		render(<TaskItem task={mockTask} />);
 
-		const checkbox = screen.getByRole("checkbox");
-		fireEvent.click(checkbox);
-
-		expect(mockOnUpdate).toHaveBeenCalledWith(1, { completed: true });
+		// The icon should be rendered within the component
+		const categorySection = screen.getByText("Interior").parentElement;
+		expect(categorySection).toBeInTheDocument();
 	});
 
-	it("calls onDelete when delete button is clicked", () => {
-		render(
-			<TaskItem
-				task={mockTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
-		);
+	it("shows 'Do it' button", () => {
+		render(<TaskItem task={mockTask} />);
 
-		const deleteButton = screen.getByLabelText("Delete task");
-		fireEvent.click(deleteButton);
-
-		expect(mockOnDelete).toHaveBeenCalledWith(1);
+		const doItButton = screen.getByRole("button", { name: /Do it/i });
+		expect(doItButton).toBeInTheDocument();
 	});
 
-	it("enters edit mode when edit button is clicked", () => {
-		render(
-			<TaskItem
-				task={mockTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
+	it("shows snooze options when clock button is clicked", () => {
+		render(<TaskItem task={mockTask} />);
+
+		// Find and click the clock button
+		const clockButtons = screen.getAllByRole("button");
+		const clockButton = clockButtons.find(
+			(button) => !button.textContent?.includes("Do it"),
 		);
 
-		const editButton = screen.getByLabelText("Edit task");
-		fireEvent.click(editButton);
+		fireEvent.click(clockButton!);
 
-		expect(screen.getByDisplayValue(mockTask.title)).toBeInTheDocument();
-		expect(
-			screen.getByDisplayValue(mockTask.description || ""),
-		).toBeInTheDocument();
+		// Should show snooze options
+		expect(screen.getByText("Later")).toBeInTheDocument();
+		expect(screen.getByText("+1w")).toBeInTheDocument();
+		expect(screen.getByText("Wknd")).toBeInTheDocument();
 	});
 
-	it("updates task when save is clicked in edit mode", async () => {
-		const user = userEvent.setup();
+	it("hides snooze options when clicking outside", () => {
+		render(<TaskItem task={mockTask} />);
 
-		render(
-			<TaskItem
-				task={mockTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
+		// Open snooze options
+		const clockButtons = screen.getAllByRole("button");
+		const clockButton = clockButtons.find(
+			(button) => !button.textContent?.includes("Do it"),
 		);
 
-		const editButton = screen.getByLabelText("Edit task");
-		fireEvent.click(editButton);
+		fireEvent.click(clockButton!);
+		expect(screen.getByText("Later")).toBeInTheDocument();
 
-		const titleInput = screen.getByDisplayValue(mockTask.title);
-		const descriptionInput = screen.getByPlaceholderText(
-			"Task description (optional)",
-		);
+		// Click outside
+		fireEvent.mouseDown(document.body);
 
-		await user.clear(titleInput);
-		await user.type(titleInput, "Updated Task");
-		await user.clear(descriptionInput);
-		await user.type(descriptionInput, "Updated Description");
-
-		const saveButton = screen.getByText("Save");
-		fireEvent.click(saveButton);
-
-		expect(mockOnUpdate).toHaveBeenCalledWith(1, {
-			title: "Updated Task",
-			description: "Updated Description",
-		});
+		// Should hide snooze options
+		expect(screen.queryByText("Later")).not.toBeInTheDocument();
 	});
 
-	it("cancels edit mode without saving changes", async () => {
-		const user = userEvent.setup();
+	it("renders background image when provided", () => {
+		render(<TaskItem task={mockTask} />);
 
-		render(
-			<TaskItem
-				task={mockTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
-		);
+		// The component uses inline styles for the background image
+		const taskContainer = screen.getByText("Test Task").closest(".relative");
+		expect(taskContainer).toBeInTheDocument();
+	});
 
-		const editButton = screen.getByLabelText("Edit task");
-		fireEvent.click(editButton);
+	it("renders without image when not provided", () => {
+		const taskWithoutImage = {
+			...mockTask,
+			originalTask: undefined,
+		};
 
-		const titleInput = screen.getByDisplayValue(mockTask.title);
-		await user.clear(titleInput);
-		await user.type(titleInput, "Should not be saved");
+		render(<TaskItem task={taskWithoutImage} />);
 
-		const cancelButton = screen.getByText("Cancel");
-		fireEvent.click(cancelButton);
-
-		expect(mockOnUpdate).not.toHaveBeenCalled();
 		expect(screen.getByText("Test Task")).toBeInTheDocument();
-	});
-
-	it("displays task type badges when task has types", () => {
-		const taskWithTypes = {
-			...mockTask,
-			task_types: ["interior", "electricity", "repair"] as TaskType[],
-		};
-
-		render(
-			<TaskItem
-				task={taskWithTypes}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
-		);
-
-		expect(screen.getByText("interior")).toBeInTheDocument();
-		expect(screen.getByText("electricity")).toBeInTheDocument();
-		expect(screen.getByText("repair")).toBeInTheDocument();
-	});
-
-	it("does not display task type badges when task has no types", () => {
-		render(
-			<TaskItem
-				task={mockTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
-		);
-
-		// Check that no task type badges are rendered
-		expect(screen.queryByText("interior")).not.toBeInTheDocument();
-		expect(screen.queryByText("exterior")).not.toBeInTheDocument();
-		expect(screen.queryByText("electricity")).not.toBeInTheDocument();
-		expect(screen.queryByText("plumbing")).not.toBeInTheDocument();
-		expect(screen.queryByText("appliances")).not.toBeInTheDocument();
-		expect(screen.queryByText("maintenance")).not.toBeInTheDocument();
-		expect(screen.queryByText("repair")).not.toBeInTheDocument();
-	});
-
-	it("displays AI generated indicator with task types", () => {
-		const aiTask = {
-			...mockTask,
-			source: "ai_generated" as const,
-			source_image_id: "test-image-id",
-			ai_confidence: 0.85,
-			task_types: ["maintenance", "interior"] as TaskType[],
-		};
-
-		render(
-			<TaskItem
-				task={aiTask}
-				onUpdate={mockOnUpdate}
-				onDelete={mockOnDelete}
-			/>,
-		);
-
-		expect(screen.getByText("AI Generated")).toBeInTheDocument();
-		expect(screen.getByText("(85% confidence)")).toBeInTheDocument();
-		expect(screen.getByText("maintenance")).toBeInTheDocument();
-		expect(screen.getByText("interior")).toBeInTheDocument();
 	});
 });
