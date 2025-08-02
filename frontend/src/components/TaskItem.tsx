@@ -1,4 +1,9 @@
-import { ArrowRightIcon, ClockIcon, MoreHorizontalIcon } from "lucide-react";
+import {
+	ArrowRightIcon,
+	ClockIcon,
+	type LucideIcon,
+	MoreHorizontalIcon,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface TaskItemProps {
@@ -7,7 +12,7 @@ interface TaskItemProps {
 		title: string;
 		description?: string;
 		category: string;
-		icon: any;
+		icon: LucideIcon;
 		addedTime: string;
 		estimatedTime: string;
 		status: string;

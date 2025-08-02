@@ -79,6 +79,7 @@ export function CameraScreen({
 						type="button"
 						onClick={handleCancel}
 						className="p-2 hover:bg-gray-100 rounded-full"
+						aria-label="Close"
 					>
 						<XIcon size={20} />
 					</button>
@@ -122,6 +123,7 @@ export function CameraScreen({
 								capture="environment"
 								onChange={handleFileSelect}
 								className="hidden"
+								data-testid="file-input"
 							/>
 						</div>
 					) : (

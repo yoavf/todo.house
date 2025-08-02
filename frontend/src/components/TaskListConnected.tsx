@@ -1,6 +1,13 @@
 "use client";
 
 import {
+	addDays,
+	addHours,
+	addWeeks,
+	formatDistanceToNow,
+	nextSaturday,
+} from "date-fns";
+import {
 	BoxIcon,
 	HammerIcon,
 	HomeIcon,
@@ -42,19 +49,10 @@ function mapTaskToUI(task: Task) {
 	const Icon = taskTypeIcons[taskType] || BoxIcon;
 	const category = taskTypeCategories[taskType] || "General";
 
-	// Calculate time ago
-	const createdDate = new Date(task.created_at);
-	const now = new Date();
-	const diffMs = now.getTime() - createdDate.getTime();
-	const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-	const diffDays = Math.floor(diffHours / 24);
-
-	let addedTime = "Just now";
-	if (diffDays > 0) {
-		addedTime = `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-	} else if (diffHours > 0) {
-		addedTime = `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-	}
+	// Calculate time ago using date-fns
+	const addedTime = formatDistanceToNow(new Date(task.created_at), {
+		addSuffix: true,
+	});
 
 	// Map status
 	let status: "do-next" | "later" | "suggested" = "do-next";
@@ -88,7 +86,10 @@ export function TaskListConnected() {
 	if (loading) {
 		return (
 			<div className="flex justify-center items-center py-12">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+				<div
+					className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"
+					data-testid="loading-spinner"
+				></div>
 			</div>
 		);
 	}
@@ -115,25 +116,19 @@ export function TaskListConnected() {
 
 	const _handleSnooze = async (taskId: number, duration: string) => {
 		let snoozedUntil: Date;
-		const now = new Date();
 
 		switch (duration) {
 			case "Later":
-				snoozedUntil = new Date(now.getTime() + 4 * 60 * 60 * 1000); // 4 hours
+				snoozedUntil = addHours(new Date(), 4);
 				break;
 			case "+1w":
-				snoozedUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 1 week
+				snoozedUntil = addWeeks(new Date(), 1);
 				break;
 			case "Wknd":
-				// Next weekend (Saturday)
-				snoozedUntil = new Date(now);
-				snoozedUntil.setDate(now.getDate() + ((6 - now.getDay() + 7) % 7));
-				if (snoozedUntil <= now) {
-					snoozedUntil.setDate(snoozedUntil.getDate() + 7);
-				}
+				snoozedUntil = nextSaturday(new Date());
 				break;
 			default:
-				snoozedUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 1 day
+				snoozedUntil = addDays(new Date(), 1);
 		}
 
 		await updateTask(taskId, {

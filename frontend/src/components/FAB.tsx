@@ -34,23 +34,23 @@ export function FAB({ onTasksGenerated }: FABProps) {
 						<button
 							type="button"
 							className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 shadow-lg hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105"
-							onClick={handleCameraClick}
-						>
-							<CameraIcon size={20} />
-						</button>
-						<button
-							type="button"
-							className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 shadow-lg hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105"
 							onClick={() => console.log("Keyboard clicked")}
 						>
 							<KeyboardIcon size={20} />
 						</button>
 						<button
 							type="button"
-							className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 shadow-lg hover:bg-orange-500 transition-all transform hover:scale-105"
+							className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 shadow-lg hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105"
 							onClick={() => console.log("Microphone clicked")}
 						>
 							<MicIcon size={20} />
+						</button>
+						<button
+							type="button"
+							className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 shadow-lg hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105"
+							onClick={handleCameraClick}
+						>
+							<CameraIcon size={20} />
 						</button>
 					</div>
 				)}
