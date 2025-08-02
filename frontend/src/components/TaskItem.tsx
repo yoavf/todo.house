@@ -52,7 +52,11 @@ export function TaskItem({ task }: TaskItemProps) {
 		// Here you would typically update the task's due date based on the option
 	};
 	return (
-		<div className="bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow relative overflow-hidden">
+		<div
+			className="bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow relative overflow-hidden"
+			data-testid={`task-item-${task.status}`}
+			data-task-id={task.id}
+		>
 			{/* Background circular image - only show if we have an image URL */}
 			{imageUrl && (
 				<div className="absolute right-0 top-0 transform translate-x-1/4 -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none">

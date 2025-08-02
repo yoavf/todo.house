@@ -39,40 +39,49 @@ describe("TaskList Integration", () => {
 	it("filters tasks based on active tab", () => {
 		render(<TaskList />);
 
-		// By default, should show do-next tasks
-		expect(screen.getByText("Fix leaking kitchen faucet")).toBeInTheDocument();
-		expect(
-			screen.getByText("Change living room light bulbs"),
-		).toBeInTheDocument();
+		// By default, should show do-next tasks (2 tasks)
+		const doNextTasks = screen.getAllByTestId("task-item-do-next");
+		expect(doNextTasks).toHaveLength(2);
+
+		// Verify no other status tasks are shown
+		expect(screen.queryByTestId("task-item-later")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("task-item-suggested")).not.toBeInTheDocument();
 
 		// Switch to Later tab
 		const laterTab = screen.getByRole("button", { name: "Later" });
 		fireEvent.click(laterTab);
 
-		// Should show later tasks
-		expect(screen.getByText("Mow the lawn")).toBeInTheDocument();
-		expect(
-			screen.queryByText("Fix leaking kitchen faucet"),
-		).not.toBeInTheDocument();
+		// Should show only later tasks (1 task)
+		const laterTasks = screen.getAllByTestId("task-item-later");
+		expect(laterTasks).toHaveLength(1);
+		expect(screen.queryByTestId("task-item-do-next")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("task-item-suggested")).not.toBeInTheDocument();
 
 		// Switch to Suggested tab
 		const suggestedTab = screen.getByRole("button", { name: "Suggested" });
 		fireEvent.click(suggestedTab);
 
-		// Should show suggested tasks
-		expect(screen.getByText("Replace bathroom caulking")).toBeInTheDocument();
+		// Should show only suggested tasks (1 task)
+		const suggestedTasks = screen.getAllByTestId("task-item-suggested");
+		expect(suggestedTasks).toHaveLength(1);
+		expect(screen.queryByTestId("task-item-do-next")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("task-item-later")).not.toBeInTheDocument();
 
 		// Switch to All tab
 		const allTab = screen.getByRole("button", { name: "All" });
 		fireEvent.click(allTab);
 
-		// Should show all tasks
-		expect(screen.getByText("Fix leaking kitchen faucet")).toBeInTheDocument();
-		expect(screen.getByText("Mow the lawn")).toBeInTheDocument();
-		expect(screen.getByText("Replace bathroom caulking")).toBeInTheDocument();
+		// Should show all tasks (4 total: 2 do-next + 1 later + 1 suggested)
+		const allDoNextTasks = screen.getAllByTestId("task-item-do-next");
+		const allLaterTasks = screen.getAllByTestId("task-item-later");
+		const allSuggestedTasks = screen.getAllByTestId("task-item-suggested");
+
+		expect(allDoNextTasks).toHaveLength(2);
+		expect(allLaterTasks).toHaveLength(1);
+		expect(allSuggestedTasks).toHaveLength(1);
 		expect(
-			screen.getByText("Change living room light bulbs"),
-		).toBeInTheDocument();
+			allDoNextTasks.length + allLaterTasks.length + allSuggestedTasks.length,
+		).toBe(4);
 	});
 
 	it("shows empty state when no tasks in category", () => {
