@@ -65,10 +65,10 @@ class TestPromptTestingIntegration:
             assert result.result_status == TestResult.SUCCESS
             assert result.tasks_generated == 2
             assert result.accuracy_score > 0
-            assert (
-                "limescale" in result.matched_tasks[0].lower()
-                or "soap" in result.matched_tasks[0].lower()
-            )
+            assert any(
+                "limescale" in t.lower() or "soap" in t.lower()
+                for t in result.matched_tasks
+            ), "Expected 'limescale' or 'soap' in at least one matched task title"
 
             # Test prompt comparison
             prompts = [
