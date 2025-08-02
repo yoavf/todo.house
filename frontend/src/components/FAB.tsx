@@ -5,9 +5,15 @@ import { CameraScreen } from "./CameraScreen";
 
 interface FABProps {
 	onTasksGenerated?: (response: ImageAnalysisResponse) => void;
+	onKeyboardClick?: () => void;
+	onMicrophoneClick?: () => void;
 }
 
-export function FAB({ onTasksGenerated }: FABProps) {
+export function FAB({
+	onTasksGenerated,
+	onKeyboardClick,
+	onMicrophoneClick,
+}: FABProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showCameraScreen, setShowCameraScreen] = useState(false);
 
@@ -34,14 +40,20 @@ export function FAB({ onTasksGenerated }: FABProps) {
 						<button
 							type="button"
 							className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 shadow-lg hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105"
-							onClick={() => console.log("Keyboard clicked")}
+							onClick={() => {
+								onKeyboardClick?.();
+								setIsOpen(false);
+							}}
 						>
 							<KeyboardIcon size={20} />
 						</button>
 						<button
 							type="button"
 							className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 shadow-lg hover:bg-orange-500 hover:text-white transition-all transform hover:scale-105"
-							onClick={() => console.log("Microphone clicked")}
+							onClick={() => {
+								onMicrophoneClick?.();
+								setIsOpen(false);
+							}}
 						>
 							<MicIcon size={20} />
 						</button>

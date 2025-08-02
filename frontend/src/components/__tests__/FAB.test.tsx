@@ -86,9 +86,16 @@ describe("FAB", () => {
 	});
 
 	it("handles keyboard and microphone buttons", () => {
-		const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+		const mockOnKeyboardClick = jest.fn();
+		const mockOnMicrophoneClick = jest.fn();
 
-		render(<FAB onTasksGenerated={mockOnTasksGenerated} />);
+		render(
+			<FAB
+				onTasksGenerated={mockOnTasksGenerated}
+				onKeyboardClick={mockOnKeyboardClick}
+				onMicrophoneClick={mockOnMicrophoneClick}
+			/>,
+		);
 
 		// Open menu
 		const mainButton = screen.getByRole("button");
@@ -98,15 +105,19 @@ describe("FAB", () => {
 
 		// Click keyboard button (first button, index 0)
 		fireEvent.click(menuButtons[0]);
-		expect(consoleSpy).toHaveBeenCalledWith("Keyboard clicked");
+		expect(mockOnKeyboardClick).toHaveBeenCalledTimes(1);
 
-		// Clear the spy
-		consoleSpy.mockClear();
+		// Menu should close after clicking a button
+		expect(screen.getAllByRole("button")).toHaveLength(1);
+
+		// Open menu again
+		fireEvent.click(mainButton);
 
 		// Click microphone button (second button, index 1)
-		fireEvent.click(menuButtons[1]);
-		expect(consoleSpy).toHaveBeenCalledWith("Microphone clicked");
+		fireEvent.click(screen.getAllByRole("button")[1]);
+		expect(mockOnMicrophoneClick).toHaveBeenCalledTimes(1);
 
-		consoleSpy.mockRestore();
+		// Menu should close after clicking a button
+		expect(screen.getAllByRole("button")).toHaveLength(1);
 	});
 });
