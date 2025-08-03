@@ -53,6 +53,9 @@ def run_migrations_offline() -> None:
 
     """
     url = get_database_url()
+    # Convert async SQLite URL to sync if needed
+    if url.startswith("sqlite") and "+aiosqlite" in url:
+        url = url.replace("+aiosqlite", "")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -96,6 +99,9 @@ def run_migrations_online() -> None:
 
     # Check if we're using SQLite
     if database_url.startswith("sqlite"):
+        # Convert async SQLite URL to sync if needed
+        if "+aiosqlite" in database_url:
+            database_url = database_url.replace("+aiosqlite", "")
         # For SQLite, use synchronous engine
         connectable = create_engine(
             database_url,
