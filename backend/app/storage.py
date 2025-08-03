@@ -26,6 +26,11 @@ class StorageProvider(ABC):
         """Get public URL for a file."""
         pass
 
+    @abstractmethod
+    async def download_file(self, path: str) -> bytes:
+        """Download a file from storage."""
+        pass
+
 
 class SupabaseStorageProvider(StorageProvider):
     """Supabase storage provider implementation."""
@@ -58,6 +63,11 @@ class SupabaseStorageProvider(StorageProvider):
     def get_public_url(self, path: str) -> str:
         """Get public URL for a file in Supabase storage."""
         return self.client.storage.from_(self.bucket_name).get_public_url(path)
+
+    async def download_file(self, path: str) -> bytes:
+        """Download a file from Supabase storage."""
+        response = self.client.storage.from_(self.bucket_name).download(path)
+        return response
 
 
 # Factory function to get storage provider

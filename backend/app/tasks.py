@@ -79,9 +79,6 @@ async def populate_task_image_urls(
         # Return tasks without URLs rather than failing completely
         return [Task.model_validate(task) for task in tasks]
 
-    # Cache for storage URLs to avoid duplicate calls
-    url_cache: Dict[str, str] = {}
-    
     # Convert tasks and populate image URLs
     task_models = []
     for task in tasks:
@@ -90,18 +87,11 @@ async def populate_task_image_urls(
         if task.source_image_id and task.source_image_id in images:
             image = images[task.source_image_id]
             
-            # Get or cache the public URL with error handling
+            # Use proxy endpoint instead of direct Supabase URL
             try:
-                if image.storage_path not in url_cache:
-                    # Generate and cache the URL
-                    public_url = storage.get_public_url(image.storage_path)
-                    url_cache[image.storage_path] = public_url
-                
-                # Use cached URL
-                public_url = url_cache[image.storage_path]
-                task_dict["image_url"] = public_url
-                # For now, use the same URL for thumbnail (could be optimized later)
-                task_dict["thumbnail_url"] = public_url
+                proxy_url = f"/api/images/proxy/{image.id}"
+                task_dict["image_url"] = proxy_url
+                task_dict["thumbnail_url"] = proxy_url
                 
             except Exception as e:
                 # Log error but don't fail the entire operation

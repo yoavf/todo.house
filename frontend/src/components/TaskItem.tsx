@@ -16,10 +16,8 @@ interface TaskItemProps {
 		addedTime: string;
 		estimatedTime: string;
 		status: string;
-		originalTask?: {
-			thumbnail_url?: string;
-			image_url?: string;
-		};
+		thumbnail_url?: string;
+		image_url?: string;
 	};
 }
 
@@ -29,8 +27,11 @@ export function TaskItem({ task }: TaskItemProps) {
 	const Icon = task.icon;
 
 	// Get image URL from the task (populated by backend)
-	const imageUrl =
-		task.originalTask?.thumbnail_url || task.originalTask?.image_url;
+	const imageUrl = task.thumbnail_url || task.image_url;
+	// Convert relative proxy URL to full URL
+	const fullImageUrl = imageUrl
+		? `${process.env.NEXT_PUBLIC_API_URL}${imageUrl}`
+		: null;
 	// Handle clicks outside the dropdown to close it
 	useEffect(() => {
 		function handleClickOutside(event: MouseEvent) {
@@ -58,12 +59,12 @@ export function TaskItem({ task }: TaskItemProps) {
 			data-task-id={task.id}
 		>
 			{/* Background circular image - only show if we have an image URL */}
-			{imageUrl && (
+			{fullImageUrl && (
 				<div className="absolute right-0 top-0 transform translate-x-1/4 -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none">
 					<div
 						className="w-full h-full rounded-full opacity-60"
 						style={{
-							backgroundImage: `url(${imageUrl})`,
+							backgroundImage: `url(${fullImageUrl})`,
 							backgroundSize: "cover",
 							backgroundPosition: "center",
 							filter: "saturate(0.7)",
@@ -79,7 +80,11 @@ export function TaskItem({ task }: TaskItemProps) {
 					</span>
 				</div>
 				<h3 className="text-base font-medium text-gray-800">{task.title}</h3>
-				<p className="text-sm text-gray-500 mt-1">{task.description}</p>
+				{task.description && (
+					<p className="text-sm text-gray-500 mt-1 line-clamp-2">
+						{task.description}
+					</p>
+				)}
 				{/* Main action row - fixed layout */}
 				<div className="flex items-center justify-between mt-3">
 					<button
