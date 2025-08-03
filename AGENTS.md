@@ -11,16 +11,10 @@
 When reviewing PRs during MVP phase:
 1. **Critical Issues Only**: Flag only bugs, security issues, or breaking changes
 2. **Non-Critical Feedback**: Output as structured recommendations, not blockers
-3. **Format**: Use the `todo-tracker-pm` agent to create properly formatted GitHub issues
-4. **Priority Levels**: Mark as `[P0]` (critical), `[P1]` (important), `[P2]` (nice-to-have)
+3. **Priority Levels**: Mark as `[P0]` (critical), `[P1]` (important), `[P2]` (nice-to-have)
 
 **Note**: The review agent automatically skips PRs that:
 - Have `[skip-review]` or `[WIP]` in the PR title
-
-The review agent will use the `todo-tracker-pm` agent to create GitHub issues for non-critical improvements with appropriate priority levels:
-- `[P0]` Critical: Security, data loss, breaking changes
-- `[P1]` Important: Significant bugs, performance issues
-- `[P2]` Nice-to-have: Enhancements, optimizations
 
 ## Project Overview
 
@@ -215,6 +209,7 @@ Tests are categorized using pytest markers:
 3. **Unit Tests**: All unit tests must pass before commit
 
 This is enforced via husky and lint-staged configuration in `package.json`.
+Never bypass the pre-commit hooks!
 
 ### Writing Tests - Best Practices
 
@@ -265,20 +260,20 @@ async def test_create_todo_success(client, test_user_id):
 
 ### MVP Phase Guidelines
 - **Speed over perfection**: Get features working first, polish later
-- **Minimal viable tests**: Write basic happy-path tests only - edge cases should be tracked using the `todo-tracker-pm` agent
-- **Feature scope**: Implement core functionality only - nice-to-haves should be tracked using the `todo-tracker-pm` agent as [P2] items
-- **Technical debt is OK**: Use the `todo-tracker-pm` agent to create GitHub issues for refactoring needs rather than blocking progress
-- **IMPORTANT**: Whenever you skip something for MVP (tests, error handling, features), you MUST use the `todo-tracker-pm` agent to create a GitHub issue with appropriate priority level
+- **Aim for fool coverage**: Write complete unit tests for every feature.
+- **Feature scope**: Implement requested functionality only - nice-to-haves should be tracked using the `todo-tracker-pm` agent as [P2] items.
+- **Some technical debt is OK**: confirm with the user when a refactor seems costly - the user will direct you wether to refactor or accept technical debt.
 - You can use context7 mcp to retrieve documentation
 
 
 ### General Development
 - Never add comments for perfectly self-explanatory code
+- Never skip pre-commit hooks!!! Ask the user for guidance if stuck
 - When refactoring, do not leave comments about what was change or what was there before.
 - Always use an opportunity to teach the user about python
 - Frontend: Use shadcn components whenever possible, with tailwind
-- **Backend tests are mandatory** but keep them simple during MVP - just verify the happy path works
-- **Frontend tests are optional during MVP** - use the `todo-tracker-pm` agent to create [P1] GitHub issues for post-MVP testing
+- **Backend tests are mandatory** 
+- **Frontend tests mandatory** 
 
 ## Development Memory
 
