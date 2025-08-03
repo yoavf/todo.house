@@ -8,22 +8,9 @@ Create Date: 2025-08-02 17:40:00.000000
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.types import TypeDecorator, JSON
-from sqlalchemy.dialects.postgresql import JSONB
 
-
-# Define JSONType inline to avoid import issues
-class JSONType(TypeDecorator):
-    """Cross-database JSON column type."""
-
-    impl = JSON
-    cache_ok = True
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == "postgresql":
-            return dialect.type_descriptor(JSONB())
-        else:
-            return dialect.type_descriptor(JSON())
+# Import JSONType from shared models to avoid duplication
+from app.database.models import JSONType
 
 
 # revision identifiers, used by Alembic.
