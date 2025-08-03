@@ -29,7 +29,13 @@
     "backend/**/*.py": [
       "sh -c 'cd backend && uv run ruff check --fix'",
       "sh -c 'cd backend && uv run mypy app/'",
-      "sh -c 'cd backend && uv run pytest tests/test_*_unit.py -v'"
+      "sh -c 'cd backend && uv run pytest tests/ -k \"unit\" -v'"
+    ],
+    "backend/**/test_*_integration.py": [
+      "sh -c 'cd backend && uv run pytest tests/ -k \"integration\" -v'"
+    ],
+    "backend/tests/integration/**/*.py": [
+      "sh -c 'cd backend && uv run pytest tests/ -k \"integration\" -v'"
     ],
     "frontend/**/*.{ts,tsx,js,jsx}": [
       "sh -c 'cd frontend && pnpm run lint:fix'",
