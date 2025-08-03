@@ -219,6 +219,8 @@ class Task(TaskBase):
     # Image URLs - populated when fetching tasks
     image_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
+    # Snooze options - populated when fetching tasks for responsive UI
+    snooze_options: Optional[Dict[str, Dict[str, Any]]] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -246,6 +248,7 @@ class Task(TaskBase):
 
 class SnoozeRequest(BaseModel):
     snooze_until: Optional[datetime] = None
+    snooze_option: Optional[str] = Field(None, description="Predefined snooze option key")
 
 
 class AITaskCreate(TaskCreate):
