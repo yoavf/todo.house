@@ -371,7 +371,7 @@ class TestTasksIntegration:
         # Verify in database
         query = select(TaskModel).where(
             and_(
-                TaskModel.user_id == test_user_id,
+                TaskModel.user_id == uuid.UUID(test_user_id),
                 TaskModel.title.like("Bulk task%")
             )
         )

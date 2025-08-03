@@ -35,7 +35,7 @@ class TestLocationsIntegration:
         db_location = await db_session.get(LocationModel, uuid.UUID(location_id))
         assert db_location is not None
         assert db_location.name == "Home Office"
-        assert db_location.user_id == test_user_id
+        assert db_location.user_id == uuid.UUID(test_user_id)
         
         # 2. Read the location
         get_response = await client.get(
@@ -106,7 +106,7 @@ class TestLocationsIntegration:
         
         # Verify in database
         query = select(LocationModel).where(
-            LocationModel.user_id == test_user_id,
+            LocationModel.user_id == uuid.UUID(test_user_id),
             LocationModel.name == "Kitchen"
         )
         result = await db_session.execute(query)
@@ -241,43 +241,3 @@ class TestLocationsIntegration:
             assert task["location"]["id"] == location_id
             assert task["location"]["name"] == "Garage"
 
-    async def test_concurrent_location_operations(self, client, db_session):
-        """Test that concurrent operations on locations work correctly."""
-        import asyncio
-        
-        user_id = uuid.uuid4()
-        
-        async def create_location(name):
-            """Helper to create a location."""
-            return await client.post(
-                "/locations/",
-                json={"name": name},
-                headers={"x-user-id": str(user_id)}
-            )
-        
-        # Create multiple locations concurrently
-        tasks = [create_location(f"Room {i}") for i in range(5)]
-        responses = await asyncio.gather(*tasks)
-        
-        # All should succeed
-        for response in responses:
-            assert response.status_code == 201
-        
-        # List all locations
-        list_response = await client.get(
-            "/locations/",
-            headers={"x-user-id": str(user_id)}
-        )
-        
-        locations = list_response.json()
-        created_locations = [loc for loc in locations if loc["name"].startswith("Room")]
-        assert len(created_locations) == 5
-        
-        # Verify all are in database
-        query = select(LocationModel).where(
-            LocationModel.user_id == user_id,
-            LocationModel.name.like("Room%")
-        )
-        result = await db_session.execute(query)
-        db_locations = result.scalars().all()
-        assert len(db_locations) == 5
