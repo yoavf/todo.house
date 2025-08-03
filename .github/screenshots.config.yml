@@ -15,16 +15,6 @@ screenshots:
       height: 812
     waitFor: .task-list
 
-  - name: fab-opened-desktop
-    url: http://localhost:3000/
-    viewport:
-      width: 1280
-      height: 800
-    steps:
-      - waitFor: .task-list
-      - click: ".fixed.bottom-6.right-6 button"
-      - wait: 300
-
   - name: fab-opened-mobile
     url: http://localhost:3000/
     viewport:
@@ -34,18 +24,6 @@ screenshots:
       - waitFor: .task-list
       - click: ".fixed.bottom-6.right-6 button"
       - wait: 300
-
-  - name: fab-camera-desktop
-    url: http://localhost:3000/
-    viewport:
-      width: 1280
-      height: 800
-    steps:
-      - waitFor: .task-list
-      - click: ".fixed.bottom-6.right-6 button"
-      - wait: 300
-      - click: "[data-testid='fab-camera']"
-      - wait: 500
 
   - name: fab-camera-mobile
     url: http://localhost:3000/
@@ -59,18 +37,6 @@ screenshots:
       - click: "[data-testid='fab-camera']"
       - wait: 500
 
-  - name: fab-microphone-desktop
-    url: http://localhost:3000/
-    viewport:
-      width: 1280
-      height: 800
-    steps:
-      - waitFor: .task-list
-      - click: ".fixed.bottom-6.right-6 button"
-      - wait: 300
-      - click: "[data-testid='fab-microphone']"
-      - wait: 500
-
   - name: fab-microphone-mobile
     url: http://localhost:3000/
     viewport:
@@ -81,18 +47,6 @@ screenshots:
       - click: ".fixed.bottom-6.right-6 button"
       - wait: 300
       - click: "[data-testid='fab-microphone']"
-      - wait: 500
-
-  - name: fab-keyboard-desktop
-    url: http://localhost:3000/
-    viewport:
-      width: 1280
-      height: 800
-    steps:
-      - waitFor: .task-list
-      - click: ".fixed.bottom-6.right-6 button"
-      - wait: 300
-      - click: "[data-testid='fab-keyboard']"
       - wait: 500
 
   - name: fab-keyboard-mobile
