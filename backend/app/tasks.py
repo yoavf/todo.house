@@ -83,7 +83,9 @@ async def populate_task_related_data(
     locations: Dict[uuid.UUID, LocationModel] = {}
     if location_ids:
         try:
-            location_query = select(LocationModel).where(LocationModel.id.in_(location_ids))
+            location_query = select(LocationModel).where(
+                LocationModel.id.in_(location_ids)
+            )
             location_result = await session.execute(location_query)
             locations = {loc.id: loc for loc in location_result.scalars().all()}
         except SQLAlchemyError as e:

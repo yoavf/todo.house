@@ -13,7 +13,9 @@ from app.models import Task, TaskStatus, TaskPriority, TaskSource
 class MockTaskModel:
     """Mock TaskModel for testing."""
 
-    def __init__(self, id=None, title="Test Task", source_image_id=None, location_id=None):
+    def __init__(
+        self, id=None, title="Test Task", source_image_id=None, location_id=None
+    ):
         self.id = id if id is not None else 1
         self.title = title
         self.source_image_id = source_image_id

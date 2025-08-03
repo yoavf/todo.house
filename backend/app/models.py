@@ -82,17 +82,6 @@ class TaskStatus(str, Enum):
     COMPLETED = "completed"
 
 
-class LocationType(str, Enum):
-    ROOM = "room"
-    OUTDOOR = "outdoor"
-    GARDEN = "garden"
-    GARAGE = "garage"
-    STORAGE = "storage"
-    OFFICE = "office"
-    COMMON_AREA = "common_area"
-    OTHER = "other"
-
-
 class TaskPriority(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
@@ -334,8 +323,8 @@ class LocationBase(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
-    location_type: Optional[LocationType] = None
     is_active: bool = True
+    is_default: bool = False
     location_metadata: Optional[Dict[str, Any]] = None
 
 
@@ -350,8 +339,8 @@ class LocationUpdate(BaseModel):
 
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
-    location_type: Optional[LocationType] = None
     is_active: Optional[bool] = None
+    is_default: Optional[bool] = None
     location_metadata: Optional[Dict[str, Any]] = None
 
 
@@ -362,5 +351,9 @@ class Location(LocationBase):
     user_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
+    is_from_defaults: bool = Field(
+        default=False,
+        description="Whether this location is from the default list (computed)",
+    )
 
     model_config = ConfigDict(from_attributes=True)

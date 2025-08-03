@@ -93,7 +93,7 @@ def run_migrations_online() -> None:
 
     """
     database_url = get_database_url()
-    
+
     # Check if we're using SQLite
     if database_url.startswith("sqlite"):
         # For SQLite, use synchronous engine
@@ -101,12 +101,10 @@ def run_migrations_online() -> None:
             database_url,
             poolclass=pool.NullPool,
         )
-        
+
         with connectable.connect() as connection:
-            context.configure(
-                connection=connection, target_metadata=target_metadata
-            )
-            
+            context.configure(connection=connection, target_metadata=target_metadata)
+
             with context.begin_transaction():
                 context.run_migrations()
     else:

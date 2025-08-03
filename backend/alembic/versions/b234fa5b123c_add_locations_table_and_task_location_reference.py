@@ -11,9 +11,11 @@ import sqlalchemy as sa
 from sqlalchemy.types import TypeDecorator, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 
+
 # Define JSONType inline to avoid import issues
 class JSONType(TypeDecorator):
     """Cross-database JSON column type."""
+
     impl = JSON
     cache_ok = True
 
@@ -22,6 +24,7 @@ class JSONType(TypeDecorator):
             return dialect.type_descriptor(JSONB())
         else:
             return dialect.type_descriptor(JSON())
+
 
 # revision identifiers, used by Alembic.
 revision = "b234fa5b123c"
@@ -34,7 +37,7 @@ def upgrade() -> None:
     # Get the bind to check the database dialect
     bind = op.get_bind()
     dialect_name = bind.dialect.name
-    
+
     # Create locations table
     op.create_table(
         "locations",
@@ -42,21 +45,27 @@ def upgrade() -> None:
         sa.Column("user_id", sa.UUID(), nullable=False),
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("location_type", sa.String(length=50), nullable=True),
         sa.Column(
             "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
+        sa.Column(
+            "is_default", sa.Boolean(), nullable=False, server_default=sa.text("false")
         ),
         sa.Column("location_metadata", JSONType(), nullable=True),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("CURRENT_TIMESTAMP" if dialect_name == "sqlite" else "now()"),
+            server_default=sa.text(
+                "CURRENT_TIMESTAMP" if dialect_name == "sqlite" else "now()"
+            ),
             nullable=False,
         ),
         sa.Column(
             "updated_at",
             sa.DateTime(timezone=True),
-            server_default=sa.text("CURRENT_TIMESTAMP" if dialect_name == "sqlite" else "now()"),
+            server_default=sa.text(
+                "CURRENT_TIMESTAMP" if dialect_name == "sqlite" else "now()"
+            ),
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
@@ -97,7 +106,7 @@ def downgrade() -> None:
     # Get the bind to check the database dialect
     bind = op.get_bind()
     dialect_name = bind.dialect.name
-    
+
     # Handle dropping column and foreign key differently for SQLite
     if dialect_name == "sqlite":
         # For SQLite, use batch mode

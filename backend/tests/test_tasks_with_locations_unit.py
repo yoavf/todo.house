@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.models import TaskPriority, LocationType
+from app.models import TaskPriority
 
 
 @pytest.mark.unit
@@ -12,7 +12,7 @@ class TestTasksWithLocations:
     async def test_create_task_with_location(self, client, test_user_id):
         """Test creating a task with a location reference."""
         # First create a location
-        location_data = {"name": "Garden", "location_type": LocationType.GARDEN.value}
+        location_data = {"name": "Garden"}
 
         location_response = await client.post(
             "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
@@ -43,7 +43,7 @@ class TestTasksWithLocations:
     async def test_get_task_with_location(self, client, test_user_id):
         """Test retrieving a task includes location data."""
         # Create location and task
-        location_data = {"name": "Kitchen", "location_type": LocationType.ROOM.value}
+        location_data = {"name": "Kitchen"}
         location_response = await client.post(
             "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
         )
@@ -64,7 +64,7 @@ class TestTasksWithLocations:
         data = response.json()
         assert data["location"]["id"] == location_id
         assert data["location"]["name"] == "Kitchen"
-        assert data["location"]["location_type"] == LocationType.ROOM.value
+        assert data["location"]["is_default"] is True  # Kitchen is a default location
 
     async def test_update_task_location(self, client, test_user_id):
         """Test updating a task's location."""
@@ -121,7 +121,7 @@ class TestTasksWithLocations:
     async def test_list_tasks_with_locations(self, client, test_user_id):
         """Test listing tasks includes location data."""
         # Create a location
-        location_data = {"name": "Office", "location_type": LocationType.OFFICE.value}
+        location_data = {"name": "Office"}
         location_response = await client.post(
             "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
         )

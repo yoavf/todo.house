@@ -3,6 +3,7 @@
 import logging
 import uuid
 from typing import List
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy import select, and_
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .database import get_session_dependency
 from .database.models import Location as LocationModel
 from .models import Location, LocationCreate, LocationUpdate
+from .config import app_config
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,13 @@ async def create_location(
     session: AsyncSession = Depends(get_session_dependency),
 ):
     """Create a new location for the user."""
-    db_location = LocationModel(user_id=user_id, **location.model_dump())
+    location_data = location.model_dump()
+
+    # Check if this is a default location
+    if location.name in app_config.default_locations:
+        location_data["is_default"] = True
+
+    db_location = LocationModel(user_id=user_id, **location_data)
 
     session.add(db_location)
     await session.commit()
@@ -48,19 +56,48 @@ async def list_locations(
     active_only: bool = True,
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    """List all locations for the user."""
+    """List all locations for the user, including defaults not yet saved."""
     query = select(LocationModel).where(LocationModel.user_id == user_id)
 
     if active_only:
         query = query.where(LocationModel.is_active)
 
-    query = query.order_by(LocationModel.name)
-
     result = await session.execute(query)
-    locations = result.scalars().all()
+    db_locations = result.scalars().all()
 
-    logger.info(f"Retrieved {len(locations)} locations for user {user_id}")
-    return [Location.model_validate(loc) for loc in locations]
+    # Convert to Location models
+    locations = []
+    saved_location_names = set()
+
+    # First add all user's saved locations (custom ones first, then used defaults)
+    for db_loc in sorted(db_locations, key=lambda x: (x.is_default, x.name)):
+        loc = Location.model_validate(db_loc)
+        loc.is_from_defaults = db_loc.is_default
+        locations.append(loc)
+        saved_location_names.add(db_loc.name)
+
+    # Then add any default locations that haven't been used yet
+    for default_name in app_config.default_locations:
+        if default_name not in saved_location_names:
+            # Create a virtual location for display
+            virtual_location = Location(
+                id=uuid.uuid4(),  # Temporary ID for frontend
+                user_id=user_id,
+                name=default_name,
+                description=None,
+                is_active=True,
+                is_default=True,
+                is_from_defaults=True,
+                location_metadata=None,
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+            )
+            locations.append(virtual_location)
+
+    logger.info(
+        f"Retrieved {len(locations)} locations for user {user_id} ({len(db_locations)} saved, {len(locations) - len(db_locations)} defaults)"
+    )
+    return locations
 
 
 @router.get("/{location_id}", response_model=Location)
