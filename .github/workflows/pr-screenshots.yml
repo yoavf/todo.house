@@ -116,7 +116,7 @@ jobs:
           cd ..
       
       - name: Auto PR Screenshots
-        uses: yoavf/auto-pr-screenshots-action@v1.0.2-beta
+        uses: yoavf/auto-pr-screenshots-action@main
         with:
           url: http://localhost:3000
           github-token: ${{ secrets.GITHUB_TOKEN }}
