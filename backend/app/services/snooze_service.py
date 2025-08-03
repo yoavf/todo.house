@@ -119,7 +119,10 @@ class SnoozeService:
             target_datetime = datetime.combine(target_date.date(), cls.DEFAULT_TASK_TIME)
             
             # Get localized day name
-            day_name = locale.days['format']['wide'][locale.weekend_start]
+            try:
+                day_name = locale.days['format']['wide'][locale.weekend_start]
+            except (KeyError, TypeError):
+                day_name = "Weekend"
             
             return {
                 "date": target_datetime,
@@ -149,7 +152,10 @@ class SnoozeService:
             target_datetime = datetime.combine(target_date.date(), cls.DEFAULT_TASK_TIME)
             
             # Get localized day name
-            day_name = locale.days['format']['wide'][first_workday]
+            try:
+                day_name = locale.days['format']['wide'][first_workday]
+            except (KeyError, TypeError):
+                day_name = "Weekday"
             
             return {
                 "date": target_datetime,
@@ -186,7 +192,10 @@ class SnoozeService:
             target_datetime = datetime.combine(target_date.date(), cls.DEFAULT_TASK_TIME)
             
             # Get localized day name
-            day_name = locale.days['format']['wide'][first_workday]
+            try:
+                day_name = locale.days['format']['wide'][first_workday]
+            except (KeyError, TypeError):
+                day_name = "Weekday"
             
             return {
                 "date": target_datetime,
@@ -201,7 +210,10 @@ class SnoozeService:
             target_datetime = datetime.combine(target_date.date(), cls.DEFAULT_TASK_TIME)
             
             # Get localized day name
-            day_name = locale.days['format']['wide'][locale.weekend_start]
+            try:
+                day_name = locale.days['format']['wide'][locale.weekend_start]
+            except (KeyError, TypeError):
+                day_name = "Weekend"
             
             return {
                 "date": target_datetime,
