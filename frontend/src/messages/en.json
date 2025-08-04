@@ -1,47 +1,47 @@
 {
-  "common": {
-    "delete": "Delete",
-    "cancel": "Cancel",
-    "confirm": "Confirm",
-    "save": "Save",
-    "edit": "Edit",
-    "loading": "Loading..."
-  },
-  "dialogs": {
-    "deleteConfirm": "Are you sure you want to delete \"{title}\"?",
-    "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?"
-  },
-  "time": {
-    "tomorrow": "Tomorrow",
-    "thisWeekend": "This weekend",
-    "nextWeek": "Next week",
-    "later": "Later"
-  },
-  "tasks": {
-    "priority": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High"
-    },
-    "status": {
-      "active": "Active",
-      "snoozed": "Snoozed",
-      "completed": "Completed"
-    },
-    "types": {
-      "interior": "Interior",
-      "exterior": "Exterior",
-      "electricity": "Electricity",
-      "plumbing": "Plumbing",
-      "hvac": "HVAC",
-      "appliances": "Appliances",
-      "general": "General"
-    }
-  },
-  "errors": {
-    "generic": "Something went wrong. Please try again.",
-    "network": "Network error. Please check your connection.",
-    "validation": "Please check your input and try again.",
-    "notFound": "The requested item was not found."
-  }
+	"common": {
+		"delete": "Delete",
+		"cancel": "Cancel",
+		"confirm": "Confirm",
+		"save": "Save",
+		"edit": "Edit",
+		"loading": "Loading..."
+	},
+	"dialogs": {
+		"deleteConfirm": "Are you sure you want to delete \"{title}\"?",
+		"unsavedChanges": "You have unsaved changes. Are you sure you want to leave?"
+	},
+	"time": {
+		"tomorrow": "Tomorrow",
+		"thisWeekend": "This weekend",
+		"nextWeek": "Next week",
+		"later": "Later"
+	},
+	"tasks": {
+		"priority": {
+			"low": "Low",
+			"medium": "Medium",
+			"high": "High"
+		},
+		"status": {
+			"active": "Active",
+			"snoozed": "Snoozed",
+			"completed": "Completed"
+		},
+		"types": {
+			"interior": "Interior",
+			"exterior": "Exterior",
+			"electricity": "Electricity",
+			"plumbing": "Plumbing",
+			"hvac": "HVAC",
+			"appliances": "Appliances",
+			"general": "General"
+		}
+	},
+	"errors": {
+		"generic": "Something went wrong. Please try again.",
+		"network": "Network error. Please check your connection.",
+		"validation": "Please check your input and try again.",
+		"notFound": "The requested item was not found."
+	}
 }
