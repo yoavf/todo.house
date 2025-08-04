@@ -248,4 +248,194 @@ describe("MicrophoneView", () => {
 
 		jest.useRealTimers();
 	});
+
+	describe("Auto-pause detection", () => {
+		beforeEach(() => {
+			jest.useFakeTimers();
+		});
+
+		afterEach(() => {
+			jest.useRealTimers();
+		});
+
+		it("should auto-process after 3 seconds of silence when transcript exists", async () => {
+			mockTranscript = "Buy groceries";
+			render(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+			// Verify initial state
+			expect(screen.getByText("Buy groceries")).toBeInTheDocument();
+			expect(screen.getByText("Process")).toBeEnabled();
+
+			// Fast-forward time by 3 seconds
+			act(() => {
+				jest.advanceTimersByTime(3000);
+			});
+
+			// Should auto-process and show processing state
+			await waitFor(() => {
+				expect(screen.getByText("Processing your audio")).toBeInTheDocument();
+			});
+
+			// Should stop listening
+			expect(mockStopListening).toHaveBeenCalled();
+		});
+
+		it("should show auto-pause indicator when transcript exists", () => {
+			mockTranscript = "Test task";
+			render(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+			expect(screen.getByText("Test task")).toBeInTheDocument();
+			// Check for pulse indicator
+			const pulseIndicator = document.querySelector(".animate-pulse");
+			expect(pulseIndicator).toBeInTheDocument();
+		});
+
+		it("should reset auto-pause timer when transcript changes", async () => {
+			const { rerender } = render(
+				<MicrophoneView isOpen onClose={jest.fn()} />,
+			);
+
+			// Set initial transcript
+			mockTranscript = "Buy";
+			rerender(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+			// Wait 2 seconds (less than auto-pause timeout)
+			act(() => {
+				jest.advanceTimersByTime(2000);
+			});
+
+			// Update transcript (user continues speaking)
+			mockTranscript = "Buy groceries";
+			rerender(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+			// Wait another 2 seconds (total 4 seconds, but timer should have reset)
+			act(() => {
+				jest.advanceTimersByTime(2000);
+			});
+
+			// Should not have auto-processed yet
+			expect(
+				screen.queryByText("Processing your audio"),
+			).not.toBeInTheDocument();
+			expect(mockStopListening).not.toHaveBeenCalled();
+
+			// Now wait the full 3 seconds from the last transcript change
+			act(() => {
+				jest.advanceTimersByTime(1000);
+			});
+
+			// Should auto-process now
+			await waitFor(() => {
+				expect(screen.getByText("Processing your audio")).toBeInTheDocument();
+			});
+
+			expect(mockStopListening).toHaveBeenCalled();
+		});
+
+		it("should not auto-process when not recording", () => {
+			mockTranscript = "Test task";
+			render(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+			// Stop recording manually first
+			fireEvent.click(screen.getByText("Process"));
+
+			// Reset mocks for this test
+			mockStopListening.mockClear();
+
+			// Set new transcript and rerender to trigger auto-pause logic
+			mockTranscript = "New task";
+
+			// Fast-forward time
+			act(() => {
+				jest.advanceTimersByTime(3000);
+			});
+
+			// Should not auto-process because we're no longer recording
+			expect(mockStopListening).not.toHaveBeenCalled();
+		});
+
+		it("should not auto-process when there's an error", () => {
+			render(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+			// Simulate an error state
+			mockStartListening.mockRejectedValue(
+				new Error("Permission denied: not-allowed"),
+			);
+
+			// Set transcript
+			mockTranscript = "Test task";
+
+			// Fast-forward time
+			act(() => {
+				jest.advanceTimersByTime(3000);
+			});
+
+			// Should not auto-process because there's an error
+			expect(mockStopListening).not.toHaveBeenCalled();
+		});
+
+		it("should clear auto-pause timer when component closes", () => {
+			mockTranscript = "Test task";
+			const { rerender } = render(
+				<MicrophoneView isOpen onClose={jest.fn()} />,
+			);
+
+			// Verify auto-pause indicator is shown
+			const pulseIndicator = document.querySelector(".animate-pulse");
+			expect(pulseIndicator).toBeInTheDocument();
+
+			// Close component
+			rerender(<MicrophoneView isOpen={false} onClose={jest.fn()} />);
+
+			// Clear the mock to ensure we're testing fresh
+			mockStopListening.mockClear();
+
+			// Reopen with new transcript
+			mockTranscript = "New task";
+			rerender(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+			// Fast-forward time by only 1 second - should not auto-process as timer was reset
+			act(() => {
+				jest.advanceTimersByTime(1000);
+			});
+
+			// Should not have processed yet (timer was cleared and restarted)
+			expect(mockStopListening).not.toHaveBeenCalled();
+
+			// Now fast-forward the full 3 seconds to verify the new timer works
+			act(() => {
+				jest.advanceTimersByTime(2000);
+			});
+
+			// Should process now with the new timer
+			expect(mockStopListening).toHaveBeenCalledTimes(1);
+		});
+
+		it("should clear auto-pause timer when manual process is clicked", () => {
+			mockTranscript = "Test task";
+			render(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+			// Wait 2 seconds
+			act(() => {
+				jest.advanceTimersByTime(2000);
+			});
+
+			// Click manual process button before auto-pause triggers
+			fireEvent.click(screen.getByText("Process"));
+
+			// Should process immediately
+			expect(mockStopListening).toHaveBeenCalled();
+
+			// Clear mock for next assertion
+			mockStopListening.mockClear();
+
+			// Continue time - should not trigger auto-process again
+			act(() => {
+				jest.advanceTimersByTime(2000);
+			});
+
+			// Should not call stop listening again
+			expect(mockStopListening).not.toHaveBeenCalled();
+		});
+	});
 });
