@@ -1,7 +1,7 @@
-import { getRequestConfig } from "next-intl/server";
 import { headers } from "next/headers";
+import { getRequestConfig } from "next-intl/server";
 import type { Locale } from "@/i18n/config";
-import { detectLocaleFromHeader, defaultLocale } from "@/lib/locale-detection";
+import { defaultLocale, detectLocaleFromHeader } from "@/lib/locale-detection";
 
 export default getRequestConfig(async ({ requestLocale }) => {
 	// This function runs on every request to determine the locale
@@ -9,7 +9,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
 	// Detect locale from Accept-Language header
 	let locale: Locale = defaultLocale;
-	
+
 	try {
 		const headersList = await headers();
 		const acceptLanguage = headersList.get("accept-language");

@@ -1,9 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, type ReactNode } from "react";
 import { useLocale } from "next-intl";
+import React, { createContext, type ReactNode, useContext } from "react";
 import { createLocaleContext } from "@/lib/locale-utils";
-import type { LocaleContext as LocaleContextType, Locale } from "@/types/locale";
+import type {
+	Locale,
+	LocaleContext as LocaleContextType,
+} from "@/types/locale";
 
 const LocaleContext = createContext<LocaleContextType | null>(null);
 
@@ -31,11 +34,11 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
  */
 export function useLocaleContext(): LocaleContextType {
 	const context = useContext(LocaleContext);
-	
+
 	if (!context) {
 		throw new Error("useLocaleContext must be used within a LocaleProvider");
 	}
-	
+
 	return context;
 }
 

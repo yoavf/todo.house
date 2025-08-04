@@ -92,7 +92,7 @@ export function detectLocaleWithMetadata(acceptLanguageHeader?: string): {
 
 	try {
 		const parsedLocales = parseAcceptLanguageHeader(acceptLanguageHeader);
-		
+
 		// First, try to find exact matches (including region codes)
 		for (const { locale } of parsedLocales) {
 			const normalizedLocale = locale.toLowerCase();

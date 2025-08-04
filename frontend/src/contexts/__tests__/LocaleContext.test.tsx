@@ -1,10 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import { LocaleProvider, useLocaleContext, useIsRTL, useDirection } from "../LocaleContext";
+import {
+	LocaleProvider,
+	useDirection,
+	useIsRTL,
+	useLocaleContext,
+} from "../LocaleContext";
 
 // Mock next-intl's useLocale hook
 jest.mock("next-intl", () => ({
-	NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 	useLocale: jest.fn(),
 }));
 
@@ -47,7 +54,7 @@ describe("LocaleContext", () => {
 				<LocaleProvider>
 					<TestComponent />
 				</LocaleProvider>
-			</NextIntlClientProvider>
+			</NextIntlClientProvider>,
 		);
 
 		expect(screen.getByTestId("locale")).toHaveTextContent("en");
@@ -65,7 +72,7 @@ describe("LocaleContext", () => {
 				<LocaleProvider>
 					<TestComponent />
 				</LocaleProvider>
-			</NextIntlClientProvider>
+			</NextIntlClientProvider>,
 		);
 
 		expect(screen.getByTestId("locale")).toHaveTextContent("he");
@@ -79,7 +86,9 @@ describe("LocaleContext", () => {
 		mockUseLocale.mockReturnValue("en");
 
 		// Suppress console.error for this test
-		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const consoleSpy = jest
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
 
 		expect(() => {
 			render(<TestComponent />);

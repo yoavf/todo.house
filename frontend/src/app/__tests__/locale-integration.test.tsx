@@ -4,7 +4,12 @@
 
 import { render } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import { LocaleProvider, useLocaleContext, useIsRTL, useDirection } from "@/contexts/LocaleContext";
+import {
+	LocaleProvider,
+	useDirection,
+	useIsRTL,
+	useLocaleContext,
+} from "@/contexts/LocaleContext";
 
 // Test component that uses the locale context
 function TestLocaleComponent() {
@@ -38,12 +43,14 @@ function TestLocaleComponent() {
 
 // Mock next-intl's useLocale hook
 jest.mock("next-intl", () => ({
-	NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 	useLocale: jest.fn(),
 	useTranslations: () => (key: string) => {
 		const translations: Record<string, string> = {
 			"common.delete": "Delete",
-			"common.cancel": "Cancel", 
+			"common.cancel": "Cancel",
 			"time.tomorrow": "Tomorrow",
 			"tasks.priority.high": "High",
 		};
@@ -66,7 +73,7 @@ describe("Locale Integration", () => {
 				<LocaleProvider>
 					<TestLocaleComponent />
 				</LocaleProvider>
-			</NextIntlClientProvider>
+			</NextIntlClientProvider>,
 		);
 
 		expect(getByText("en")).toBeInTheDocument();
@@ -83,7 +90,7 @@ describe("Locale Integration", () => {
 				<LocaleProvider>
 					<TestLocaleComponent />
 				</LocaleProvider>
-			</NextIntlClientProvider>
+			</NextIntlClientProvider>,
 		);
 
 		expect(getByText("he")).toBeInTheDocument();

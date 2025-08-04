@@ -1,7 +1,7 @@
 import {
 	createLocaleContext,
-	getHTMLDirection,
 	getCSSDirection,
+	getHTMLDirection,
 	requiresRTL,
 } from "../locale-utils";
 

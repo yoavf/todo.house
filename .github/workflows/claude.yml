@@ -65,15 +65,15 @@ jobs:
           # assignee_trigger: "claude-bot"
           
           # Optional: Allow Claude to run specific commands
-          allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*),Bash(npm run test:backend),Bash(npm run test:backend:unit),Bash(npm run test:backend:integration),Bash(npm run lint:backend),Bash(npm run lint:backend:fix),Bash(npm run typecheck:backend),Bash(npm run test:frontend),Bash(npm run lint:frontend),Bash(uv sync),Bash(uv run *),Bash(cd backend && uv run *),Bash(uv *)"
+          allowed_tools: "Bash(pnpm install),Bash(pnpm run build),Bash(pnpm run test:*),Bash(pnpm run lint:*),Bash(pnpm run test:backend),Bash(pnpm run test:backend:unit),Bash(pnpm run test:backend:integration),Bash(pnpm run lint:backend),Bash(pnpm run lint:backend:fix),Bash(pnpm run typecheck:backend),Bash(pnpm run test:frontend),Bash(pnpm run lint:frontend),Bash(uv sync),Bash(uv run *),Bash(cd backend && uv run *),Bash(uv *)"
           
           # Optional: Add custom instructions for Claude to customize its behavior for your project
           custom_instructions: |
             Always run linting and tests after making code changes:
-            - For backend: npm run lint:backend, npm run typecheck:backend, and npm run test:backend:unit
-            - For frontend: npm run lint:frontend and npm run test:frontend
+            - For backend: pnpm run lint:backend, pnpm run typecheck:backend, and pnpm run test:backend:unit
+            - For frontend: pnpm run lint:frontend and pnpm run test:frontend
             Use uv for Python dependency management in the backend directory
-            If linting errors occur, use npm run lint:backend:fix to auto-fix them
+            If linting errors occur, use pnpm run lint:backend:fix to auto-fix them
           
           # Optional: Custom environment variables for Claude
           # claude_env: |

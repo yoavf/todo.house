@@ -1,7 +1,7 @@
-import { 
-	detectLocaleFromHeader, 
+import {
+	defaultLocale,
+	detectLocaleFromHeader,
 	detectLocaleWithMetadata,
-	defaultLocale 
 } from "../locale-detection";
 
 describe("locale-detection", () => {
@@ -22,7 +22,9 @@ describe("locale-detection", () => {
 		});
 
 		it("should handle complex Accept-Language header with quality values", () => {
-			expect(detectLocaleFromHeader("en-US,en;q=0.9,he;q=0.8,fr;q=0.7")).toBe("en");
+			expect(detectLocaleFromHeader("en-US,en;q=0.9,he;q=0.8,fr;q=0.7")).toBe(
+				"en",
+			);
 			expect(detectLocaleFromHeader("he-IL,he;q=0.9,en;q=0.8")).toBe("he");
 			expect(detectLocaleFromHeader("fr;q=0.9,he;q=0.8,en;q=0.7")).toBe("he");
 		});

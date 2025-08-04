@@ -3,8 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { LocaleProvider } from "@/contexts/LocaleContext";
-import { getHTMLDirection } from "@/lib/locale-utils";
 import type { Locale } from "@/i18n/config";
+import { getHTMLDirection } from "@/lib/locale-utils";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,9 +28,9 @@ export default async function RootLayout({
 	children: React.ReactNode;
 }>) {
 	// Get locale and messages from next-intl
-	const locale = await getLocale() as Locale;
+	const locale = (await getLocale()) as Locale;
 	const messages = await getMessages();
-	
+
 	// Determine HTML direction based on locale
 	const direction = getHTMLDirection(locale);
 
