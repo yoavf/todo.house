@@ -15,6 +15,7 @@ from .providers import (
     AIProviderRateLimitError,
     AIProviderAPIError,
 )
+from .prompt_service import PromptService, PromptNotFoundError
 from ..models import AITaskCreate, TaskSource, TaskType
 from ..logging_config import ImageProcessingLogger
 
@@ -145,15 +146,21 @@ class ImageProcessingService:
     # Validation constants
     MAX_TITLE_LENGTH = 50  # Maximum task title length (characters)
 
-    def __init__(self, ai_provider: Optional[AIProvider] = None):
+    def __init__(
+        self,
+        ai_provider: Optional[AIProvider] = None,
+        prompt_service: Optional[PromptService] = None,
+    ):
         """
         Initialize image processing service.
 
         Args:
             ai_provider: AI provider instance for image analysis
+            prompt_service: Service for managing prompts (optional)
         """
         self.preprocessor = ImagePreprocessor()
         self.ai_provider = ai_provider
+        self.prompt_service = prompt_service or PromptService()
         self.max_retries = 3
         self.base_retry_delay = 1.0  # seconds
         self.max_retry_delay = 30.0  # seconds
@@ -480,39 +487,11 @@ class ImageProcessingService:
         Returns:
             Generated prompt string
         """
-        # Base prompt for home maintenance task identification
-        base_prompt = """You are a home maintenance expert analyzing an image to identify maintenance tasks.
-
-Analyze this image and identify specific, actionable home maintenance tasks based on what you observe.
-
-For each task you identify:
-1. Provide a clear, specific title (max 50 characters)
-2. Include a detailed description explaining what needs to be done and why
-3. Assign a priority level (high, medium, low) based on urgency and safety
-4. Suggest a category (cleaning, repair, maintenance, safety, etc.)
-5. Assign one or more task_types from this list that best describe the task:
-   - interior: Tasks related to inside the home
-   - exterior: Tasks related to outside the home
-   - electricity: Electrical work or issues
-   - plumbing: Plumbing related tasks
-   - appliances: Appliance maintenance or repair
-   - maintenance: Regular upkeep and preventive care
-   - repair: Fixing broken or damaged items
-
-Focus on:
-- Visible maintenance needs (dirt, wear, damage)
-- Safety concerns
-- Preventive maintenance opportunities
-- Seasonal considerations
-
-Include a reasoning field for each task explaining why it was identified.
-
-For each task, provide a confidence score (0.0 to 1.0) indicating how certain you are:
-- 0.8-1.0: Very confident - clear visual evidence of the issue
-- 0.5-0.7: Moderately confident - likely issue but some uncertainty
-- 0.2-0.4: Low confidence - possible issue but hard to determine from image
-
-If you cannot identify any maintenance tasks, provide an empty tasks array with an explanation in the analysis_summary."""
+        try:
+            base_prompt = self.prompt_service.get_prompt("home_maintenance_analysis")
+        except PromptNotFoundError as e:
+            logger.error(f"Failed to load prompt: {e}")
+            raise ImageProcessingError(f"AI prompt configuration missing: {str(e)}")
 
         # Add context-specific modifications if provided
         if context:
@@ -525,7 +504,7 @@ If you cannot identify any maintenance tasks, provide an empty tasks array with 
                 areas_str = ", ".join(focus_areas)
                 base_prompt += f"\n\nPay special attention to: {areas_str}"
 
-        return base_prompt.strip()
+        return base_prompt
 
     def validate_ai_response(self, response: Dict[str, Any]) -> List[str]:
         """

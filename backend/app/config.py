@@ -16,7 +16,7 @@ class AIConfig(BaseSettings):
 
     gemini_api_key: str = Field(default="", description="Google Gemini API key")
     gemini_model: str = Field(
-        default="gemini-1.5-flash", description="Gemini model to use"
+        default="gemini-2.5-flash-lite", description="Gemini model to use"
     )
     default_provider: str = Field(default="gemini", description="Default AI provider")
     enable_usage_tracking: bool = Field(
