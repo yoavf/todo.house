@@ -1,6 +1,32 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { HomeIcon } from "lucide-react";
 import { TaskItem } from "../TaskItem";
+
+// Mock framer-motion to avoid animation issues in tests
+jest.mock("framer-motion", () => ({
+	motion: {
+		div: ({
+			children,
+			...props
+		}: React.PropsWithChildren<Record<string, any>>) => (
+			<div {...props}>{children}</div>
+		),
+	},
+	useAnimation: () => ({
+		start: jest.fn(),
+	}),
+	useMotionValue: () => ({
+		set: jest.fn(),
+		get: () => 0,
+	}),
+}));
+
+// Mock the API
+jest.mock("@/lib/api", () => ({
+	tasksAPI: {
+		updateTask: jest.fn().mockResolvedValue({}),
+	},
+}));
 
 describe("TaskItem", () => {
 	const mockTask = {
@@ -12,32 +38,32 @@ describe("TaskItem", () => {
 		addedTime: "2 days ago",
 		estimatedTime: "30m",
 		status: "do-next",
-		originalTask: {
-			thumbnail_url: "https://example.com/thumbnail.jpg",
-			image_url: "https://example.com/image.jpg",
-		},
+		thumbnail_url: "/api/proxy/image123",
+		image_url: "/api/proxy/image123",
 	};
+
+	const mockOnTaskUpdate = jest.fn();
 
 	beforeEach(() => {
 		jest.clearAllMocks();
 	});
 
 	it("renders task title and description", () => {
-		render(<TaskItem task={mockTask} />);
+		render(<TaskItem task={mockTask} onTaskUpdate={mockOnTaskUpdate} />);
 
 		expect(screen.getByText("Test Task")).toBeInTheDocument();
 		expect(screen.getByText("Test Description")).toBeInTheDocument();
 	});
 
 	it("renders task category and estimated time", () => {
-		render(<TaskItem task={mockTask} />);
+		render(<TaskItem task={mockTask} onTaskUpdate={mockOnTaskUpdate} />);
 
 		expect(screen.getByText("Interior")).toBeInTheDocument();
 		expect(screen.getByText(/30m/)).toBeInTheDocument();
 	});
 
 	it("renders the task icon", () => {
-		render(<TaskItem task={mockTask} />);
+		render(<TaskItem task={mockTask} onTaskUpdate={mockOnTaskUpdate} />);
 
 		// The icon should be rendered within the component
 		const categorySection = screen.getByText("Interior").parentElement;
@@ -45,54 +71,49 @@ describe("TaskItem", () => {
 	});
 
 	it("shows 'Do it' button", () => {
-		render(<TaskItem task={mockTask} />);
+		render(<TaskItem task={mockTask} onTaskUpdate={mockOnTaskUpdate} />);
 
 		const doItButton = screen.getByRole("button", { name: /Do it/i });
 		expect(doItButton).toBeInTheDocument();
 	});
 
-	it("shows snooze options when clock button is clicked", () => {
-		render(<TaskItem task={mockTask} />);
+	it("renders with swipeable container", () => {
+		render(<TaskItem task={mockTask} onTaskUpdate={mockOnTaskUpdate} />);
 
-		// Find and click the clock button
-		const clockButtons = screen.getAllByRole("button");
-		const clockButton = clockButtons.find(
-			(button) => !button.textContent?.includes("Do it"),
-		);
-
-		if (clockButton) {
-			fireEvent.click(clockButton);
-		}
-
-		// Should show snooze options
-		expect(screen.getByText("Later")).toBeInTheDocument();
-		expect(screen.getByText("+1w")).toBeInTheDocument();
-		expect(screen.getByText("Wknd")).toBeInTheDocument();
+		// Check that the swipeable area exists
+		const taskItem = screen.getByTestId(`task-item-${mockTask.status}`);
+		expect(taskItem).toBeInTheDocument();
 	});
 
-	it("hides snooze options when clicking outside", () => {
-		render(<TaskItem task={mockTask} />);
+	it("shows snooze modal when snooze button is clicked", async () => {
+		render(<TaskItem task={mockTask} onTaskUpdate={mockOnTaskUpdate} />);
 
-		// Open snooze options
-		const clockButtons = screen.getAllByRole("button");
-		const clockButton = clockButtons.find(
-			(button) => !button.textContent?.includes("Do it"),
-		);
+		// Find the snooze button in the background layer
+		const snoozeButtons = screen.getAllByRole("button");
+		const snoozeButton = snoozeButtons.find((button) => {
+			// Check if this button contains a clock icon
+			const svg = button.querySelector("svg");
+			return svg?.classList.contains("lucide-clock");
+		});
 
-		if (clockButton) {
-			fireEvent.click(clockButton);
+		if (snoozeButton) {
+			fireEvent.click(snoozeButton);
+
+			// Wait for modal to appear
+			await waitFor(() => {
+				expect(screen.getByText("Snooze until")).toBeInTheDocument();
+			});
+
+			// Check snooze options are shown
+			expect(screen.getByText("Tomorrow")).toBeInTheDocument();
+			expect(screen.getByText("This weekend")).toBeInTheDocument();
+			expect(screen.getByText("Next week")).toBeInTheDocument();
+			expect(screen.getByText("Select date")).toBeInTheDocument();
 		}
-		expect(screen.getByText("Later")).toBeInTheDocument();
-
-		// Click outside
-		fireEvent.mouseDown(document.body);
-
-		// Should hide snooze options
-		expect(screen.queryByText("Later")).not.toBeInTheDocument();
 	});
 
 	it("renders background image when provided", () => {
-		render(<TaskItem task={mockTask} />);
+		render(<TaskItem task={mockTask} onTaskUpdate={mockOnTaskUpdate} />);
 
 		// The component uses inline styles for the background image
 		const taskContainer = screen.getByText("Test Task").closest(".relative");
@@ -102,10 +123,13 @@ describe("TaskItem", () => {
 	it("renders without image when not provided", () => {
 		const taskWithoutImage = {
 			...mockTask,
-			originalTask: undefined,
+			thumbnail_url: undefined,
+			image_url: undefined,
 		};
 
-		render(<TaskItem task={taskWithoutImage} />);
+		render(
+			<TaskItem task={taskWithoutImage} onTaskUpdate={mockOnTaskUpdate} />,
+		);
 
 		expect(screen.getByText("Test Task")).toBeInTheDocument();
 	});

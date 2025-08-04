@@ -155,7 +155,11 @@ export function TaskList() {
 
 			<div className="space-y-4">
 				{filteredTasks.map((task) => (
-					<TaskItem key={task.id} task={task} />
+					<TaskItem
+						key={task.id}
+						task={task}
+						onTaskUpdate={() => window.location.reload()}
+					/>
 				))}
 
 				{filteredTasks.length === 0 && (

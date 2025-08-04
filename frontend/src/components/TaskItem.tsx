@@ -1,10 +1,15 @@
+"use client";
+
+import { motion, useAnimation, useMotionValue } from "framer-motion";
 import {
 	ArrowRightIcon,
 	ClockIcon,
 	type LucideIcon,
 	MoreHorizontalIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { tasksAPI } from "@/lib/api";
+import { SnoozeModal } from "./SnoozeModal";
 
 interface TaskItemProps {
 	task: {
@@ -19,121 +24,150 @@ interface TaskItemProps {
 		thumbnail_url?: string;
 		image_url?: string;
 	};
+	onTaskUpdate?: () => void;
 }
 
-export function TaskItem({ task }: TaskItemProps) {
-	const [showSnoozeOptions, setShowSnoozeOptions] = useState(false);
-	const snoozeRef = useRef<HTMLDivElement>(null);
-	const Icon = task.icon;
+const SWIPE_THRESHOLD = -100;
+const SWIPE_FULL_THRESHOLD = -200;
 
-	// Get image URL from the task (populated by backend)
+export function TaskItem({ task, onTaskUpdate }: TaskItemProps) {
+	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
+	const Icon = task.icon;
+	const controls = useAnimation();
+	const x = useMotionValue(0);
+
 	const imageUrl = task.thumbnail_url || task.image_url;
-	// Convert relative proxy URL to full URL
 	const fullImageUrl = imageUrl
 		? `${process.env.NEXT_PUBLIC_API_URL}${imageUrl}`
 		: null;
-	// Handle clicks outside the dropdown to close it
-	useEffect(() => {
-		function handleClickOutside(event: MouseEvent) {
-			if (
-				snoozeRef.current &&
-				!(snoozeRef.current as HTMLElement).contains(event.target as Node)
-			) {
-				setShowSnoozeOptions(false);
-			}
+
+	const handleDragEnd = async (
+		_: MouseEvent | TouchEvent | PointerEvent,
+		info: { offset: { x: number }; velocity: { x: number } },
+	) => {
+		const offset = info.offset.x;
+		const velocity = info.velocity.x;
+
+		// Gmail-style behavior: either trigger action or snap back
+		if (
+			offset < SWIPE_FULL_THRESHOLD ||
+			(offset < SWIPE_THRESHOLD && velocity < -500)
+		) {
+			// Trigger snooze action
+			setShowSnoozeModal(true);
+			await controls.start({ x: 0 });
+		} else {
+			// Always snap back to closed position
+			await controls.start({ x: 0 });
 		}
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
-	}, []);
-	const handleSnooze = (option: string) => {
-		console.log(`Task snoozed until: ${option}`);
-		setShowSnoozeOptions(false);
-		// Here you would typically update the task's due date based on the option
 	};
+
+	const handleSnoozeClick = () => {
+		setShowSnoozeModal(true);
+		controls.start({ x: 0 });
+	};
+
+	const handleSnooze = async (date: Date) => {
+		try {
+			await tasksAPI.updateTask(task.id, {
+				status: "snoozed",
+				snoozed_until: date.toISOString(),
+			});
+			if (onTaskUpdate) {
+				onTaskUpdate();
+			}
+		} catch (error) {
+			console.error("Failed to snooze task:", error);
+		}
+	};
+
 	return (
-		<div
-			className="bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow relative overflow-hidden"
-			data-testid={`task-item-${task.status}`}
-			data-task-id={task.id}
-		>
-			{/* Background circular image - only show if we have an image URL */}
-			{fullImageUrl && (
-				<div className="absolute right-0 top-0 transform translate-x-1/4 -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none">
-					<div
-						className="w-full h-full rounded-full opacity-60"
-						style={{
-							backgroundImage: `url(${fullImageUrl})`,
-							backgroundSize: "cover",
-							backgroundPosition: "center",
-							filter: "saturate(0.7)",
-						}}
-					/>
-				</div>
-			)}
-			<div className="flex-1 relative z-10">
-				<div className="flex items-center mb-2">
-					<Icon size={16} className="text-orange-400 mr-1.5" />
-					<span className="text-sm font-medium text-gray-500">
-						{task.category}
-					</span>
-				</div>
-				<h3 className="text-base font-medium text-gray-800">{task.title}</h3>
-				{task.description && (
-					<p className="text-sm text-gray-500 mt-1 line-clamp-2">
-						{task.description}
-					</p>
-				)}
-				{/* Main action row - fixed layout */}
-				<div className="flex items-center justify-between mt-3">
+		<>
+			<div
+				className="relative overflow-hidden rounded-lg"
+				data-testid={`task-item-${task.status}`}
+				data-task-id={task.id}
+			>
+				{/* Background snooze action */}
+				<div className="absolute inset-0 bg-orange-500 flex items-center justify-end pr-6 rounded-lg">
 					<button
 						type="button"
-						className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0"
+						onClick={handleSnoozeClick}
+						className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
 					>
-						<ArrowRightIcon size={16} className="mr-1" />
-						Do it{" "}
-						<span className="ml-1 opacity-80 text-xs">
-							· {task.estimatedTime}
-						</span>
+						<ClockIcon size={24} className="text-white" />
 					</button>
-					<div className="flex items-center space-x-2">
-						<div className="relative" ref={snoozeRef}>
-							{!showSnoozeOptions ? (
-								<button
-									type="button"
-									className="p-2 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full"
-									onClick={() => setShowSnoozeOptions(true)}
-								>
-									<ClockIcon size={18} />
-								</button>
-							) : (
-								<div className="flex space-x-1.5">
-									{["Later", "+1w", "Wknd"].map((option, index) => (
-										<button
-											type="button"
-											key={option}
-											className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium hover:bg-orange-200 transition-all transform animate-in fade-in zoom-in duration-200"
-											style={{
-												animationDelay: `${index * 50}ms`,
-											}}
-											onClick={() => handleSnooze(option)}
-										>
-											{option}
-										</button>
-									))}
-								</div>
-							)}
-						</div>
-						<button
-							type="button"
-							className="p-2 text-gray-400 hover:text-gray-600 flex-shrink-0"
-						>
-							<MoreHorizontalIcon size={18} />
-						</button>
-					</div>
 				</div>
+
+				{/* Main swipeable content */}
+				<motion.div
+					drag="x"
+					dragConstraints={{ left: SWIPE_FULL_THRESHOLD, right: 0 }}
+					dragElastic={0.2}
+					onDragEnd={handleDragEnd}
+					animate={controls}
+					style={{ x }}
+					className="relative bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow cursor-grab active:cursor-grabbing"
+				>
+					{/* Background circular image */}
+					{fullImageUrl && (
+						<div className="absolute right-0 top-0 transform translate-x-1/4 -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none">
+							<div
+								className="w-full h-full rounded-full opacity-60"
+								style={{
+									backgroundImage: `url(${fullImageUrl})`,
+									backgroundSize: "cover",
+									backgroundPosition: "center",
+									filter: "saturate(0.7)",
+								}}
+							/>
+						</div>
+					)}
+
+					<div className="flex-1 relative z-10">
+						<div className="flex items-center mb-2">
+							<Icon size={16} className="text-orange-400 mr-1.5" />
+							<span className="text-sm font-medium text-gray-500">
+								{task.category}
+							</span>
+						</div>
+						<h3 className="text-base font-medium text-gray-800">
+							{task.title}
+						</h3>
+						{task.description && (
+							<p className="text-sm text-gray-500 mt-1 line-clamp-2">
+								{task.description}
+							</p>
+						)}
+
+						{/* Main action row */}
+						<div className="flex items-center justify-between mt-3">
+							<button
+								type="button"
+								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0"
+							>
+								<ArrowRightIcon size={16} className="mr-1" />
+								Do it{" "}
+								<span className="ml-1 opacity-80 text-xs">
+									· {task.estimatedTime}
+								</span>
+							</button>
+							<button
+								type="button"
+								className="p-2 text-gray-400 hover:text-gray-600 flex-shrink-0"
+							>
+								<MoreHorizontalIcon size={18} />
+							</button>
+						</div>
+					</div>
+				</motion.div>
 			</div>
-		</div>
+
+			<SnoozeModal
+				isOpen={showSnoozeModal}
+				onClose={() => setShowSnoozeModal(false)}
+				onSnooze={handleSnooze}
+			/>
+		</>
 	);
 }
