@@ -69,9 +69,9 @@ export interface Task {
 	// Enhanced fields
 	location?: Location;
 	content?: TaskContent;
-	metrics?: Record<string, any>;
+	metrics?: Record<string, unknown>;
 	tags?: string[];
-	snooze_options?: Record<string, any>;
+	snooze_options?: Record<string, unknown>;
 }
 
 export interface TaskCreate {

@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type ShoppingListItem, type Task, tasksAPI } from "@/lib/api";
@@ -261,12 +262,7 @@ export default function TaskDetailPage() {
 									<TabsContent value="guide" className="mt-6">
 										<h3 className="font-semibold text-lg mb-4">Steps</h3>
 										<div className="prose prose-sm max-w-none">
-											{/* biome-ignore lint/security/noDangerouslySetInnerHtml: Markdown content from backend is sanitized */}
-											<div
-												dangerouslySetInnerHTML={{
-													__html: task.content.markdown,
-												}}
-											/>
+											<ReactMarkdown>{task.content.markdown}</ReactMarkdown>
 										</div>
 
 										{task.content.images && task.content.images.length > 0 && (

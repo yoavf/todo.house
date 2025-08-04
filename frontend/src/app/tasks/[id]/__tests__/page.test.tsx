@@ -175,7 +175,9 @@ describe("TaskDetailPage", () => {
 				button.querySelector('[class*="clock"]') !== null,
 		);
 		expect(snoozeButton).toBeDefined();
-		fireEvent.click(snoozeButton!);
+		if (snoozeButton) {
+			fireEvent.click(snoozeButton);
+		}
 
 		await waitFor(() => {
 			expect(tasksAPI.snoozeTask).toHaveBeenCalledWith(1, "tomorrow");
