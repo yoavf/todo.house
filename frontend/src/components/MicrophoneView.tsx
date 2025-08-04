@@ -48,6 +48,9 @@ export function MicrophoneView({
 				setError(null);
 			})
 			.catch((err) => {
+				// Ensure we stop listening on error to prevent any leaks
+				SpeechRecognition.stopListening();
+
 				if (err.message.includes("not-allowed")) {
 					setError(
 						"Microphone access denied. Please allow microphone permissions and try again.",
@@ -197,6 +200,24 @@ export function MicrophoneView({
 					{error && (
 						<div className="mt-4 p-3 bg-red-500/20 rounded-lg">
 							<p className="text-red-200 text-sm">{error}</p>
+							<button
+								type="button"
+								className="mt-2 text-xs text-red-300 underline"
+								onClick={() => {
+									setError(null);
+									SpeechRecognition.startListening({
+										continuous: true,
+										language: "en-US",
+									}).catch((err) => {
+										SpeechRecognition.stopListening();
+										setError(
+											"Failed to start speech recognition. Please try again.",
+										);
+									});
+								}}
+							>
+								Try again
+							</button>
 						</div>
 					)}
 					{!error && !transcript && (
