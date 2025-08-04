@@ -1,5 +1,8 @@
 import { defaultLocale, isSupportedLocale, type Locale } from "@/i18n/config";
 
+// Re-export defaultLocale for convenience
+export { defaultLocale };
+
 interface ParsedLocale {
 	locale: string;
 	quality: number;
@@ -70,4 +73,56 @@ export function detectLocaleFromHeader(acceptLanguageHeader?: string): Locale {
 export function detectLocale(request: Request): Locale {
 	const acceptLanguage = request.headers.get("accept-language");
 	return detectLocaleFromHeader(acceptLanguage || undefined);
+}
+
+/**
+ * Enhanced locale detection with detailed result information
+ */
+export function detectLocaleWithMetadata(acceptLanguageHeader?: string): {
+	locale: Locale;
+	source: "header" | "default";
+	originalHeader?: string;
+} {
+	if (!acceptLanguageHeader) {
+		return {
+			locale: defaultLocale,
+			source: "default",
+		};
+	}
+
+	try {
+		const parsedLocales = parseAcceptLanguageHeader(acceptLanguageHeader);
+		
+		// First, try to find exact matches (including region codes)
+		for (const { locale } of parsedLocales) {
+			const normalizedLocale = locale.toLowerCase();
+			if (isSupportedLocale(normalizedLocale)) {
+				return {
+					locale: normalizedLocale,
+					source: "header",
+					originalHeader: acceptLanguageHeader,
+				};
+			}
+		}
+
+		// Then, try to match by language code only
+		for (const { locale } of parsedLocales) {
+			const languageCode = extractLanguageCode(locale);
+			if (isSupportedLocale(languageCode)) {
+				return {
+					locale: languageCode,
+					source: "header",
+					originalHeader: acceptLanguageHeader,
+				};
+			}
+		}
+	} catch (error) {
+		console.warn("Failed to parse Accept-Language header:", error);
+	}
+
+	return {
+		locale: defaultLocale,
+		source: "default",
+		originalHeader: acceptLanguageHeader,
+	};
 }
