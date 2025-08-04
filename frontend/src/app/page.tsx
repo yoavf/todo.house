@@ -10,6 +10,7 @@ import { TabNavigation } from "@/components/TabNavigation";
 import { TaskList } from "@/components/TaskList";
 import { TypingView } from "@/components/TypingView";
 import { TaskProvider, useTaskContext } from "@/contexts/TaskContext";
+import { useScrollBounce } from "@/hooks/useScrollBounce";
 import type { ImageAnalysisResponse, TaskCreate } from "@/lib/api";
 import { tasksAPI } from "@/lib/api";
 
@@ -21,6 +22,12 @@ function HomePageContent() {
 	const [showTyping, setShowTyping] = useState(false);
 	const [showCamera, setShowCamera] = useState(false);
 	const { triggerRefetch } = useTaskContext();
+
+	// Add scroll bounce effect
+	const bounceState = useScrollBounce({
+		threshold: 5,
+		duration: 300,
+	});
 
 	const handleTasksGenerated = (response: ImageAnalysisResponse) => {
 		setAnalysisResponse(response);
@@ -60,7 +67,18 @@ function HomePageContent() {
 
 	return (
 		<div className="w-full min-h-screen bg-gray-50">
-			<div className="max-w-md mx-auto px-4">
+			<div
+				className={`max-w-md mx-auto px-4 transition-transform duration-300 ease-out ${
+					bounceState.isBouncingTop
+						? "bounce-top"
+						: bounceState.isBouncingBottom
+							? "bounce-bottom"
+							: ""
+				}`}
+				style={{
+					transform: bounceState.transform,
+				}}
+			>
 				<div className="sticky top-0 bg-gray-50 z-20 pt-6 pb-4">
 					<Header />
 					<TabNavigation />

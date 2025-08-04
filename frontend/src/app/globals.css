@@ -64,6 +64,39 @@ body {
 	animation: animate-in 0.3s ease-out;
 }
 
+/* Scroll bounce animations */
+@keyframes bounce-top {
+	0% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(15px);
+	}
+	100% {
+		transform: translateY(0);
+	}
+}
+
+@keyframes bounce-bottom {
+	0% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-15px);
+	}
+	100% {
+		transform: translateY(0);
+	}
+}
+
+.bounce-top {
+	animation: bounce-top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.bounce-bottom {
+	animation: bounce-bottom 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 /* Microphone recording animations */
 @keyframes ping-slow {
 	0% {
