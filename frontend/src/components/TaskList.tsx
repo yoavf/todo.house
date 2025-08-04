@@ -10,7 +10,8 @@ import {
 	TreesIcon,
 	WrenchIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTaskContext } from "@/contexts/TaskContext";
 import { useTasks } from "@/hooks/useTasks";
 import type { Task, TaskType } from "@/lib/api";
 import { TaskItem } from "./TaskItem";
@@ -49,14 +50,8 @@ function mapTaskToUI(task: Task) {
 	});
 
 	// Map status
-	let status: "do-next" | "later" | "suggested" = "do-next";
-	if (task.source === "ai_generated" && !task.completed) {
-		status = "suggested";
-	} else if (task.status === "snoozed") {
-		status = "later";
-	} else if (!task.completed) {
-		status = "do-next";
-	}
+	const status: "do-next" | "later" =
+		task.status === "snoozed" ? "later" : "do-next";
 
 	return {
 		id: task.id,
@@ -73,10 +68,16 @@ function mapTaskToUI(task: Task) {
 }
 
 export function TaskList() {
-	const [activeTab, setActiveTab] = useState<
-		"do-next" | "later" | "suggested" | "all"
-	>("do-next");
+	const [activeTab, setActiveTab] = useState<"do-next" | "later" | "all">(
+		"do-next",
+	);
 	const { tasks, loading, error, refetch } = useTasks();
+	const { setRefetchHandler } = useTaskContext();
+
+	useEffect(() => {
+		setRefetchHandler(refetch);
+		return () => setRefetchHandler(null);
+	}, [refetch, setRefetchHandler]);
 
 	if (loading) {
 		return (
@@ -128,17 +129,6 @@ export function TaskList() {
 					onClick={() => setActiveTab("later")}
 				>
 					Later
-				</button>
-				<button
-					type="button"
-					className={`py-2 px-4 text-sm font-medium ${
-						activeTab === "suggested"
-							? "text-orange-500 border-b-2 border-orange-500"
-							: "text-gray-500 hover:text-gray-700"
-					}`}
-					onClick={() => setActiveTab("suggested")}
-				>
-					Suggested
 				</button>
 				<button
 					type="button"
