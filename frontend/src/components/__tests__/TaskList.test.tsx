@@ -6,11 +6,14 @@ import type { Task } from "@/lib/api";
 import { TaskList } from "../TaskList";
 
 // Mock next/navigation
+const mockPush = jest.fn();
+const mockUsePathname = jest.fn(() => "/");
 jest.mock("next/navigation", () => ({
 	useRouter: () => ({
-		push: jest.fn(),
+		push: mockPush,
 		back: jest.fn(),
 	}),
+	usePathname: () => mockUsePathname(),
 }));
 
 // Mock the useTasks hook
@@ -79,6 +82,8 @@ describe("TaskList", () => {
 
 	beforeEach(() => {
 		jest.clearAllMocks();
+		mockPush.mockClear();
+		mockUsePathname.mockReturnValue("/");
 		mockUseTasks.mockReturnValue(getMockTasksState());
 	});
 
@@ -113,7 +118,6 @@ describe("TaskList", () => {
 	});
 
 	it("renders tasks with correct categories", async () => {
-		const user = userEvent.setup();
 		render(
 			<TaskProvider>
 				<TaskList />
@@ -124,14 +128,15 @@ describe("TaskList", () => {
 		expect(screen.getByText("Fix leaking faucet")).toBeInTheDocument();
 		expect(screen.getByText("Plumbing")).toBeInTheDocument();
 
-		// Switch to All tab to see all tasks
-		await user.click(screen.getByRole("button", { name: "All" }));
+		// Clean gutters is also in do-next tab
+		expect(screen.getByText("Clean gutters")).toBeInTheDocument();
+		expect(screen.getByText("Outdoor")).toBeInTheDocument();
 
-		expect(screen.getByText("Replace light bulbs")).toBeInTheDocument();
-		expect(screen.getByText("Electrical")).toBeInTheDocument();
+		// Replace light bulbs is in later/snoozed tab, not visible by default
+		expect(screen.queryByText("Replace light bulbs")).not.toBeInTheDocument();
 	});
 
-	it("filters tasks by tab", async () => {
+	it("navigates to correct URLs when tabs are clicked", async () => {
 		const user = userEvent.setup();
 		render(
 			<TaskProvider>
@@ -144,28 +149,28 @@ describe("TaskList", () => {
 		expect(screen.queryByText("Replace light bulbs")).not.toBeInTheDocument();
 		expect(screen.getByText("Clean gutters")).toBeInTheDocument(); // AI generated now goes to do-next
 
-		// Later tab - should show snoozed tasks
+		// Click Later tab - should navigate to /snoozed
 		await user.click(screen.getByRole("button", { name: "Later" }));
-		expect(screen.queryByText("Fix leaking faucet")).not.toBeInTheDocument();
-		expect(screen.getByText("Replace light bulbs")).toBeInTheDocument();
-		expect(screen.queryByText("Clean gutters")).not.toBeInTheDocument();
+		expect(mockPush).toHaveBeenCalledWith("/snoozed");
 
-		// All tab - should show all tasks
+		// Click All tab - should navigate to /tasks
 		await user.click(screen.getByRole("button", { name: "All" }));
-		expect(screen.getByText("Fix leaking faucet")).toBeInTheDocument();
-		expect(screen.getByText("Replace light bulbs")).toBeInTheDocument();
-		expect(screen.getByText("Clean gutters")).toBeInTheDocument();
+		expect(mockPush).toHaveBeenCalledWith("/tasks");
+
+		// Click Do next tab - should navigate to /
+		await user.click(screen.getByRole("button", { name: "Do next" }));
+		expect(mockPush).toHaveBeenCalledWith("/");
 	});
 
-	it("shows all tasks when All tab is selected", async () => {
-		const user = userEvent.setup();
+	it("shows all tasks when on /tasks route", () => {
+		// Mock the pathname to be /tasks
+		mockUsePathname.mockReturnValue("/tasks");
+
 		render(
 			<TaskProvider>
 				<TaskList />
 			</TaskProvider>,
 		);
-
-		await user.click(screen.getByRole("button", { name: "All" }));
 
 		// Check that all tasks are displayed
 		expect(screen.getByText("Fix leaking faucet")).toBeInTheDocument();
@@ -185,15 +190,15 @@ describe("TaskList", () => {
 		expect(screen.getByText("No tasks in this category")).toBeInTheDocument();
 	});
 
-	it("maps task types to correct icons", async () => {
-		const user = userEvent.setup();
+	it("maps task types to correct icons", () => {
+		// Mock the pathname to be /tasks to see all tasks
+		mockUsePathname.mockReturnValue("/tasks");
+
 		render(
 			<TaskProvider>
 				<TaskList />
 			</TaskProvider>,
 		);
-
-		await user.click(screen.getByRole("button", { name: "All" }));
 
 		// Check that tasks are rendered with their categories
 		expect(screen.getByText("Plumbing")).toBeInTheDocument();
