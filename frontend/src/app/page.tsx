@@ -8,17 +8,18 @@ import { Header } from "@/components/Header";
 import { MicrophoneView } from "@/components/MicrophoneView";
 import { TaskList } from "@/components/TaskList";
 import { TypingView } from "@/components/TypingView";
+import { TaskProvider, useTaskContext } from "@/contexts/TaskContext";
 import type { ImageAnalysisResponse, TaskCreate } from "@/lib/api";
 import { tasksAPI } from "@/lib/api";
 
-export default function HomePage() {
+function HomePageContent() {
 	const [analysisResponse, setAnalysisResponse] =
 		useState<ImageAnalysisResponse | null>(null);
 	const [showGeneratedTasks, setShowGeneratedTasks] = useState(false);
 	const [showMicrophone, setShowMicrophone] = useState(false);
 	const [showTyping, setShowTyping] = useState(false);
 	const [showCamera, setShowCamera] = useState(false);
-	const [refreshKey, setRefreshKey] = useState(0);
+	const { triggerRefetch } = useTaskContext();
 
 	const handleTasksGenerated = (response: ImageAnalysisResponse) => {
 		setAnalysisResponse(response);
@@ -29,8 +30,8 @@ export default function HomePage() {
 		// Close the modal and trigger a refresh of the task list
 		setShowGeneratedTasks(false);
 		setAnalysisResponse(null);
-		setRefreshKey((prev) => prev + 1); // Force TaskList to refetch
-	}, []);
+		triggerRefetch();
+	}, [triggerRefetch]);
 
 	const handleKeyboardClick = () => {
 		setShowTyping(true);
@@ -47,7 +48,7 @@ export default function HomePage() {
 	const handleManualTaskCreated = async (task: TaskCreate) => {
 		try {
 			await tasksAPI.createTask(task);
-			setRefreshKey((prev) => prev + 1); // Force TaskList to refetch
+			triggerRefetch();
 		} catch (error) {
 			console.error("Failed to create task:", error);
 		}
@@ -60,7 +61,7 @@ export default function HomePage() {
 		<div className="w-full min-h-screen bg-gray-50">
 			<div className="max-w-md mx-auto px-4 py-6">
 				<Header />
-				<TaskList key={refreshKey} />
+				<TaskList />
 			</div>
 
 			{!isFullScreenViewOpen && (
@@ -75,7 +76,7 @@ export default function HomePage() {
 				isOpen={showMicrophone}
 				onClose={() => setShowMicrophone(false)}
 				onTaskCreated={() => {
-					setRefreshKey((prev) => prev + 1);
+					triggerRefetch();
 				}}
 			/>
 
@@ -98,5 +99,13 @@ export default function HomePage() {
 				onTasksCreated={handleTasksCreated}
 			/>
 		</div>
+	);
+}
+
+export default function HomePage() {
+	return (
+		<TaskProvider>
+			<HomePageContent />
+		</TaskProvider>
 	);
 }
