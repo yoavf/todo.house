@@ -13,39 +13,14 @@ class TestHomeMaintenancePromptTemplate:
 
     def setup_method(self):
         """Set up test fixtures before each test method."""
-        self.template_content = """You are a home maintenance expert analyzing an image to identify maintenance tasks.
-
-Analyze this image and identify specific, actionable home maintenance tasks based on what you observe.
-
-For each task you identify:
-1. Provide a clear, specific title (max 50 characters)
-2. Include a detailed description explaining what needs to be done and why
-3. Assign a priority level (high, medium, low) based on urgency and safety
-4. Suggest a category (cleaning, repair, maintenance, safety, etc.)
-5. Assign one or more task_types from this list that best describe the task:
-   - interior: Tasks related to inside the home
-   - exterior: Tasks related to outside the home
-   - electricity: Electrical work or issues
-   - plumbing: Plumbing related tasks
-   - appliances: Appliance maintenance or repair
-   - maintenance: Regular upkeep and preventive care
-   - repair: Fixing broken or damaged items
-
-Focus on:
-- Visible maintenance needs (dirt, wear, damage)
-- Safety concerns
-- Preventive maintenance opportunities
-- Seasonal considerations
-
-Include a reasoning field for each task explaining why it was identified.
-
-For each task, provide a confidence score (0.0 to 1.0) indicating how certain you are:
-- 0.8-1.0: Very confident - clear visual evidence of the issue
-- 0.5-0.7: Moderately confident - likely issue but some uncertainty
-- 0.2-0.4: Low confidence - possible issue but hard to determine from image
-
-If you cannot identify any maintenance tasks, provide an empty tasks array with an explanation in the analysis_summary."""
-
+        # Load the actual prompt file
+        import os
+        prompt_path = os.path.join(
+            os.path.dirname(__file__),
+            '../../app/ai/prompts/home_maintenance_analysis.txt'
+        )
+        with open(prompt_path, 'r') as f:
+            self.template_content = f.read()
     def test_prompt_template_structure_validation(self):
         """Test that the prompt template has the required structural elements."""
         assert "You are a home maintenance expert" in self.template_content
