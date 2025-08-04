@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { TaskProvider } from "@/contexts/TaskContext";
 import { useTasks } from "@/hooks/useTasks";
 import type { Task } from "@/lib/api";
 import { TaskList } from "../TaskList";
@@ -86,7 +87,11 @@ describe("TaskList", () => {
 			getMockTasksState({ tasks: [], loading: true }),
 		);
 
-		const { container } = render(<TaskList />);
+		const { container } = render(
+			<TaskProvider>
+				<TaskList />
+			</TaskProvider>,
+		);
 		const spinner = container.querySelector(".animate-spin");
 		expect(spinner).toHaveAttribute("data-testid", "loading-spinner");
 		expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
@@ -97,7 +102,11 @@ describe("TaskList", () => {
 			getMockTasksState({ tasks: [], error: "Failed to fetch tasks" }),
 		);
 
-		render(<TaskList />);
+		render(
+			<TaskProvider>
+				<TaskList />
+			</TaskProvider>,
+		);
 
 		expect(screen.getByText("Failed to load tasks")).toBeInTheDocument();
 		expect(screen.getByText("Failed to fetch tasks")).toBeInTheDocument();
@@ -105,7 +114,11 @@ describe("TaskList", () => {
 
 	it("renders tasks with correct categories", async () => {
 		const user = userEvent.setup();
-		render(<TaskList />);
+		render(
+			<TaskProvider>
+				<TaskList />
+			</TaskProvider>,
+		);
 
 		// First task is visible in do-next tab
 		expect(screen.getByText("Fix leaking faucet")).toBeInTheDocument();
@@ -120,24 +133,22 @@ describe("TaskList", () => {
 
 	it("filters tasks by tab", async () => {
 		const user = userEvent.setup();
-		render(<TaskList />);
+		render(
+			<TaskProvider>
+				<TaskList />
+			</TaskProvider>,
+		);
 
-		// Do next tab (default) - should show active tasks
+		// Do next tab (default) - should show active tasks including AI generated
 		expect(screen.getByText("Fix leaking faucet")).toBeInTheDocument();
 		expect(screen.queryByText("Replace light bulbs")).not.toBeInTheDocument();
-		expect(screen.queryByText("Clean gutters")).not.toBeInTheDocument();
+		expect(screen.getByText("Clean gutters")).toBeInTheDocument(); // AI generated now goes to do-next
 
 		// Later tab - should show snoozed tasks
 		await user.click(screen.getByRole("button", { name: "Later" }));
 		expect(screen.queryByText("Fix leaking faucet")).not.toBeInTheDocument();
 		expect(screen.getByText("Replace light bulbs")).toBeInTheDocument();
 		expect(screen.queryByText("Clean gutters")).not.toBeInTheDocument();
-
-		// Suggested tab - should show AI generated tasks
-		await user.click(screen.getByRole("button", { name: "Suggested" }));
-		expect(screen.queryByText("Fix leaking faucet")).not.toBeInTheDocument();
-		expect(screen.queryByText("Replace light bulbs")).not.toBeInTheDocument();
-		expect(screen.getByText("Clean gutters")).toBeInTheDocument();
 
 		// All tab - should show all tasks
 		await user.click(screen.getByRole("button", { name: "All" }));
@@ -148,7 +159,11 @@ describe("TaskList", () => {
 
 	it("shows all tasks when All tab is selected", async () => {
 		const user = userEvent.setup();
-		render(<TaskList />);
+		render(
+			<TaskProvider>
+				<TaskList />
+			</TaskProvider>,
+		);
 
 		await user.click(screen.getByRole("button", { name: "All" }));
 
@@ -161,14 +176,22 @@ describe("TaskList", () => {
 	it("shows empty state when no tasks in category", () => {
 		mockUseTasks.mockReturnValue(getMockTasksState({ tasks: [] }));
 
-		render(<TaskList />);
+		render(
+			<TaskProvider>
+				<TaskList />
+			</TaskProvider>,
+		);
 
 		expect(screen.getByText("No tasks in this category")).toBeInTheDocument();
 	});
 
 	it("maps task types to correct icons", async () => {
 		const user = userEvent.setup();
-		render(<TaskList />);
+		render(
+			<TaskProvider>
+				<TaskList />
+			</TaskProvider>,
+		);
 
 		await user.click(screen.getByRole("button", { name: "All" }));
 
@@ -179,7 +202,11 @@ describe("TaskList", () => {
 	});
 
 	it("shows link to all tasks page", () => {
-		render(<TaskList />);
+		render(
+			<TaskProvider>
+				<TaskList />
+			</TaskProvider>,
+		);
 
 		const allTasksLink = screen.getByText("All tasks >");
 		expect(allTasksLink).toBeInTheDocument();
