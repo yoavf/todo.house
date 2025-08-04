@@ -1,14 +1,8 @@
 "use client";
 
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import {
-	CheckIcon,
-	ChevronLeftIcon,
-	ChevronRightIcon,
-	CircleIcon,
-} from "lucide-react";
+import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
 import type * as React from "react";
-import { useLocale } from "@/hooks/useLocale";
 import { cn } from "@/lib/utils";
 
 function DropdownMenu({
@@ -211,8 +205,7 @@ function DropdownMenuSubTrigger({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
 	inset?: boolean;
 }) {
-	const { isRTL } = useLocale();
-	const ChevronIcon = isRTL ? ChevronLeftIcon : ChevronRightIcon;
+	// Use CSS mirroring for RTL instead of conditional icons
 
 	return (
 		<DropdownMenuPrimitive.SubTrigger
@@ -225,7 +218,7 @@ function DropdownMenuSubTrigger({
 			{...props}
 		>
 			{children}
-			<ChevronIcon className="ms-auto size-4" />
+			<ChevronRightIcon className="ms-auto size-4 rtl:scale-x-[-1]" />
 		</DropdownMenuPrimitive.SubTrigger>
 	);
 }

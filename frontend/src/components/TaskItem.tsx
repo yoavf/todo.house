@@ -2,7 +2,6 @@
 
 import { motion, useAnimation, useMotionValue } from "framer-motion";
 import {
-	ArrowLeftIcon,
 	ArrowRightIcon,
 	ClockIcon,
 	type LucideIcon,
@@ -90,8 +89,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	const { mirrorIcon, getSwipeDirection } = useRTLClasses();
 	const t = useTranslations();
 
-	// Get appropriate arrow icon for RTL
-	const ArrowIcon = isRTL ? ArrowLeftIcon : ArrowRightIcon;
+	// Use CSS mirroring for RTL instead of conditional icons
 
 	const imageUrl = task.thumbnail_url || task.image_url;
 	const fullImageUrl = imageUrl
@@ -224,9 +222,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 				data-task-id={task.id}
 			>
 				{/* Background snooze action - RTL aware positioning */}
-				<div
-					className={`absolute inset-0 bg-orange-500 flex items-center rounded-lg ${isRTL ? "justify-start ps-6" : "justify-end pe-6"}`}
-				>
+				<div className="absolute inset-0 bg-orange-500 flex items-center rounded-lg justify-end rtl:justify-start pe-6 rtl:pe-0 rtl:ps-6">
 					<button
 						type="button"
 						onClick={handleSnoozeClick}
@@ -271,9 +267,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 				>
 					{/* Background circular image - RTL aware positioning */}
 					{fullImageUrl && (
-						<div
-							className={`absolute top-0 transform -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none ${isRTL ? "start-0 -translate-x-1/4" : "end-0 translate-x-1/4"}`}
-						>
+						<div className="absolute top-0 transform -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none end-0 translate-x-1/4 rtl:end-auto rtl:start-0 rtl:-translate-x-1/4">
 							<div
 								className="w-full h-full rounded-full opacity-60"
 								style={{
@@ -311,7 +305,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 								disabled={isDoItAnimating}
 								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0 hover:bg-orange-600 transition-colors disabled:opacity-80"
 							>
-								<ArrowIcon size={16} className="me-1" />
+								<ArrowRightIcon size={16} className="me-1 rtl:scale-x-[-1]" />
 								{t("common.doIt")}{" "}
 								<span className="ms-1 opacity-80 text-xs">
 									· {task.estimatedTime}

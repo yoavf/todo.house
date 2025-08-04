@@ -2,7 +2,6 @@
 
 import {
 	ArrowLeft,
-	ArrowRight,
 	Check,
 	Clock,
 	MapPin,
@@ -16,7 +15,7 @@ import ReactMarkdown from "react-markdown";
 import { SnoozeModal } from "@/components/SnoozeModal";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLocale } from "@/hooks/useLocale";
+
 import { type ShoppingListItem, type Task, tasksAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -62,9 +61,7 @@ export default function TaskDetailPage() {
 	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
 	const [snoozeError, setSnoozeError] = useState<string | null>(null);
 
-	// RTL support
-	const { isRTL } = useLocale();
-	const BackArrowIcon = isRTL ? ArrowRight : ArrowLeft;
+	// Use CSS mirroring for RTL instead of conditional icons
 
 	useEffect(() => {
 		const loadTask = async () => {
@@ -144,7 +141,7 @@ export default function TaskDetailPage() {
 				<div className="text-center">
 					<p className="text-red-500 mb-4">{error}</p>
 					<Button onClick={() => router.back()} variant="outline">
-						<BackArrowIcon className="w-4 h-4 me-2" />
+						<ArrowLeft className="w-4 h-4 me-2 rtl:scale-x-[-1]" />
 						Go Back
 					</Button>
 				</div>
@@ -190,7 +187,7 @@ export default function TaskDetailPage() {
 						onClick={() => router.back()}
 						className="me-4 p-2 -ms-2 rounded-full hover:bg-gray-100 transition-colors"
 					>
-						<BackArrowIcon className="w-5 h-5" />
+						<ArrowLeft className="w-5 h-5 rtl:scale-x-[-1]" />
 					</button>
 					<h1 className="text-lg font-semibold">Task Details</h1>
 				</div>
