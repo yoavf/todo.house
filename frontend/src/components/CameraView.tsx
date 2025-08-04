@@ -15,7 +15,7 @@ export function CameraView({
 	onClose,
 	onTasksGenerated,
 }: CameraViewProps) {
-	const [isCapturing] = useState(false);
+	const [isCapturing, setIsCapturing] = useState(false);
 	const [processingState, setProcessingState] = useState<
 		null | "processing" | "results"
 	>(null);
@@ -99,6 +99,12 @@ export function CameraView({
 	const capturePhoto = async () => {
 		if (!videoRef.current || !canvasRef.current) return;
 
+		// Trigger flash effect
+		setIsCapturing(true);
+
+		// Wait a brief moment for the flash effect to show
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
 		const video = videoRef.current;
 		const canvas = canvasRef.current;
 		const context = canvas.getContext("2d");
@@ -112,10 +118,21 @@ export function CameraView({
 		// Draw video frame to canvas
 		context.drawImage(video, 0, 0);
 
+		// Remove flash effect after capture
+		setIsCapturing(false);
+
 		// Convert canvas to blob
 		canvas.toBlob(
 			async (blob) => {
-				if (!blob) return;
+				if (!blob) {
+					// Stop camera stream even if blob creation fails
+					if (stream) {
+						stream.getTracks().forEach((track) => track.stop());
+						setStream(null);
+					}
+					alert("Failed to capture photo. Please try again.");
+					return;
+				}
 
 				// Create a File object from the blob
 				const file = new File([blob], `capture-${Date.now()}.jpg`, {
