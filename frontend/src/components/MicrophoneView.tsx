@@ -1,5 +1,8 @@
 import { LoaderIcon, MicIcon, XIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import SpeechRecognition, {
+	useSpeechRecognition,
+} from "react-speech-recognition";
 import { SpeechResults } from "./SpeechResults";
 
 export interface MicrophoneViewProps {
@@ -20,107 +23,66 @@ export function MicrophoneView({
 	>(null);
 	const [recordedText, setRecordedText] = useState("");
 	const [error, setError] = useState<string | null>(null);
-	const recognitionRef = useRef<SpeechRecognition | null>(null);
-	const [transcript, setTranscript] = useState("");
-	const [isListening, setIsListening] = useState(false);
 
-	// Initialize Web Speech API
+	const {
+		transcript,
+		listening,
+		resetTranscript,
+		browserSupportsSpeechRecognition,
+	} = useSpeechRecognition();
+
+	// Check browser support
 	useEffect(() => {
 		if (!isOpen) return;
 
-		// Check for browser support
-		const SpeechRecognition =
-			window.SpeechRecognition || window.webkitSpeechRecognition;
-
-		if (!SpeechRecognition) {
+		if (!browserSupportsSpeechRecognition) {
 			setError(
 				"Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.",
 			);
 			return;
 		}
 
-		const recognition = new SpeechRecognition();
-		recognition.continuous = true;
-		recognition.interimResults = true;
-		recognition.lang = "en-US";
-
-		recognition.onstart = () => {
-			setIsListening(true);
-			setError(null);
-		};
-
-		recognition.onresult = (event: SpeechRecognitionEvent) => {
-			// Build complete transcript from all results
-			let transcript = "";
-
-			// Each result represents a separate utterance/phrase
-			for (let i = 0; i < event.results.length; i++) {
-				// Use the best alternative (index 0)
-				transcript += event.results[i][0].transcript;
-				// Add space between utterances if this is a final result
-				if (event.results[i].isFinal && i < event.results.length - 1) {
-					transcript += " ";
+		// Start listening when component opens
+		SpeechRecognition.startListening({ continuous: true, language: "en-US" })
+			.then(() => {
+				setError(null);
+			})
+			.catch((err) => {
+				if (err.message.includes("not-allowed")) {
+					setError(
+						"Microphone access denied. Please allow microphone permissions and try again.",
+					);
+				} else {
+					setError("Failed to start speech recognition. Please try again.");
 				}
-			}
+			});
 
-			setTranscript(transcript);
-		};
-
-		recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-			if (event.error === "not-allowed") {
-				setError(
-					"Microphone access denied. Please allow microphone permissions and try again.",
-				);
-			} else {
-				setError(`Speech recognition error: ${event.error}`);
-			}
-			setIsListening(false);
-		};
-
-		recognition.onend = () => {
-			setIsListening(false);
-		};
-
-		recognitionRef.current = recognition;
-
-		// Start listening immediately when opened
-		try {
-			recognition.start();
-		} catch (error) {
-			setError("Failed to start speech recognition. Please try again.");
-		}
-
+		// Cleanup when component closes
 		return () => {
-			if (recognitionRef.current) {
-				try {
-					recognitionRef.current.stop();
-				} catch (error) {
-					// Ignore errors when stopping - component is unmounting
-				}
-			}
+			SpeechRecognition.stopListening();
 		};
-	}, [isOpen]);
+	}, [isOpen, browserSupportsSpeechRecognition]);
 
-	// Start recording timer when component mounts
+	// Reset state when component closes
 	useEffect(() => {
 		if (!isOpen) {
-			// Reset state when closed
 			setIsRecording(true);
 			setRecordingTime(0);
 			setProcessingState(null);
 			setRecordedText("");
-			setTranscript("");
 			setError(null);
-			setIsListening(false);
-			return;
+			resetTranscript();
 		}
+	}, [isOpen, resetTranscript]);
 
-		let interval: NodeJS.Timeout;
-		if (isRecording && isOpen) {
-			interval = setInterval(() => {
-				setRecordingTime((prev) => prev + 1);
-			}, 1000);
-		}
+	// Start recording timer
+	useEffect(() => {
+		if (!isOpen || !isRecording) return;
+
+		const interval = setInterval(() => {
+			setRecordingTime((prev) => prev + 1);
+		}, 1000);
+
 		return () => clearInterval(interval);
 	}, [isRecording, isOpen]);
 
@@ -136,11 +98,7 @@ export function MicrophoneView({
 	const handleProcessRecording = () => {
 		// Stop recording first
 		setIsRecording(false);
-
-		// Stop speech recognition
-		if (recognitionRef.current && isListening) {
-			recognitionRef.current.stop();
-		}
+		SpeechRecognition.stopListening();
 
 		// Use the transcript or show error if empty
 		const finalText = transcript.trim();
@@ -206,7 +164,7 @@ export function MicrophoneView({
 				{/* Recording indicator */}
 				<div className="relative mb-8">
 					{/* Pulsing circles animation */}
-					{isRecording && (
+					{isRecording && listening && (
 						<>
 							<div className="absolute inset-0 rounded-full bg-orange-500/20 animate-ping-slow"></div>
 							<div className="absolute inset-0 -m-4 rounded-full bg-orange-500/10 animate-ping-slower"></div>
@@ -225,7 +183,7 @@ export function MicrophoneView({
 				{/* Prompt text */}
 				<div className="text-center mb-12">
 					<h2 className="text-white text-xl font-medium mb-2">
-						{isListening ? "I'm listening..." : "Preparing microphone..."}
+						{listening ? "I'm listening..." : "Preparing microphone..."}
 					</h2>
 					<p className="text-gray-400 max-w-xs">
 						Say what needs to be done. Feel free to include when, where, and any

@@ -5,7 +5,36 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+
+// Mock react-speech-recognition before importing component
+let mockTranscript = "";
+let mockListening = false;
+let mockBrowserSupport = true;
+const mockStartListening = jest.fn();
+const mockStopListening = jest.fn();
+const mockResetTranscript = jest.fn();
+
+jest.mock("react-speech-recognition", () => ({
+	__esModule: true,
+	default: {
+		startListening: jest.fn(),
+		stopListening: jest.fn(),
+	},
+	useSpeechRecognition: () => ({
+		transcript: mockTranscript,
+		listening: mockListening,
+		resetTranscript: mockResetTranscript,
+		browserSupportsSpeechRecognition: mockBrowserSupport,
+	}),
+}));
+
+// Import component after mocking
 import { MicrophoneView } from "../MicrophoneView";
+
+// Get references to the mocked functions
+const SpeechRecognition = require("react-speech-recognition").default;
+SpeechRecognition.startListening = mockStartListening;
+SpeechRecognition.stopListening = mockStopListening;
 
 // Mock the SpeechResults component
 jest.mock("../SpeechResults", () => ({
@@ -30,98 +59,15 @@ jest.mock("../SpeechResults", () => ({
 	),
 }));
 
-// Mock SpeechRecognition API
-class MockSpeechRecognition {
-	continuous = false;
-	interimResults = false;
-	lang = "";
-	onstart: ((this: SpeechRecognition, ev: Event) => void) | null = null;
-	onresult:
-		| ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void)
-		| null = null;
-	onerror:
-		| ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void)
-		| null = null;
-	onend: ((this: SpeechRecognition, ev: Event) => void) | null = null;
-
-	start() {
-		// Simulate successful start
-		setTimeout(() => {
-			if (this.onstart) {
-				this.onstart.call(
-					this as unknown as SpeechRecognition,
-					new Event("start"),
-				);
-			}
-		}, 10);
-	}
-
-	stop() {
-		if (this.onend) {
-			this.onend.call(this as unknown as SpeechRecognition, new Event("end"));
-		}
-	}
-
-	abort() {
-		this.stop();
-	}
-
-	// Helper method to simulate speech recognition result
-	simulateResult(transcript: string, isFinal = true) {
-		if (this.onresult) {
-			const event = {
-				resultIndex: 0,
-				results: [
-					[
-						{
-							transcript,
-							confidence: 0.9,
-						},
-					],
-				],
-			} as unknown as SpeechRecognitionEvent;
-			Object.defineProperty(event.results[0], "isFinal", {
-				value: isFinal,
-				writable: true,
-			});
-			Object.defineProperty(event.results, "length", {
-				value: 1,
-				writable: true,
-			});
-			act(() => {
-				this.onresult?.call(this as unknown as SpeechRecognition, event);
-			});
-		}
-	}
-
-	// Helper method to simulate error
-	simulateError(error: string) {
-		if (this.onerror) {
-			const event = { error } as unknown as SpeechRecognitionErrorEvent;
-			act(() => {
-				this.onerror?.call(this as unknown as SpeechRecognition, event);
-			});
-		}
-	}
-}
-
 describe("MicrophoneView", () => {
-	let mockSpeechRecognition: MockSpeechRecognition;
-
 	beforeEach(() => {
-		// Setup SpeechRecognition mock
-		mockSpeechRecognition = new MockSpeechRecognition();
-		window.SpeechRecognition = jest
-			.fn()
-			.mockImplementation(
-				() => mockSpeechRecognition,
-			) as unknown as SpeechRecognitionConstructor;
-	});
-
-	afterEach(() => {
-		delete window.SpeechRecognition;
-		delete window.webkitSpeechRecognition;
+		// Reset mocks
 		jest.clearAllMocks();
+		mockTranscript = "";
+		mockListening = false;
+		mockBrowserSupport = true;
+		mockStartListening.mockResolvedValue(undefined);
+		mockStopListening.mockResolvedValue(undefined);
 	});
 
 	it("should not render when isOpen is false", () => {
@@ -139,28 +85,29 @@ describe("MicrophoneView", () => {
 		expect(screen.getByText("Process")).toBeInTheDocument();
 	});
 
-	it("should show listening state when speech recognition starts", async () => {
+	it("should start listening when component opens", async () => {
 		render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
 		await waitFor(() => {
-			expect(screen.getByText("I'm listening...")).toBeInTheDocument();
+			expect(mockStartListening).toHaveBeenCalledWith({
+				continuous: true,
+				language: "en-US",
+			});
 		});
 	});
 
-	it("should display transcript as user speaks", async () => {
+	it("should show listening state when speech recognition starts", async () => {
+		mockListening = true;
 		render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
-		// Wait for recognition to start
-		await waitFor(() => {
-			expect(screen.getByText("I'm listening...")).toBeInTheDocument();
-		});
+		expect(screen.getByText("I'm listening...")).toBeInTheDocument();
+	});
 
-		// Simulate speech recognition
-		mockSpeechRecognition.simulateResult("Clean the kitchen", true);
+	it("should display transcript as user speaks", async () => {
+		mockTranscript = "Clean the kitchen";
+		render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
-		await waitFor(() => {
-			expect(screen.getByText("Clean the kitchen")).toBeInTheDocument();
-		});
+		expect(screen.getByText("Clean the kitchen")).toBeInTheDocument();
 	});
 
 	it("should disable Process button when no transcript", () => {
@@ -170,23 +117,20 @@ describe("MicrophoneView", () => {
 		expect(processButton).toBeDisabled();
 	});
 
-	it("should enable Process button when transcript exists", async () => {
+	it("should enable Process button when transcript exists", () => {
+		mockTranscript = "Buy groceries";
 		render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
-		// Simulate speech recognition
-		mockSpeechRecognition.simulateResult("Buy groceries", true);
-
-		await waitFor(() => {
-			const processButton = screen.getByText("Process");
-			expect(processButton).toBeEnabled();
-		});
+		const processButton = screen.getByText("Process");
+		expect(processButton).toBeEnabled();
 	});
 
 	it("should show error when microphone access is denied", async () => {
-		render(<MicrophoneView isOpen onClose={jest.fn()} />);
+		mockStartListening.mockRejectedValue(
+			new Error("Permission denied: not-allowed"),
+		);
 
-		// Simulate permission denied error
-		mockSpeechRecognition.simulateError("not-allowed");
+		render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
 		await waitFor(() => {
 			expect(screen.getByText(/Microphone access denied/)).toBeInTheDocument();
@@ -194,8 +138,7 @@ describe("MicrophoneView", () => {
 	});
 
 	it("should show error for unsupported browsers", () => {
-		// Remove SpeechRecognition support
-		delete window.SpeechRecognition;
+		mockBrowserSupport = false;
 
 		render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
@@ -204,31 +147,15 @@ describe("MicrophoneView", () => {
 		).toBeInTheDocument();
 	});
 
-	it("should fallback to webkitSpeechRecognition", () => {
-		delete window.SpeechRecognition;
-		window.webkitSpeechRecognition = jest
-			.fn()
-			.mockImplementation(
-				() => mockSpeechRecognition,
-			) as unknown as SpeechRecognitionConstructor;
-
-		render(<MicrophoneView isOpen onClose={jest.fn()} />);
-
-		expect(window.webkitSpeechRecognition).toHaveBeenCalled();
-	});
-
 	it("should process recording and show results", async () => {
+		mockTranscript = "Water the plants";
 		render(<MicrophoneView isOpen onClose={jest.fn()} />);
-
-		// Simulate speech recognition
-		mockSpeechRecognition.simulateResult("Water the plants", true);
-
-		await waitFor(() => {
-			expect(screen.getByText("Process")).toBeEnabled();
-		});
 
 		// Click process button
 		fireEvent.click(screen.getByText("Process"));
+
+		// Should stop listening
+		expect(mockStopListening).toHaveBeenCalled();
 
 		// Should show processing state briefly
 		expect(screen.getByText("Processing your audio")).toBeInTheDocument();
@@ -250,6 +177,8 @@ describe("MicrophoneView", () => {
 
 	it("should call onTaskCreated when task is added from results", async () => {
 		const onTaskCreated = jest.fn();
+		mockTranscript = "Fix the door";
+
 		render(
 			<MicrophoneView
 				isOpen
@@ -258,12 +187,8 @@ describe("MicrophoneView", () => {
 			/>,
 		);
 
-		// Simulate speech and process
-		mockSpeechRecognition.simulateResult("Fix the door", true);
-
-		await waitFor(() => {
-			fireEvent.click(screen.getByText("Process"));
-		});
+		// Process the recording
+		fireEvent.click(screen.getByText("Process"));
 
 		// Wait for results to show
 		await waitFor(() => {
@@ -277,27 +202,30 @@ describe("MicrophoneView", () => {
 	});
 
 	it("should stop recognition when component unmounts", () => {
-		const stopSpy = jest.spyOn(mockSpeechRecognition, "stop");
-
 		const { unmount } = render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
 		unmount();
 
-		expect(stopSpy).toHaveBeenCalled();
+		expect(mockStopListening).toHaveBeenCalled();
 	});
 
 	it("should reset state when closed and reopened", async () => {
 		const { rerender } = render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
 		// Add some transcript
-		mockSpeechRecognition.simulateResult("Test task", true);
-
-		await waitFor(() => {
-			expect(screen.getByText("Test task")).toBeInTheDocument();
-		});
+		mockTranscript = "Test task";
+		rerender(<MicrophoneView isOpen onClose={jest.fn()} />);
 
 		// Close
 		rerender(<MicrophoneView isOpen={false} onClose={jest.fn()} />);
+
+		// Should reset transcript
+		await waitFor(() => {
+			expect(mockResetTranscript).toHaveBeenCalled();
+		});
+
+		// Reset mock transcript for reopen
+		mockTranscript = "";
 
 		// Reopen
 		rerender(<MicrophoneView isOpen onClose={jest.fn()} />);
@@ -305,5 +233,19 @@ describe("MicrophoneView", () => {
 		// Should not have previous transcript
 		expect(screen.queryByText("Test task")).not.toBeInTheDocument();
 		expect(screen.getByText("Process")).toBeDisabled();
+	});
+
+	it("should show recording time", async () => {
+		jest.useFakeTimers();
+		render(<MicrophoneView isOpen onClose={jest.fn()} />);
+
+		// Advance timer by 5 seconds
+		act(() => {
+			jest.advanceTimersByTime(5000);
+		});
+
+		expect(screen.getByText("00:05")).toBeInTheDocument();
+
+		jest.useRealTimers();
 	});
 });
