@@ -50,12 +50,8 @@ function mapTaskToUI(task: Task) {
 	});
 
 	// Map status
-	let status: "do-next" | "later" = "do-next";
-	if (task.status === "snoozed") {
-		status = "later";
-	} else if (!task.completed) {
-		status = "do-next";
-	}
+	const status: "do-next" | "later" =
+		task.status === "snoozed" ? "later" : "do-next";
 
 	return {
 		id: task.id,
