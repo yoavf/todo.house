@@ -50,22 +50,20 @@ export function MicrophoneView({
 		};
 
 		recognition.onresult = (event: SpeechRecognitionEvent) => {
-			// Build the complete transcript from all results
-			let fullTranscript = "";
-			let interimTranscript = "";
+			// Build complete transcript from all results
+			let transcript = "";
 
-			// Go through all results from the beginning
+			// Each result represents a separate utterance/phrase
 			for (let i = 0; i < event.results.length; i++) {
-				const transcript = event.results[i][0].transcript;
-				if (event.results[i].isFinal) {
-					fullTranscript += transcript + " ";
-				} else {
-					interimTranscript += transcript;
+				// Use the best alternative (index 0)
+				transcript += event.results[i][0].transcript;
+				// Add space between utterances if this is a final result
+				if (event.results[i].isFinal && i < event.results.length - 1) {
+					transcript += " ";
 				}
 			}
 
-			// Set the complete transcript (final + interim)
-			setTranscript(fullTranscript + interimTranscript);
+			setTranscript(transcript);
 		};
 
 		recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
