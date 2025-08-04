@@ -16,7 +16,6 @@ from .models import (
 from .database import get_session_dependency, Task as TaskModel, Image as ImageModel
 from .services.task_service import TaskService
 from .services.snooze_service import SnoozeService, SnoozeOption
-from .storage import storage
 from .logging_config import StructuredLogger
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -32,9 +31,7 @@ def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
 
 
 async def populate_task_image_urls(
-    tasks: Sequence[TaskModel], 
-    session: AsyncSession,
-    locale_str: str = "en_US"
+    tasks: Sequence[TaskModel], session: AsyncSession, locale_str: str = "en_US"
 ) -> List[Task]:
     """
     Populate image URLs and snooze options for tasks.
@@ -44,7 +41,7 @@ async def populate_task_image_urls(
     2. Caches storage URLs to avoid duplicate API calls
     3. Calculates snooze options based on locale
     4. Handles database and storage errors gracefully
-    
+
     Args:
         tasks: List of task models from database
         session: Database session
@@ -84,8 +81,7 @@ async def populate_task_image_urls(
         return [Task.model_validate(task) for task in tasks]
 
     # Cache for storage URLs to avoid duplicate calls
-    url_cache: Dict[str, str] = {}
-    
+
     # Calculate snooze options once for all tasks
     snooze_options = SnoozeService.calculate_snooze_options(locale_str=locale_str)
     # Convert datetime objects to ISO strings for JSON serialization
@@ -93,10 +89,10 @@ async def populate_task_image_urls(
     for option, data in snooze_options.items():
         serializable_snooze_options[option.value] = {
             "date": data["date"].isoformat(),
-            "label": data["label"], 
-            "description": data["description"]
+            "label": data["label"],
+            "description": data["description"],
         }
-    
+
     # Convert tasks and populate image URLs and snooze options
     task_models = []
     for task in tasks:
@@ -332,7 +328,9 @@ async def snooze_task(
         # Use predefined snooze option
         try:
             option = SnoozeOption(snooze_request.snooze_option)
-            snooze_until = SnoozeService.get_snooze_date_by_option(option, locale_str=locale)
+            snooze_until = SnoozeService.get_snooze_date_by_option(
+                option, locale_str=locale
+            )
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid snooze option")
     elif snooze_request.snooze_until:
@@ -349,7 +347,7 @@ async def snooze_task(
 
     await session.commit()
     await session.refresh(db_task)
-    
+
     # Return task with snooze options populated
     tasks_with_options = await populate_task_image_urls([db_task], session, locale)
     return tasks_with_options[0]

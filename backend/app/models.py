@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class SnoozeOptionData(TypedDict):
     """Type definition for snooze option data."""
+
     date: datetime
     label: str
     description: str
@@ -255,7 +256,9 @@ class Task(TaskBase):
 
 class SnoozeRequest(BaseModel):
     snooze_until: Optional[datetime] = None
-    snooze_option: Optional[str] = Field(None, description="Predefined snooze option key")
+    snooze_option: Optional[str] = Field(
+        None, description="Predefined snooze option key"
+    )
 
 
 class AITaskCreate(TaskCreate):
