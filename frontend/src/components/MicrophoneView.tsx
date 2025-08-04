@@ -1,5 +1,5 @@
 import { LoaderIcon, MicIcon, XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SpeechRecognition, {
 	useSpeechRecognition,
 } from "react-speech-recognition";
@@ -23,6 +23,8 @@ export function MicrophoneView({
 	>(null);
 	const [recordedText, setRecordedText] = useState("");
 	const [error, setError] = useState<string | null>(null);
+	const [showAutoPauseIndicator, setShowAutoPauseIndicator] = useState(false);
+	const autoPauseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 	const {
 		transcript,
@@ -30,6 +32,37 @@ export function MicrophoneView({
 		resetTranscript,
 		browserSupportsSpeechRecognition,
 	} = useSpeechRecognition();
+
+	// Auto-pause detection: timeout in milliseconds (3 seconds)
+	const AUTO_PAUSE_TIMEOUT = 3000;
+
+	const handleProcessRecording = useCallback(() => {
+		// Clear auto-pause timer
+		if (autoPauseTimerRef.current) {
+			clearTimeout(autoPauseTimerRef.current);
+			autoPauseTimerRef.current = null;
+		}
+		setShowAutoPauseIndicator(false);
+
+		// Stop recording first
+		setIsRecording(false);
+		SpeechRecognition.stopListening();
+
+		// Use the transcript or show error if empty
+		const finalText = transcript.trim();
+		if (!finalText) {
+			setError("No speech detected. Please try again.");
+			return;
+		}
+
+		setRecordedText(finalText);
+		// Start processing
+		setProcessingState("processing");
+		// Simulate processing time
+		setTimeout(() => {
+			setProcessingState("results");
+		}, 500);
+	}, [transcript]);
 
 	// Check browser support
 	useEffect(() => {
@@ -74,7 +107,13 @@ export function MicrophoneView({
 			setProcessingState(null);
 			setRecordedText("");
 			setError(null);
+			setShowAutoPauseIndicator(false);
 			resetTranscript();
+			// Clear auto-pause timer
+			if (autoPauseTimerRef.current) {
+				clearTimeout(autoPauseTimerRef.current);
+				autoPauseTimerRef.current = null;
+			}
 		}
 	}, [isOpen, resetTranscript]);
 
@@ -89,6 +128,54 @@ export function MicrophoneView({
 		return () => clearInterval(interval);
 	}, [isRecording, isOpen]);
 
+	// Auto-pause detection: monitor transcript changes and auto-process after pause
+	useEffect(() => {
+		// Only monitor if we're open, recording, have transcript, and no processing state
+		if (
+			!isOpen ||
+			!isRecording ||
+			!transcript.trim() ||
+			processingState ||
+			error
+		) {
+			// Clear any existing timer
+			if (autoPauseTimerRef.current) {
+				clearTimeout(autoPauseTimerRef.current);
+				autoPauseTimerRef.current = null;
+			}
+			setShowAutoPauseIndicator(false);
+			return;
+		}
+
+		// Clear previous timer if exists
+		if (autoPauseTimerRef.current) {
+			clearTimeout(autoPauseTimerRef.current);
+		}
+
+		// Set new timer for auto-pause detection
+		const timer = setTimeout(() => {
+			// Auto-process the recording after pause
+			handleProcessRecording();
+		}, AUTO_PAUSE_TIMEOUT);
+
+		autoPauseTimerRef.current = timer;
+		setShowAutoPauseIndicator(true);
+
+		// Cleanup timer on unmount or dependency change
+		return () => {
+			if (timer) {
+				clearTimeout(timer);
+			}
+		};
+	}, [
+		transcript,
+		isOpen,
+		isRecording,
+		processingState,
+		error,
+		handleProcessRecording,
+	]);
+
 	// Format recording time as MM:SS
 	const formatTime = (seconds: number) => {
 		const mins = Math.floor(seconds / 60)
@@ -96,27 +183,6 @@ export function MicrophoneView({
 			.padStart(2, "0");
 		const secs = (seconds % 60).toString().padStart(2, "0");
 		return `${mins}:${secs}`;
-	};
-
-	const handleProcessRecording = () => {
-		// Stop recording first
-		setIsRecording(false);
-		SpeechRecognition.stopListening();
-
-		// Use the transcript or show error if empty
-		const finalText = transcript.trim();
-		if (!finalText) {
-			setError("No speech detected. Please try again.");
-			return;
-		}
-
-		setRecordedText(finalText);
-		// Start processing
-		setProcessingState("processing");
-		// Simulate processing time
-		setTimeout(() => {
-			setProcessingState("results");
-		}, 500);
 	};
 
 	if (!isOpen) return null;
@@ -195,6 +261,11 @@ export function MicrophoneView({
 					{transcript && (
 						<div className="mt-4 p-3 bg-white/10 rounded-lg">
 							<p className="text-white text-sm">{transcript}</p>
+							{showAutoPauseIndicator && (
+								<p className="text-orange-300 text-xs mt-2">
+									Auto-processing in 3 seconds if you stop talking...
+								</p>
+							)}
 						</div>
 					)}
 					{error && (
