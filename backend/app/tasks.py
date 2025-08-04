@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Header, Query, Depends
 from typing import List, Optional, Sequence, Dict
-from datetime import datetime
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
@@ -16,6 +15,7 @@ from .models import (
 )
 from .database import get_session_dependency, Task as TaskModel, Image as ImageModel
 from .services.task_service import TaskService
+from .services.snooze_service import SnoozeService, SnoozeOption
 from .logging_config import StructuredLogger
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -31,22 +31,24 @@ def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
 
 
 async def populate_task_image_urls(
-    tasks: Sequence[TaskModel], session: AsyncSession
+    tasks: Sequence[TaskModel], session: AsyncSession, locale_str: str = "en_US"
 ) -> List[Task]:
     """
-    Populate image URLs for tasks that have source_image_id.
+    Populate image URLs and snooze options for tasks.
 
     This function:
     1. Fetches all unique images in a single database query for performance
     2. Caches storage URLs to avoid duplicate API calls
-    3. Handles database and storage errors gracefully
+    3. Calculates snooze options based on locale
+    4. Handles database and storage errors gracefully
 
     Args:
         tasks: List of task models from database
         session: Database session
+        locale_str: Locale string for calculating snooze options
 
     Returns:
-        List of Task models with populated image URLs where available.
+        List of Task models with populated image URLs and snooze options.
         Tasks without images or with errors will be returned without URLs.
 
     Error Handling:
@@ -78,7 +80,20 @@ async def populate_task_image_urls(
         # Return tasks without URLs rather than failing completely
         return [Task.model_validate(task) for task in tasks]
 
-    # Convert tasks and populate image URLs
+    # Cache for storage URLs to avoid duplicate calls
+
+    # Calculate snooze options once for all tasks
+    snooze_options = SnoozeService.calculate_snooze_options(locale_str=locale_str)
+    # Convert datetime objects to ISO strings for JSON serialization
+    serializable_snooze_options = {}
+    for option, data in snooze_options.items():
+        serializable_snooze_options[option.value] = {
+            "date": data["date"].isoformat(),
+            "label": data["label"],
+            "description": data["description"],
+        }
+
+    # Convert tasks and populate image URLs and snooze options
     task_models = []
     for task in tasks:
         task_dict = Task.model_validate(task).model_dump()
@@ -104,6 +119,9 @@ async def populate_task_image_urls(
                 )
                 # Task will be returned without image URLs
 
+        # Add snooze options to all tasks
+        task_dict["snooze_options"] = serializable_snooze_options
+
         task_models.append(Task(**task_dict))
 
     return task_models
@@ -117,6 +135,7 @@ async def get_tasks(
     source: Optional[TaskSource] = Query(
         None, description="Filter by source (manual or ai_generated)"
     ),
+    locale: str = Header("en_US", alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Build query conditions
@@ -133,13 +152,14 @@ async def get_tasks(
     result = await session.execute(query)
     tasks = result.scalars().all()
 
-    # Populate image URLs
-    return await populate_task_image_urls(tasks, session)
+    # Populate image URLs and snooze options
+    return await populate_task_image_urls(tasks, session, locale)
 
 
 @router.get("/active", response_model=List[Task])
 async def get_active_tasks(
     user_uuid: uuid.UUID = Depends(get_user_uuid),
+    locale: str = Header("en_US", alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     query = select(TaskModel).where(
@@ -147,12 +167,13 @@ async def get_active_tasks(
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    return await populate_task_image_urls(tasks, session)
+    return await populate_task_image_urls(tasks, session, locale)
 
 
 @router.get("/snoozed", response_model=List[Task])
 async def get_snoozed_tasks(
     user_uuid: uuid.UUID = Depends(get_user_uuid),
+    locale: str = Header("en_US", alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     query = select(TaskModel).where(
@@ -160,7 +181,7 @@ async def get_snoozed_tasks(
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    return await populate_task_image_urls(tasks, session)
+    return await populate_task_image_urls(tasks, session, locale)
 
 
 @router.post("/", response_model=Task)
@@ -206,6 +227,7 @@ async def create_task(
 async def get_task(
     task_id: int,
     user_uuid: uuid.UUID = Depends(get_user_uuid),
+    locale: str = Header("en_US", alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     query = select(TaskModel).where(
@@ -217,8 +239,8 @@ async def get_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # Populate image URLs for single task
-    tasks_with_urls = await populate_task_image_urls([task], session)
+    # Populate image URLs and snooze options for single task
+    tasks_with_urls = await populate_task_image_urls([task], session, locale)
     return tasks_with_urls[0]
 
 
@@ -288,6 +310,7 @@ async def snooze_task(
     task_id: int,
     snooze_request: SnoozeRequest,
     user_uuid: uuid.UUID = Depends(get_user_uuid),
+    locale: str = Header("en_US", alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     # Get existing task
@@ -300,15 +323,34 @@ async def snooze_task(
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # If no date provided, snooze indefinitely (year 9999)
-    snooze_until = snooze_request.snooze_until or datetime.max
+    # Determine snooze_until date
+    if snooze_request.snooze_option:
+        # Use predefined snooze option
+        try:
+            option = SnoozeOption(snooze_request.snooze_option)
+            snooze_until = SnoozeService.get_snooze_date_by_option(
+                option, locale_str=locale
+            )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid snooze option")
+    elif snooze_request.snooze_until:
+        # Use explicit date
+        snooze_until = snooze_request.snooze_until
+    else:
+        # If no date provided, snooze indefinitely
+        snooze_until = SnoozeService.get_snooze_date_by_option(
+            SnoozeOption.LATER, locale_str=locale
+        )
 
     db_task.status = TaskStatus.SNOOZED
     db_task.snoozed_until = snooze_until
 
     await session.commit()
     await session.refresh(db_task)
-    return db_task
+
+    # Return task with snooze options populated
+    tasks_with_options = await populate_task_image_urls([db_task], session, locale)
+    return tasks_with_options[0]
 
 
 @router.post("/{task_id}/unsnooze", response_model=Task)

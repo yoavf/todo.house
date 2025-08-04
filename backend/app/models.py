@@ -2,11 +2,19 @@ from datetime import datetime
 from enum import Enum
 import logging
 import uuid
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 logger = logging.getLogger(__name__)
+
+
+class SnoozeOptionData(TypedDict):
+    """Type definition for snooze option data."""
+
+    date: datetime
+    label: str
+    description: str
 
 
 class EnhancedFieldsMixin:
@@ -219,6 +227,8 @@ class Task(TaskBase):
     # Image URLs - populated when fetching tasks
     image_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
+    # Snooze options - populated when fetching tasks for responsive UI
+    snooze_options: Optional[Dict[str, SnoozeOptionData]] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -246,6 +256,9 @@ class Task(TaskBase):
 
 class SnoozeRequest(BaseModel):
     snooze_until: Optional[datetime] = None
+    snooze_option: Optional[str] = Field(
+        None, description="Predefined snooze option key"
+    )
 
 
 class AITaskCreate(TaskCreate):
