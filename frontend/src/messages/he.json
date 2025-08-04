@@ -5,17 +5,30 @@
 		"confirm": "אישור",
 		"save": "שמור",
 		"edit": "ערוך",
-		"loading": "טוען..."
+		"loading": "טוען...",
+		"ok": "אישור",
+		"goBack": "חזור",
+		"addTask": "הוסף משימה",
+		"doIt": "בצע",
+		"snooze": "דחה",
+		"unsnooze": "בטל דחייה",
+		"complete": "השלם",
+		"selectDate": "בחר תאריך"
 	},
 	"dialogs": {
 		"deleteConfirm": "האם אתה בטוח שברצונך למחוק את \"{title}\"?",
-		"unsavedChanges": "יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לעזוב?"
+		"deleteTask": "מחק משימה",
+		"deleteTaskDescription": "האם אתה בטוח שברצונך למחוק את \"{title}\"? פעולה זו לא ניתנת לביטול.",
+		"unsavedChanges": "יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לעזוב?",
+		"error": "שגיאה"
 	},
 	"time": {
 		"tomorrow": "מחר",
 		"thisWeekend": "בסוף השבוע",
 		"nextWeek": "השבוע הבא",
-		"later": "מאוחר יותר"
+		"later": "מאוחר יותר",
+		"andTime": "ושעה",
+		"estimatedTime": "זמן משוער"
 	},
 	"tasks": {
 		"priority": {
@@ -26,7 +39,8 @@
 		"status": {
 			"active": "פעיל",
 			"snoozed": "נדחה",
-			"completed": "הושלם"
+			"completed": "הושלם",
+			"later": "מאוחר יותר"
 		},
 		"types": {
 			"interior": "פנים",
@@ -35,13 +49,50 @@
 			"plumbing": "אינסטלציה",
 			"hvac": "מיזוג אוויר",
 			"appliances": "מכשירי חשמל",
-			"general": "כללי"
+			"general": "כללי",
+			"maintenance": "תחזוקה"
+		},
+		"fields": {
+			"title": "כותרת המשימה",
+			"description": "תיאור",
+			"descriptionOptional": "תיאור (אופציונלי)",
+			"priority": "עדיפות",
+			"category": "קטגוריה"
+		},
+		"placeholders": {
+			"descriptionPlaceholder": "הוסף פרטים נוספים..."
+		},
+		"actions": {
+			"reviewTask": "סקור את המשימה",
+			"createTask": "צור משימה",
+			"viewTask": "הצג משימה",
+			"editTask": "ערוך משימה",
+			"deleteTask": "מחק משימה",
+			"snoozeTask": "דחה משימה",
+			"completeTask": "השלם משימה"
+		},
+		"tabs": {
+			"guide": "מדריך",
+			"shoppingList": "רשימת קניות",
+			"steps": "שלבים"
 		}
+	},
+	"speech": {
+		"iHeard": "שמעתי:",
+		"reviewYourTask": "סקור את המשימה"
 	},
 	"errors": {
 		"generic": "משהו השתבש. אנא נסה שוב.",
 		"network": "שגיאת רשת. אנא בדוק את החיבור שלך.",
 		"validation": "אנא בדוק את הקלט שלך ונסה שוב.",
-		"notFound": "הפריט המבוקש לא נמצא."
+		"notFound": "הפריט המבוקש לא נמצא.",
+		"invalidTaskId": "מזהה משימה לא חוקי",
+		"failedToLoadTask": "נכשל בטעינת המשימה",
+		"failedToCreateTask": "נכשל ביצירת המשימה",
+		"failedToUpdateTask": "נכשל בעדכון המשימה",
+		"failedToDeleteTask": "נכשל במחיקת המשימה",
+		"failedToSnoozeTask": "נכשל בדחיית המשימה",
+		"failedToUnsnoozeTask": "נכשל בביטול דחיית המשימה",
+		"actionFailed": "נכשל ב{action} המשימה. אנא בדוק את החיבור שלך ונסה שוב."
 	}
 }
