@@ -285,9 +285,9 @@ describe("MicrophoneView", () => {
 			render(<MicrophoneView isOpen onClose={jest.fn()} />);
 
 			expect(screen.getByText("Test task")).toBeInTheDocument();
-			expect(
-				screen.getByText(/Auto-processing in 3 seconds/),
-			).toBeInTheDocument();
+			// Check for pulse indicator
+			const pulseIndicator = document.querySelector(".animate-pulse");
+			expect(pulseIndicator).toBeInTheDocument();
 		});
 
 		it("should reset auto-pause timer when transcript changes", async () => {
@@ -381,9 +381,8 @@ describe("MicrophoneView", () => {
 			);
 
 			// Verify auto-pause indicator is shown
-			expect(
-				screen.getByText(/Auto-processing in 3 seconds/),
-			).toBeInTheDocument();
+			const pulseIndicator = document.querySelector(".animate-pulse");
+			expect(pulseIndicator).toBeInTheDocument();
 
 			// Close component
 			rerender(<MicrophoneView isOpen={false} onClose={jest.fn()} />);

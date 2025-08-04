@@ -262,9 +262,9 @@ export function MicrophoneView({
 						<div className="mt-4 p-3 bg-white/10 rounded-lg">
 							<p className="text-white text-sm">{transcript}</p>
 							{showAutoPauseIndicator && (
-								<p className="text-orange-300 text-xs mt-2">
-									Auto-processing in 3 seconds if you stop talking...
-								</p>
+								<div className="flex justify-center items-center mt-2">
+									<div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+								</div>
 							)}
 						</div>
 					)}
