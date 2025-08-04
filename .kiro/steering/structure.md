@@ -77,13 +77,18 @@ backend/
 - **Database**: Session management via dependency injection
 - **IDs**: UUIDs for all primary keys (users, images) except tasks (integer)
 
-### Testing Structure (MVP Approach)
-- **MVP Testing**: Focus on happy-path backend tests only
-- **Unit tests**: Basic functionality verification, marked with `@pytest.mark.unit`
-- **Integration tests**: Optional during MVP, marked with `@pytest.mark.integration`
-- **Frontend tests**: Track as [P1] items in `/docs/todos.md`
+### Testing Structure
+- **Backend tests are mandatory**: Every new endpoint and business logic must have tests
+- **Unit tests**: Fast, isolated tests with mocked dependencies, marked with `@pytest.mark.unit`
+- **Integration tests**: Tests that interact with real services, marked with `@pytest.mark.integration`
+- **Frontend tests are mandatory**: All components and functionality must be tested
 - **Test isolation**: Each test gets unique user ID for data separation
-- **Edge cases**: Document in `/docs/todos.md` rather than implementing now
+- **Test markers**: Use `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.slow`
+
+### Test Organization
+- **Unit Tests**: Files ending with `_unit.py` - Fast, isolated tests with mocked dependencies
+- **Integration Tests**: Files ending with `_integration.py` - Tests that interact with real services
+- **Test Fixtures**: Shared test utilities and fixtures in `conftest.py`
 
 ### Configuration Management
 - **Environment files**: `.env` for development, `.env.test` for testing, `.env.local` for frontend
@@ -99,11 +104,19 @@ backend/
 
 ### MVP Implementation Guidelines
 - **Quick wins first**: Implement core features that deliver immediate value
-- **Defer complexity**: Advanced features and edge cases → `/docs/todos.md`
-- **Minimal viable tests**: Just enough to verify core functionality works
-- **Technical debt tracking**: Document shortcuts taken in `/docs/todos.md`
+- **Never skip pre-commit hooks**: Always run linting, type checking, and unit tests before commit
+- **Complete test coverage**: Write tests for all new functionality
+- **Technical debt tracking**: Use `todo-tracker-pm` agent to track issues with priority levels
 - **Iterate based on feedback**: Ship fast, learn, improve
-- **ALWAYS document deferrals**: Any time you skip tests, error handling, or features for MVP, add them to `/docs/todos.md` with priority:
-  - [P0]: Critical security/breaking issues
-  - [P1]: Important functionality, major UX issues, missing tests
-  - [P2]: Nice-to-haves, optimizations, minor enhancements
+- **Database Design**: 
+  - UUIDs for all IDs (user_id, image_id, etc.) for security and scalability
+  - String-based enums for flexibility during development
+  - Standard audit columns (created_at, updated_at)
+  - JSON for arrays to avoid complexity of normalized junction tables
+
+### Code Quality Standards
+- **Never add comments for perfectly self-explanatory code**
+- **Comments should explain the "why" when it's not obvious, not document development history**
+- **Always use an opportunity to teach the user about Python**
+- **Frontend**: Use shadcn components whenever possible, with Tailwind
+- **Opt to use libraries when possible instead of reinventing the wheel**

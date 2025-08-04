@@ -29,13 +29,13 @@ This directory contains tests for the TodoHouse backend API.
 
 ```bash
 # Run all tests
-npm run test:backend
+pnpm run test:backend
 
 # Run only unit tests (fast, mocked)
-npm run test:backend:unit
+pnpm run test:backend:unit
 
 # Run integration tests (requires local Supabase)
-npm run test:backend:integration
+pnpm run test:backend:integration
 
 # Run specific test file
 pytest tests/test_todos_unit.py -v
