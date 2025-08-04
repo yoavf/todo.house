@@ -77,3 +77,4 @@
 - **Complete test coverage**: Write tests for all new functionality
 - **Feature scope**: Implement requested functionality only - nice-to-haves go to backlog
 - **Learning focus**: Use development as opportunity to master Python and modern web patterns
+- **NEVER BYPASS PRE-COMMIT HOOKS**
