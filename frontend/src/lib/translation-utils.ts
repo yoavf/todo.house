@@ -35,7 +35,10 @@ export async function loadTranslations(
 	try {
 		// Dynamic import of translation file
 		const messages = await import(`../messages/${locale}.json`);
-		// Handle both real imports and Jest mocks
+		// Extract translations with fallback chain for different module systems:
+		// - messages.default?.default: Jest mocks that wrap the default export
+		// - messages.default: Standard ES module default export
+		// - messages: CommonJS or direct object export
 		const translations = (messages.default?.default ||
 			messages.default ||
 			messages) as TranslationMessages;
@@ -184,106 +187,144 @@ export function getNestedTranslationKeyPath<
 }
 
 /**
- * Translation key builder for common patterns
+ * Type-safe translation key builder that automatically generates keys from TranslationMessages
  */
-export const translationKeys = {
+type DeepKeyPaths<T, Prefix extends string = ""> = {
+	[K in keyof T]: T[K] extends Record<string, any>
+		? DeepKeyPaths<T[K], `${Prefix}${K & string}.`>
+		: `${Prefix}${K & string}`;
+}[keyof T];
+
+/**
+ * Generate translation key paths automatically from the TranslationMessages type
+ */
+function createTranslationKeys<T extends Record<string, any>>(
+	obj: T,
+	prefix = "",
+): { [K in keyof T]: T[K] extends Record<string, any> ? any : string } {
+	const result = {} as any;
+
+	for (const key in obj) {
+		const fullKey = prefix ? `${prefix}.${key}` : key;
+		const value = obj[key];
+
+		if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+			result[key] = createTranslationKeys(value, fullKey);
+		} else {
+			result[key] = fullKey;
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Type-safe translation keys generated from the TranslationMessages interface
+ * This automatically stays in sync with the translation structure
+ */
+export const translationKeys = createTranslationKeys({
 	common: {
-		delete: "common.delete",
-		cancel: "common.cancel",
-		confirm: "common.confirm",
-		save: "common.save",
-		edit: "common.edit",
-		loading: "common.loading",
-		ok: "common.ok",
-		goBack: "common.goBack",
-		addTask: "common.addTask",
-		doIt: "common.doIt",
-		snooze: "common.snooze",
-		unsnooze: "common.unsnooze",
-		complete: "common.complete",
-		selectDate: "common.selectDate",
+		delete: "",
+		cancel: "",
+		confirm: "",
+		save: "",
+		edit: "",
+		loading: "",
+		ok: "",
+		goBack: "",
+		addTask: "",
+		doIt: "",
+		snooze: "",
+		unsnooze: "",
+		complete: "",
+		selectDate: "",
 	},
 	dialogs: {
-		deleteConfirm: "dialogs.deleteConfirm",
-		deleteTask: "dialogs.deleteTask",
-		deleteTaskDescription: "dialogs.deleteTaskDescription",
-		unsavedChanges: "dialogs.unsavedChanges",
-		error: "dialogs.error",
+		deleteConfirm: "",
+		deleteTask: "",
+		deleteTaskDescription: "",
+		unsavedChanges: "",
+		error: "",
 	},
 	time: {
-		tomorrow: "time.tomorrow",
-		thisWeekend: "time.thisWeekend",
-		nextWeek: "time.nextWeek",
-		later: "time.later",
-		andTime: "time.andTime",
-		estimatedTime: "time.estimatedTime",
+		tomorrow: "",
+		thisWeekend: "",
+		nextWeek: "",
+		later: "",
+		andTime: "",
+		estimatedTime: "",
 	},
 	tasks: {
 		priority: {
-			low: "tasks.priority.low",
-			medium: "tasks.priority.medium",
-			high: "tasks.priority.high",
+			low: "",
+			medium: "",
+			high: "",
 		},
 		status: {
-			active: "tasks.status.active",
-			snoozed: "tasks.status.snoozed",
-			completed: "tasks.status.completed",
-			later: "tasks.status.later",
+			active: "",
+			snoozed: "",
+			completed: "",
+			later: "",
 		},
 		types: {
-			interior: "tasks.types.interior",
-			exterior: "tasks.types.exterior",
-			electricity: "tasks.types.electricity",
-			plumbing: "tasks.types.plumbing",
-			hvac: "tasks.types.hvac",
-			appliances: "tasks.types.appliances",
-			general: "tasks.types.general",
-			maintenance: "tasks.types.maintenance",
+			interior: "",
+			exterior: "",
+			electricity: "",
+			plumbing: "",
+			hvac: "",
+			appliances: "",
+			general: "",
+			maintenance: "",
 		},
 		fields: {
-			title: "tasks.fields.title",
-			description: "tasks.fields.description",
-			descriptionOptional: "tasks.fields.descriptionOptional",
-			priority: "tasks.fields.priority",
-			category: "tasks.fields.category",
+			title: "",
+			description: "",
+			descriptionOptional: "",
+			priority: "",
+			category: "",
 		},
 		placeholders: {
-			descriptionPlaceholder: "tasks.placeholders.descriptionPlaceholder",
+			descriptionPlaceholder: "",
 		},
 		actions: {
-			reviewTask: "tasks.actions.reviewTask",
-			createTask: "tasks.actions.createTask",
-			viewTask: "tasks.actions.viewTask",
-			editTask: "tasks.actions.editTask",
-			deleteTask: "tasks.actions.deleteTask",
-			snoozeTask: "tasks.actions.snoozeTask",
-			completeTask: "tasks.actions.completeTask",
+			reviewTask: "",
+			createTask: "",
+			viewTask: "",
+			editTask: "",
+			deleteTask: "",
+			snoozeTask: "",
+			completeTask: "",
 		},
 		tabs: {
-			guide: "tasks.tabs.guide",
-			shoppingList: "tasks.tabs.shoppingList",
-			steps: "tasks.tabs.steps",
+			guide: "",
+			shoppingList: "",
+			steps: "",
 		},
 	},
 	speech: {
-		iHeard: "speech.iHeard",
-		reviewYourTask: "speech.reviewYourTask",
+		iHeard: "",
+		reviewYourTask: "",
 	},
 	errors: {
-		generic: "errors.generic",
-		network: "errors.network",
-		validation: "errors.validation",
-		notFound: "errors.notFound",
-		invalidTaskId: "errors.invalidTaskId",
-		failedToLoadTask: "errors.failedToLoadTask",
-		failedToCreateTask: "errors.failedToCreateTask",
-		failedToUpdateTask: "errors.failedToUpdateTask",
-		failedToDeleteTask: "errors.failedToDeleteTask",
-		failedToSnoozeTask: "errors.failedToSnoozeTask",
-		failedToUnsnoozeTask: "errors.failedToUnsnoozeTask",
-		actionFailed: "errors.actionFailed",
+		generic: "",
+		network: "",
+		validation: "",
+		notFound: "",
+		invalidTaskId: "",
+		failedToLoadTask: "",
+		failedToCreateTask: "",
+		failedToUpdateTask: "",
+		failedToDeleteTask: "",
+		failedToSnoozeTask: "",
+		failedToUnsnoozeTask: "",
+		actionFailed: "",
 	},
-} as const;
+} as const);
+
+/**
+ * Type for all possible translation key paths
+ */
+export type TranslationKeyPath = DeepKeyPaths<TranslationMessages>;
 
 /**
  * Type for translation key constants

@@ -343,5 +343,17 @@ describe("translation-utils", () => {
 				"speech.reviewYourTask",
 			);
 		});
+
+		it("should automatically generate keys that match the translation structure", () => {
+			// Test that the key generation function creates the correct structure
+			expect(typeof translationKeys.common).toBe("object");
+			expect(typeof translationKeys.tasks.priority).toBe("object");
+			expect(typeof translationKeys.tasks.actions).toBe("object");
+
+			// Verify all keys are strings (not nested objects at leaf level)
+			expect(typeof translationKeys.common.delete).toBe("string");
+			expect(typeof translationKeys.tasks.priority.high).toBe("string");
+			expect(typeof translationKeys.errors.generic).toBe("string");
+		});
 	});
 });

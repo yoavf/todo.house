@@ -34,19 +34,18 @@ function extractLanguageCode(locale: string): string {
 }
 
 /**
- * Detect the best supported locale from Accept-Language header
- * Falls back to default locale if no supported locale is found
+ * Core locale detection logic extracted to avoid duplication
  */
-export function detectLocaleFromHeader(acceptLanguageHeader?: string): Locale {
-	if (!acceptLanguageHeader) {
-		return defaultLocale;
-	}
-
+function detectLocaleFromParsedHeader(
+	acceptLanguageHeader: string,
+): Locale | null {
 	try {
 		const parsedLocales = parseAcceptLanguageHeader(acceptLanguageHeader);
 
 		// First, try to find exact matches (including region codes)
 		for (const { locale } of parsedLocales) {
+			// Note: Using toLowerCase() here is safe for locale codes as they follow
+			// RFC 5646 standard where language codes are case-insensitive
 			const normalizedLocale = locale.toLowerCase();
 			if (isSupportedLocale(normalizedLocale)) {
 				return normalizedLocale;
@@ -64,7 +63,20 @@ export function detectLocaleFromHeader(acceptLanguageHeader?: string): Locale {
 		console.warn("Failed to parse Accept-Language header:", error);
 	}
 
-	return defaultLocale;
+	return null;
+}
+
+/**
+ * Detect the best supported locale from Accept-Language header
+ * Falls back to default locale if no supported locale is found
+ */
+export function detectLocaleFromHeader(acceptLanguageHeader?: string): Locale {
+	if (!acceptLanguageHeader) {
+		return defaultLocale;
+	}
+
+	const detectedLocale = detectLocaleFromParsedHeader(acceptLanguageHeader);
+	return detectedLocale || defaultLocale;
 }
 
 /**
@@ -90,34 +102,14 @@ export function detectLocaleWithMetadata(acceptLanguageHeader?: string): {
 		};
 	}
 
-	try {
-		const parsedLocales = parseAcceptLanguageHeader(acceptLanguageHeader);
+	const detectedLocale = detectLocaleFromParsedHeader(acceptLanguageHeader);
 
-		// First, try to find exact matches (including region codes)
-		for (const { locale } of parsedLocales) {
-			const normalizedLocale = locale.toLowerCase();
-			if (isSupportedLocale(normalizedLocale)) {
-				return {
-					locale: normalizedLocale,
-					source: "header",
-					originalHeader: acceptLanguageHeader,
-				};
-			}
-		}
-
-		// Then, try to match by language code only
-		for (const { locale } of parsedLocales) {
-			const languageCode = extractLanguageCode(locale);
-			if (isSupportedLocale(languageCode)) {
-				return {
-					locale: languageCode,
-					source: "header",
-					originalHeader: acceptLanguageHeader,
-				};
-			}
-		}
-	} catch (error) {
-		console.warn("Failed to parse Accept-Language header:", error);
+	if (detectedLocale) {
+		return {
+			locale: detectedLocale,
+			source: "header",
+			originalHeader: acceptLanguageHeader,
+		};
 	}
 
 	return {
