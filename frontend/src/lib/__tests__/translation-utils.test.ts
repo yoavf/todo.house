@@ -5,7 +5,6 @@ import {
 	getTranslationKeyPath,
 	loadTranslations,
 	preloadTranslations,
-	TranslationLoadError,
 	translationKeys,
 } from "../translation-utils";
 
@@ -250,7 +249,7 @@ describe("translation-utils", () => {
 
 		it("should handle unsupported locale gracefully", async () => {
 			// Test with an unsupported locale - should fallback to English
-			const translations = await loadTranslations("fr" as any);
+			const translations = await loadTranslations("fr" as Locale);
 
 			// Should fallback to English
 			expect(translations.common.delete).toBe("Delete");
@@ -267,7 +266,7 @@ describe("translation-utils", () => {
 		it("should handle failed preloads gracefully", async () => {
 			// Should not throw even if some locales fail
 			await expect(
-				preloadTranslations(["en", "fr" as any, "he"]),
+				preloadTranslations(["en", "fr" as Locale, "he"]),
 			).resolves.not.toThrow();
 
 			// Should still cache the successful ones

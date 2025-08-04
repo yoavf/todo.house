@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { hapticFeedback } from "@/lib/haptics";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -28,6 +27,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { tasksAPI } from "@/lib/api";
+import { hapticFeedback } from "@/lib/haptics";
 import { AnimatedTaskItem } from "./AnimatedTaskItem";
 import { ImageLightbox } from "./ImageLightbox";
 import { SnoozeModal } from "./SnoozeModal";
@@ -228,10 +228,10 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 					drag="x"
 					dragConstraints={{ left: SWIPE_FULL_THRESHOLD, right: 0 }}
 					dragElastic={{ left: 0.1, right: 0.3 }}
-					dragTransition={{ 
+					dragTransition={{
 						bounceDamping: 20,
 						bounceStiffness: 300,
-						power: 0.3
+						power: 0.3,
 					}}
 					onDragEnd={handleDragEnd}
 					animate={controls}

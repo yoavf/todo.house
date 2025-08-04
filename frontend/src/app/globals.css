@@ -223,7 +223,6 @@ body {
 /* Mobile touch feedback and native feel */
 .touch-feedback {
 	-webkit-tap-highlight-color: transparent;
-	tap-highlight-color: transparent;
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
 	user-select: none;
@@ -265,7 +264,7 @@ select {
 }
 
 .material-motion {
-	transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* iOS-style haptic feedback preparation */
@@ -282,21 +281,39 @@ select {
 }
 
 @keyframes haptic-pulse-light {
-	0% { transform: scale(1); }
-	50% { transform: scale(0.98); }
-	100% { transform: scale(1); }
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(0.98);
+	}
+	100% {
+		transform: scale(1);
+	}
 }
 
 @keyframes haptic-pulse-medium {
-	0% { transform: scale(1); }
-	50% { transform: scale(0.96); }
-	100% { transform: scale(1); }
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(0.96);
+	}
+	100% {
+		transform: scale(1);
+	}
 }
 
 @keyframes haptic-pulse-heavy {
-	0% { transform: scale(1); }
-	50% { transform: scale(0.94); }
-	100% { transform: scale(1); }
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(0.94);
+	}
+	100% {
+		transform: scale(1);
+	}
 }
 
 @layer base {

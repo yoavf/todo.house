@@ -3,9 +3,8 @@ import { getRequestConfig } from "next-intl/server";
 import type { Locale } from "@/i18n/config";
 import { defaultLocale, detectLocaleFromHeader } from "@/lib/locale-detection";
 
-export default getRequestConfig(async ({ requestLocale }) => {
+export default getRequestConfig(async () => {
 	// This function runs on every request to determine the locale
-	// requestLocale is undefined in our case since we don't use locale-based routing
 
 	// Detect locale from Accept-Language header
 	let locale: Locale = defaultLocale;
