@@ -351,7 +351,11 @@ export default function TaskDetailPage() {
 
 			{/* Bottom Actions */}
 			<div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3 flex gap-3">
-				{task.status !== "completed" && (
+				{task.status === "completed" ? (
+					<div className="w-full text-center py-3 px-4 bg-green-100 text-green-700 rounded-lg font-medium">
+						✓ Completed
+					</div>
+				) : (
 					<>
 						<Button
 							onClick={handleSnooze}
@@ -372,26 +376,15 @@ export default function TaskDetailPage() {
 						</Button>
 					</>
 				)}
-				{task.status === "completed" && (
-					<div className="w-full text-center py-3 px-4 bg-green-100 text-green-700 rounded-lg font-medium">
-						✓ Completed
-					</div>
-				)}
 			</div>
 		</div>
 	);
 }
 
 // Helper function to extract shopping list from text
-function extractShoppingListFromText(
-	text: string,
-): Array<{ name: string; quantity?: string; purchased: boolean }> {
+function extractShoppingListFromText(text: string): ShoppingListItem[] {
 	const lines = text.split("\n").filter((line) => line.trim());
-	const shoppingItems: Array<{
-		name: string;
-		quantity?: string;
-		purchased: boolean;
-	}> = [];
+	const shoppingItems: ShoppingListItem[] = [];
 
 	// Look for common shopping list patterns
 	const listPatterns = [
@@ -402,40 +395,26 @@ function extractShoppingListFromText(
 	];
 
 	for (const line of lines) {
-		let matched = false;
-		for (const pattern of listPatterns) {
-			const match = line.match(pattern);
+		// Try to match against patterns
+		const patternMatch = listPatterns.find((pattern) => pattern.test(line));
+
+		if (patternMatch) {
+			const match = line.match(patternMatch);
 			if (match) {
 				const itemText = match[1].trim();
 				const quantity = match[2]?.trim();
 
-				// Parse quantity from item text if not captured
+				// Check if quantity is embedded in the item text
 				const quantityMatch = itemText.match(/^(.+?)\s*[-–]\s*(\d+.*)$/);
-				if (quantityMatch) {
-					shoppingItems.push({
-						name: quantityMatch[1].trim(),
-						quantity: quantityMatch[2].trim(),
-						purchased: false,
-					});
-				} else {
-					shoppingItems.push({
-						name: itemText,
-						quantity: quantity,
-						purchased: false,
-					});
-				}
-				matched = true;
-				break;
-			}
-		}
 
-		// If no pattern matched but line looks like an item
-		if (
-			!matched &&
-			line.length > 2 &&
-			line.length < 100 &&
-			!line.includes(":")
-		) {
+				shoppingItems.push({
+					name: quantityMatch ? quantityMatch[1].trim() : itemText,
+					quantity: quantityMatch ? quantityMatch[2].trim() : quantity,
+					purchased: false,
+				});
+			}
+		} else if (line.length > 2 && line.length < 100 && !line.includes(":")) {
+			// Plain text that looks like an item
 			shoppingItems.push({
 				name: line.trim(),
 				purchased: false,
