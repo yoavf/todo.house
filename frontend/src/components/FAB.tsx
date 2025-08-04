@@ -1,5 +1,6 @@
 import { CameraIcon, KeyboardIcon, MicIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { useLocale } from "@/hooks/useLocale";
 
 interface FABProps {
 	onKeyboardClick?: () => void;
@@ -13,6 +14,7 @@ export function FAB({
 	onCameraClick,
 }: FABProps) {
 	const [isOpen, setIsOpen] = useState(false);
+	const { isRTL } = useLocale();
 
 	const toggleOpen = () => {
 		setIsOpen(!isOpen);
@@ -24,9 +26,13 @@ export function FAB({
 	};
 
 	return (
-		<div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+		<div
+			className={`fixed bottom-6 z-40 flex flex-col ${isRTL ? "start-6 items-start" : "end-6 items-end"}`}
+		>
 			{isOpen && (
-				<div className="flex flex-col gap-3 mb-3 items-end">
+				<div
+					className={`flex flex-col gap-3 mb-3 ${isRTL ? "items-start" : "items-end"}`}
+				>
 					<button
 						type="button"
 						data-testid="fab-keyboard"

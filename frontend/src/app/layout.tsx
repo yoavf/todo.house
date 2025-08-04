@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_Hebrew } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { LocaleProvider } from "@/contexts/LocaleContext";
@@ -15,6 +15,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
 	variable: "--font-geist-mono",
 	subsets: ["latin"],
+});
+
+const notoSansHebrew = Noto_Sans_Hebrew({
+	variable: "--font-noto-sans-hebrew",
+	subsets: ["hebrew"],
+	weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -37,7 +43,7 @@ export default async function RootLayout({
 	return (
 		<html lang={locale} dir={direction}>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={`${geistSans.variable} ${geistMono.variable} ${notoSansHebrew.variable} antialiased`}
 			>
 				<NextIntlClientProvider locale={locale} messages={messages}>
 					<LocaleProvider>

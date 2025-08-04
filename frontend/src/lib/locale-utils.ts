@@ -34,3 +34,26 @@ export function getCSSDirection(locale: Locale): "ltr" | "rtl" {
 export function requiresRTL(locale: Locale): boolean {
 	return isRTLLocale(locale);
 }
+
+/**
+ * Get RTL-aware icon transform classes
+ */
+export function getRTLIconClasses(locale: Locale, shouldMirror = true) {
+	const isRTL = isRTLLocale(locale);
+	return {
+		mirror: isRTL && shouldMirror ? "rtl-mirror" : "",
+		conditionalMirror: shouldMirror ? "rtl:mirror" : "",
+	};
+}
+
+/**
+ * Combine classes with RTL awareness
+ */
+export function combineRTLClasses(
+	baseClasses: string,
+	rtlClasses: string,
+	locale: Locale,
+): string {
+	const isRTL = isRTLLocale(locale);
+	return isRTL ? `${baseClasses} ${rtlClasses}` : baseClasses;
+}

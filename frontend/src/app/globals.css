@@ -3,6 +3,48 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* RTL-specific styles */
+[dir="rtl"] {
+	font-family: var(--font-noto-sans-hebrew), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* RTL text rendering optimizations */
+[dir="rtl"] * {
+	text-align: start;
+}
+
+/* RTL-specific animations and transitions */
+[dir="rtl"] .animate-slide-in-right {
+	animation: slide-in-left 0.3s ease-out;
+}
+
+[dir="rtl"] .animate-slide-in-left {
+	animation: slide-in-right 0.3s ease-out;
+}
+
+/* RTL keyframes */
+@keyframes slide-in-left {
+	from {
+		transform: translateX(-100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+@keyframes slide-in-right {
+	from {
+		transform: translateX(100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);

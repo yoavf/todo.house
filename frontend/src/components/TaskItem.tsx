@@ -2,6 +2,7 @@
 
 import { motion, useAnimation, useMotionValue } from "framer-motion";
 import {
+	ArrowLeftIcon,
 	ArrowRightIcon,
 	ClockIcon,
 	type LucideIcon,
@@ -9,6 +10,7 @@ import {
 	TrashIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +27,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLocale, useRTLClasses } from "@/hooks/useLocale";
 import { tasksAPI } from "@/lib/api";
 import { AnimatedTaskItem } from "./AnimatedTaskItem";
 import { SnoozeModal } from "./SnoozeModal";
@@ -46,8 +49,11 @@ interface TaskItemProps {
 	activeTab?: "do-next" | "later" | "suggested" | "all";
 }
 
-const SWIPE_THRESHOLD = -100;
-const SWIPE_FULL_THRESHOLD = -200;
+// RTL-aware swipe thresholds
+const getSwipeThresholds = (isRTL: boolean) => ({
+	SWIPE_THRESHOLD: isRTL ? 100 : -100,
+	SWIPE_FULL_THRESHOLD: isRTL ? 200 : -200,
+});
 
 // Animation timing constants
 const ANIMATION_TIMING = {
@@ -78,6 +84,14 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	const doItButtonControls = useAnimation();
 	const x = useMotionValue(0);
 	const router = useRouter();
+
+	// RTL support
+	const { isRTL } = useLocale();
+	const { mirrorIcon, getSwipeDirection } = useRTLClasses();
+	const t = useTranslations();
+
+	// Get appropriate arrow icon for RTL
+	const ArrowIcon = isRTL ? ArrowLeftIcon : ArrowRightIcon;
 
 	const imageUrl = task.thumbnail_url || task.image_url;
 	const fullImageUrl = imageUrl
@@ -124,12 +138,16 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	) => {
 		const offset = info.offset.x;
 		const velocity = info.velocity.x;
+		const { SWIPE_THRESHOLD, SWIPE_FULL_THRESHOLD } = getSwipeThresholds(isRTL);
 
-		// Gmail-style behavior: either trigger action or snap back
-		if (
-			offset < SWIPE_FULL_THRESHOLD ||
-			(offset < SWIPE_THRESHOLD && velocity < -500)
-		) {
+		// RTL-aware Gmail-style behavior: either trigger action or snap back
+		const shouldTriggerAction = isRTL
+			? offset > SWIPE_FULL_THRESHOLD ||
+				(offset > SWIPE_THRESHOLD && velocity > 500)
+			: offset < SWIPE_FULL_THRESHOLD ||
+				(offset < SWIPE_THRESHOLD && velocity < -500);
+
+		if (shouldTriggerAction) {
 			// Trigger snooze action
 			setShowSnoozeModal(true);
 			await controls.start({ x: 0 });
@@ -205,8 +223,10 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 				data-testid={`task-item-${task.status}`}
 				data-task-id={task.id}
 			>
-				{/* Background snooze action */}
-				<div className="absolute inset-0 bg-orange-500 flex items-center justify-end pr-6 rounded-lg">
+				{/* Background snooze action - RTL aware positioning */}
+				<div
+					className={`absolute inset-0 bg-orange-500 flex items-center rounded-lg ${isRTL ? "justify-start ps-6" : "justify-end pe-6"}`}
+				>
 					<button
 						type="button"
 						onClick={handleSnoozeClick}
@@ -219,7 +239,17 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 				{/* Main swipeable content */}
 				<motion.div
 					drag="x"
-					dragConstraints={{ left: SWIPE_FULL_THRESHOLD, right: 0 }}
+					dragConstraints={
+						isRTL
+							? {
+									left: 0,
+									right: getSwipeThresholds(isRTL).SWIPE_FULL_THRESHOLD,
+								}
+							: {
+									left: getSwipeThresholds(isRTL).SWIPE_FULL_THRESHOLD,
+									right: 0,
+								}
+					}
 					dragElastic={0.2}
 					onDragEnd={handleDragEnd}
 					animate={controls}
@@ -239,9 +269,11 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 					}}
 					className="relative bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow cursor-pointer"
 				>
-					{/* Background circular image */}
+					{/* Background circular image - RTL aware positioning */}
 					{fullImageUrl && (
-						<div className="absolute right-0 top-0 transform translate-x-1/4 -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none">
+						<div
+							className={`absolute top-0 transform -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none ${isRTL ? "start-0 -translate-x-1/4" : "end-0 translate-x-1/4"}`}
+						>
 							<div
 								className="w-full h-full rounded-full opacity-60"
 								style={{
@@ -256,16 +288,16 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 
 					<div className="flex-1 relative z-10">
 						<div className="flex items-center mb-2">
-							<Icon size={16} className="text-orange-400 mr-1.5" />
+							<Icon size={16} className="text-orange-400 me-1.5" />
 							<span className="text-sm font-medium text-gray-500">
 								{task.category}
 							</span>
 						</div>
-						<h3 className="text-base font-medium text-gray-800">
+						<h3 className="text-base font-medium text-gray-800 text-start">
 							{task.title}
 						</h3>
 						{task.description && (
-							<p className="text-sm text-gray-500 mt-1 line-clamp-2">
+							<p className="text-sm text-gray-500 mt-1 line-clamp-2 text-start">
 								{task.description}
 							</p>
 						)}
@@ -279,9 +311,9 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 								disabled={isDoItAnimating}
 								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0 hover:bg-orange-600 transition-colors disabled:opacity-80"
 							>
-								<ArrowRightIcon size={16} className="mr-1" />
-								Do it{" "}
-								<span className="ml-1 opacity-80 text-xs">
+								<ArrowIcon size={16} className="me-1" />
+								{t("common.doIt")}{" "}
+								<span className="ms-1 opacity-80 text-xs">
 									· {task.estimatedTime}
 								</span>
 							</motion.button>
@@ -295,7 +327,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 									</button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
-									align="end"
+									align={isRTL ? "start" : "end"}
 									side="top"
 									sideOffset={-5}
 									onClick={(e) => e.stopPropagation()}
@@ -311,10 +343,10 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 										}}
 										className="cursor-pointer"
 									>
-										<ClockIcon className="mr-2 h-4 w-4" />
+										<ClockIcon className="me-2 h-4 w-4" />
 										{activeTab === "later" || task.status === "later"
-											? "Unsnooze"
-											: "Snooze"}
+											? t("common.unsnooze")
+											: t("common.snooze")}
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										onClick={(e) => {
@@ -324,8 +356,8 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 										variant="destructive"
 										className="cursor-pointer"
 									>
-										<TrashIcon className="mr-2 h-4 w-4" />
-										Delete
+										<TrashIcon className="me-2 h-4 w-4" />
+										{t("common.delete")}
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>
@@ -347,10 +379,9 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 			<Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Delete Task</DialogTitle>
+						<DialogTitle>{t("dialogs.deleteTask")}</DialogTitle>
 						<DialogDescription>
-							Are you sure you want to delete "{task.title}"? This action cannot
-							be undone.
+							{t("dialogs.deleteTaskDescription", { title: task.title })}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
@@ -358,10 +389,10 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 							variant="outline"
 							onClick={() => setShowDeleteDialog(false)}
 						>
-							Cancel
+							{t("common.cancel")}
 						</Button>
 						<Button variant="destructive" onClick={handleDelete}>
-							Delete
+							{t("common.delete")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -370,12 +401,12 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 			<Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Error</DialogTitle>
+						<DialogTitle>{t("dialogs.error")}</DialogTitle>
 						<DialogDescription>{errorMessage}</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => setShowErrorDialog(false)}>
-							OK
+							{t("common.ok")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
