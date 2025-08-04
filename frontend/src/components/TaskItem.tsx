@@ -72,8 +72,10 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	const [pendingAction, setPendingAction] = useState<PendingAction | null>(
 		null,
 	);
+	const [isDoItAnimating, setIsDoItAnimating] = useState(false);
 	const Icon = task.icon;
 	const controls = useAnimation();
+	const doItButtonControls = useAnimation();
 	const x = useMotionValue(0);
 	const router = useRouter();
 
@@ -169,7 +171,19 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 		}, ANIMATION_TIMING.dialogCloseDelay);
 	};
 
-	const handleViewTask = () => {
+	const handleViewTask = async () => {
+		// Trigger fun animation first
+		setIsDoItAnimating(true);
+		await doItButtonControls.start({
+			scale: [1, 1.1, 0.95, 1],
+			rotate: [0, -2, 2, 0],
+			transition: {
+				duration: 0.3,
+				ease: "easeInOut",
+			},
+		});
+		setIsDoItAnimating(false);
+
 		// Pass initial data through URL params to show immediately
 		const params = new URLSearchParams({
 			title: task.title,
@@ -258,17 +272,19 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 
 						{/* Main action row */}
 						<div className="flex items-center justify-between mt-3">
-							<button
+							<motion.button
 								type="button"
 								onClick={handleViewTask}
-								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0 hover:bg-orange-600 transition-colors"
+								animate={doItButtonControls}
+								disabled={isDoItAnimating}
+								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0 hover:bg-orange-600 transition-colors disabled:opacity-80"
 							>
 								<ArrowRightIcon size={16} className="mr-1" />
 								Do it{" "}
 								<span className="ml-1 opacity-80 text-xs">
 									· {task.estimatedTime}
 								</span>
-							</button>
+							</motion.button>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<button

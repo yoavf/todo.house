@@ -34,9 +34,20 @@ jest.mock("framer-motion", () => ({
 				{children}
 			</div>
 		),
+		button: ({
+			children,
+			onClick,
+			animate,
+			disabled,
+			...props
+		}: React.PropsWithChildren<Record<string, unknown>>) => (
+			<button onClick={onClick} disabled={disabled} {...props}>
+				{children}
+			</button>
+		),
 	},
 	useAnimation: () => ({
-		start: jest.fn(),
+		start: jest.fn().mockResolvedValue(undefined),
 	}),
 	useMotionValue: () => ({
 		set: jest.fn(),
