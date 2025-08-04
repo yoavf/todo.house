@@ -27,7 +27,7 @@ export function FAB({
 
 	return (
 		<div
-			className={`fixed bottom-6 z-40 flex flex-col ${isRTL ? "start-6 items-start" : "end-6 items-end"}`}
+			className={`fixed bottom-6 z-40 flex flex-col ${isRTL ? "left-6 items-start" : "right-6 items-end"}`}
 		>
 			{isOpen && (
 				<div
