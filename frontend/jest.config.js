@@ -10,6 +10,7 @@ const customJestConfig = {
 	setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
 	moduleNameMapper: {
 		"^@/(.*)$": "<rootDir>/src/$1",
+		"^react-markdown$": "<rootDir>/__mocks__/react-markdown.js",
 	},
 	testMatch: ["**/__tests__/**/*.(ts|tsx|js)", "**/*.(test|spec).(ts|tsx|js)"],
 	collectCoverageFrom: [

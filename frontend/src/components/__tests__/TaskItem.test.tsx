@@ -2,13 +2,21 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { HomeIcon } from "lucide-react";
 import { TaskItem } from "../TaskItem";
 
+// Mock next/navigation
+jest.mock("next/navigation", () => ({
+	useRouter: () => ({
+		push: jest.fn(),
+		back: jest.fn(),
+	}),
+}));
+
 // Mock framer-motion to avoid animation issues in tests
 jest.mock("framer-motion", () => ({
 	motion: {
 		div: ({
 			children,
 			...props
-		}: React.PropsWithChildren<Record<string, any>>) => (
+		}: React.PropsWithChildren<Record<string, unknown>>) => (
 			<div {...props}>{children}</div>
 		),
 	},
