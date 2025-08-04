@@ -144,6 +144,17 @@ export const tasksAPI = {
 		if (!response.ok) throw new Error("Failed to delete task");
 	},
 
+	async unsnoozeTask(id: number): Promise<Task> {
+		const response = await fetch(`${API_URL}/api/tasks/${id}/unsnooze`, {
+			method: "POST",
+			headers: {
+				"X-User-Id": TEST_USER_ID,
+			},
+		});
+		if (!response.ok) throw new Error("Failed to unsnooze task");
+		return response.json();
+	},
+
 	async analyzeImage(imageFile: File): Promise<ImageAnalysisResponse> {
 		const formData = new FormData();
 		formData.append("image", imageFile);
