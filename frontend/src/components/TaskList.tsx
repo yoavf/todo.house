@@ -106,6 +106,34 @@ export function TaskList() {
 		setLocalTasks((prev) => prev.filter((t) => t.id !== taskId));
 	};
 
+	// Helper function to render a section of tasks
+	const renderTaskSection = (tasks: Task[], title?: string) => {
+		if (tasks.length === 0) return null;
+
+		const uiTasks = tasks.map(mapTaskToUI);
+		const content = (
+			<AnimatePresence mode="popLayout">
+				{uiTasks.map((task) => (
+					<TaskItem
+						key={task.id}
+						task={task}
+						onTaskUpdate={() => handleTaskRemoval(task.id)}
+						activeTab={activeTab}
+					/>
+				))}
+			</AnimatePresence>
+		);
+
+		if (!title) return content;
+
+		return (
+			<div>
+				<h3 className="text-base font-semibold text-gray-500 mb-3">{title}</h3>
+				<div className="space-y-4">{content}</div>
+			</div>
+		);
+	};
+
 	// Function to render time-organized tasks for "later" tab
 	const renderTimeOrganizedTasks = () => {
 		const categorized = categorizeSnoozedTasks(localTasks);
@@ -113,83 +141,15 @@ export function TaskList() {
 
 		if (showAsSingleList) {
 			// Show as single list without section headers
-			const laterUiTasks = categorized.later.map(mapTaskToUI);
-			return (
-				<AnimatePresence mode="popLayout">
-					{laterUiTasks.map((task) => (
-						<TaskItem
-							key={task.id}
-							task={task}
-							onTaskUpdate={() => handleTaskRemoval(task.id)}
-							activeTab={activeTab}
-						/>
-					))}
-				</AnimatePresence>
-			);
+			return renderTaskSection(categorized.later);
 		}
 
 		// Show with section headers
 		return (
 			<div className="space-y-8">
-				{categorized.thisWeek.length > 0 && (
-					<div>
-						<h3 className="text-base font-semibold text-gray-500 mb-3">
-							This week
-						</h3>
-						<div className="space-y-4">
-							<AnimatePresence mode="popLayout">
-								{categorized.thisWeek.map(mapTaskToUI).map((task) => (
-									<TaskItem
-										key={task.id}
-										task={task}
-										onTaskUpdate={() => handleTaskRemoval(task.id)}
-										activeTab={activeTab}
-									/>
-								))}
-							</AnimatePresence>
-						</div>
-					</div>
-				)}
-
-				{categorized.nextWeek.length > 0 && (
-					<div>
-						<h3 className="text-base font-semibold text-gray-500 mb-3">
-							Next week
-						</h3>
-						<div className="space-y-4">
-							<AnimatePresence mode="popLayout">
-								{categorized.nextWeek.map(mapTaskToUI).map((task) => (
-									<TaskItem
-										key={task.id}
-										task={task}
-										onTaskUpdate={() => handleTaskRemoval(task.id)}
-										activeTab={activeTab}
-									/>
-								))}
-							</AnimatePresence>
-						</div>
-					</div>
-				)}
-
-				{categorized.later.length > 0 && (
-					<div>
-						<h3 className="text-base font-semibold text-gray-500 mb-3">
-							Later
-						</h3>
-						<div className="space-y-4">
-							<AnimatePresence mode="popLayout">
-								{categorized.later.map(mapTaskToUI).map((task) => (
-									<TaskItem
-										key={task.id}
-										task={task}
-										onTaskUpdate={() => handleTaskRemoval(task.id)}
-										activeTab={activeTab}
-									/>
-								))}
-							</AnimatePresence>
-						</div>
-					</div>
-				)}
+				{renderTaskSection(categorized.thisWeek, "This week")}
+				{renderTaskSection(categorized.nextWeek, "Next week")}
+				{renderTaskSection(categorized.later, "Later")}
 			</div>
 		);
 	};

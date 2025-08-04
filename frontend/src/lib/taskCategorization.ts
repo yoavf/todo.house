@@ -47,18 +47,24 @@ export function categorizeSnoozedTasks(tasks: Task[]): CategorizedTasks {
 			continue;
 		}
 
+		// Normalize to start of day for consistent comparisons
+		const normalizedSnoozedDate = startOfDay(snoozedDate);
+
 		// Check if task is snoozed until this week
 		if (
-			isWithinInterval(snoozedDate, {
-				start: currentWeekStart,
-				end: currentWeekEnd,
+			isWithinInterval(normalizedSnoozedDate, {
+				start: startOfDay(currentWeekStart),
+				end: endOfDay(currentWeekEnd),
 			})
 		) {
 			categorized.thisWeek.push(task);
 		}
 		// Check if task is snoozed until next week
 		else if (
-			isWithinInterval(snoozedDate, { start: nextWeekStart, end: nextWeekEnd })
+			isWithinInterval(normalizedSnoozedDate, {
+				start: startOfDay(nextWeekStart),
+				end: endOfDay(nextWeekEnd),
+			})
 		) {
 			categorized.nextWeek.push(task);
 		}
