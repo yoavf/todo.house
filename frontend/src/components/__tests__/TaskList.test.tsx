@@ -4,6 +4,14 @@ import { useTasks } from "@/hooks/useTasks";
 import type { Task } from "@/lib/api";
 import { TaskList } from "../TaskList";
 
+// Mock next/navigation
+jest.mock("next/navigation", () => ({
+	useRouter: () => ({
+		push: jest.fn(),
+		back: jest.fn(),
+	}),
+}));
+
 // Mock the useTasks hook
 jest.mock("@/hooks/useTasks");
 

@@ -7,6 +7,46 @@ export type TaskType =
 	| "maintenance"
 	| "repair";
 
+export interface Location {
+	id: string;
+	name: string;
+	description?: string;
+}
+
+export interface HowToContent {
+	type: "how_to_guide";
+	markdown: string;
+	images?: Array<{ url: string; caption?: string }>;
+	videos?: Array<{ url: string; title: string }>;
+	links?: Array<{ url: string; text: string }>;
+}
+
+export interface ChecklistItem {
+	id: string;
+	text: string;
+	completed: boolean;
+}
+
+export interface ChecklistContent {
+	type: "checklist";
+	items: ChecklistItem[];
+}
+
+export interface ShoppingListItem {
+	name: string;
+	quantity?: string;
+	purchased: boolean;
+}
+
+export interface ShoppingListContent {
+	type: "shopping_list";
+	items: ShoppingListItem[];
+	store?: string;
+	estimated_cost?: number;
+}
+
+export type TaskContent = HowToContent | ChecklistContent | ShoppingListContent;
+
 export interface Task {
 	id: number;
 	title: string;
@@ -26,6 +66,12 @@ export interface Task {
 	// Image URLs - populated by backend
 	image_url?: string;
 	thumbnail_url?: string;
+	// Enhanced fields
+	location?: Location;
+	content?: TaskContent;
+	metrics?: Record<string, any>;
+	tags?: string[];
+	snooze_options?: Record<string, any>;
 }
 
 export interface TaskCreate {
@@ -142,6 +188,29 @@ export const tasksAPI = {
 			},
 		});
 		if (!response.ok) throw new Error("Failed to delete task");
+	},
+
+	async getTask(id: number): Promise<Task> {
+		const response = await fetch(`${API_URL}/api/tasks/${id}`, {
+			headers: {
+				"X-User-Id": TEST_USER_ID,
+			},
+		});
+		if (!response.ok) throw new Error("Failed to fetch task");
+		return response.json();
+	},
+
+	async snoozeTask(id: number, snoozeOption: string): Promise<Task> {
+		const response = await fetch(`${API_URL}/api/tasks/${id}/snooze`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-User-Id": TEST_USER_ID,
+			},
+			body: JSON.stringify({ snooze_option: snoozeOption }),
+		});
+		if (!response.ok) throw new Error("Failed to snooze task");
+		return response.json();
 	},
 
 	async unsnoozeTask(id: number): Promise<Task> {

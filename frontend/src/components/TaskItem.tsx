@@ -8,6 +8,7 @@ import {
 	MoreHorizontalIcon,
 	TrashIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +56,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	const Icon = task.icon;
 	const controls = useAnimation();
 	const x = useMotionValue(0);
+	const router = useRouter();
 
 	const imageUrl = task.thumbnail_url || task.image_url;
 	const fullImageUrl = imageUrl
@@ -134,6 +136,17 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 		}
 	};
 
+	const handleViewTask = () => {
+		// Pass initial data through URL params to show immediately
+		const params = new URLSearchParams({
+			title: task.title,
+			...(task.description && { description: task.description }),
+			...(task.image_url && { imageUrl: task.image_url }),
+			status: task.status,
+		});
+		router.push(`/tasks/${task.id}?${params.toString()}`);
+	};
+
 	return (
 		<>
 			<div
@@ -160,7 +173,18 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 					onDragEnd={handleDragEnd}
 					animate={controls}
 					style={{ x }}
-					className="relative bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow cursor-grab active:cursor-grabbing"
+					onClick={(e) => {
+						// Only navigate if not clicking on buttons or dragging
+						const target = e.target as HTMLElement;
+						if (
+							!target.closest("button") &&
+							!target.closest('[role="button"]') &&
+							Math.abs(x.get()) < 5
+						) {
+							handleViewTask();
+						}
+					}}
+					className="relative bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow cursor-pointer"
 				>
 					{/* Background circular image */}
 					{fullImageUrl && (
@@ -197,7 +221,8 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 						<div className="flex items-center justify-between mt-3">
 							<button
 								type="button"
-								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0"
+								onClick={handleViewTask}
+								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0 hover:bg-orange-600 transition-colors"
 							>
 								<ArrowRightIcon size={16} className="mr-1" />
 								Do it{" "}
