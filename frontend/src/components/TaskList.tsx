@@ -1,6 +1,7 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
+import { AnimatePresence } from "framer-motion";
 import {
 	BoxIcon,
 	HammerIcon,
@@ -73,11 +74,17 @@ export function TaskList() {
 	);
 	const { tasks, loading, error, refetch } = useTasks();
 	const { setRefetchHandler } = useTaskContext();
+	const [localTasks, setLocalTasks] = useState<typeof tasks>([]);
 
 	useEffect(() => {
 		setRefetchHandler(refetch);
 		return () => setRefetchHandler(null);
 	}, [refetch, setRefetchHandler]);
+
+	// Sync local tasks with fetched tasks
+	useEffect(() => {
+		setLocalTasks(tasks);
+	}, [tasks]);
 
 	if (loading) {
 		return (
@@ -100,10 +107,15 @@ export function TaskList() {
 	}
 
 	// Map backend tasks to UI format
-	const uiTasks = tasks.map(mapTaskToUI);
+	const uiTasks = localTasks.map(mapTaskToUI);
 	const filteredTasks = uiTasks.filter(
 		(task) => activeTab === "all" || task.status === activeTab,
 	);
+
+	const handleTaskRemoval = (taskId: number) => {
+		// Remove task from local state immediately
+		setLocalTasks((prev) => prev.filter((t) => t.id !== taskId));
+	};
 
 	return (
 		<div className="task-list">
@@ -144,14 +156,16 @@ export function TaskList() {
 			</div>
 
 			<div className="space-y-4">
-				{filteredTasks.map((task) => (
-					<TaskItem
-						key={task.id}
-						task={task}
-						onTaskUpdate={refetch}
-						activeTab={activeTab}
-					/>
-				))}
+				<AnimatePresence mode="popLayout">
+					{filteredTasks.map((task) => (
+						<TaskItem
+							key={task.id}
+							task={task}
+							onTaskUpdate={() => handleTaskRemoval(task.id)}
+							activeTab={activeTab}
+						/>
+					))}
+				</AnimatePresence>
 
 				{filteredTasks.length === 0 && (
 					<div className="text-center py-8">

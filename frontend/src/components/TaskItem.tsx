@@ -26,6 +26,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { tasksAPI } from "@/lib/api";
+import { AnimatedTaskItem } from "./AnimatedTaskItem";
 import { SnoozeModal } from "./SnoozeModal";
 
 interface TaskItemProps {
@@ -52,7 +53,12 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
 	const [snoozeError, setSnoozeError] = useState<string | null>(null);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-	const [isDeleting, setIsDeleting] = useState(false);
+	const [isDeleting] = useState(false);
+	const [isRemoving, setIsRemoving] = useState(false);
+	const [pendingAction, setPendingAction] = useState<{
+		type: "snooze" | "delete" | "unsnooze";
+		data?: Date;
+	} | null>(null);
 	const Icon = task.icon;
 	const controls = useAnimation();
 	const x = useMotionValue(0);
@@ -62,6 +68,41 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	const fullImageUrl = imageUrl
 		? `${process.env.NEXT_PUBLIC_API_URL}${imageUrl}`
 		: null;
+
+	const executeAction = async () => {
+		if (!pendingAction) return;
+
+		try {
+			if (pendingAction.type === "snooze") {
+				await tasksAPI.updateTask(task.id, {
+					status: "snoozed",
+					snoozed_until:
+						pendingAction.data?.toISOString() || new Date().toISOString(),
+				});
+			} else if (pendingAction.type === "delete") {
+				await tasksAPI.deleteTask(task.id);
+			} else if (pendingAction.type === "unsnooze") {
+				await tasksAPI.unsnoozeTask(task.id);
+			}
+
+			if (onTaskUpdate) {
+				onTaskUpdate();
+			}
+		} catch (error) {
+			console.error(`Failed to ${pendingAction.type} task:`, error);
+			// Reset animation state on error
+			setIsRemoving(false);
+			setPendingAction(null);
+
+			if (pendingAction.type === "snooze") {
+				setSnoozeError(
+					"Failed to snooze task. Please check your connection and try again.",
+				);
+			} else {
+				alert(`Failed to ${pendingAction.type} task. Please try again.`);
+			}
+		}
+	};
 
 	const handleDragEnd = async (
 		_: MouseEvent | TouchEvent | PointerEvent,
@@ -91,49 +132,29 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 
 	const handleSnooze = async (date: Date) => {
 		setSnoozeError(null);
-		try {
-			await tasksAPI.updateTask(task.id, {
-				status: "snoozed",
-				snoozed_until: date.toISOString(),
-			});
-			setShowSnoozeModal(false);
-			if (onTaskUpdate) {
-				onTaskUpdate();
-			}
-		} catch (error) {
-			console.error("Failed to snooze task:", error);
-			setSnoozeError(
-				"Failed to snooze task. Please check your connection and try again.",
-			);
-		}
+		setShowSnoozeModal(false);
+
+		// Delay animation to allow modal to fade out
+		setTimeout(() => {
+			setPendingAction({ type: "snooze", data: date });
+			setIsRemoving(true);
+		}, 200);
 	};
 
 	const handleUnsnooze = async () => {
-		try {
-			await tasksAPI.unsnoozeTask(task.id);
-			if (onTaskUpdate) {
-				onTaskUpdate();
-			}
-		} catch (error) {
-			console.error("Failed to unsnooze task:", error);
-			alert("Failed to unsnooze task. Please try again.");
-		}
+		// Start animation and set pending action
+		setPendingAction({ type: "unsnooze" });
+		setIsRemoving(true);
 	};
 
 	const handleDelete = async () => {
-		setIsDeleting(true);
-		try {
-			await tasksAPI.deleteTask(task.id);
-			setShowDeleteDialog(false);
-			if (onTaskUpdate) {
-				onTaskUpdate();
-			}
-		} catch (error) {
-			console.error("Failed to delete task:", error);
-			alert("Failed to delete task. Please try again.");
-		} finally {
-			setIsDeleting(false);
-		}
+		setShowDeleteDialog(false);
+
+		// Delay animation to allow dialog to fade out
+		setTimeout(() => {
+			setPendingAction({ type: "delete" });
+			setIsRemoving(true);
+		}, 200);
 	};
 
 	const handleViewTask = () => {
@@ -148,7 +169,11 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	};
 
 	return (
-		<>
+		<AnimatedTaskItem
+			taskId={task.id}
+			isRemoving={isRemoving}
+			onAnimationComplete={executeAction}
+		>
 			<div
 				className="relative overflow-hidden rounded-lg"
 				data-testid={`task-item-${task.status}`}
@@ -179,6 +204,8 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 						if (
 							!target.closest("button") &&
 							!target.closest('[role="button"]') &&
+							!target.closest('[role="menu"]') &&
+							!target.closest('[role="menuitem"]') &&
 							Math.abs(x.get()) < 5
 						) {
 							handleViewTask();
@@ -239,9 +266,15 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 										<MoreHorizontalIcon size={18} />
 									</button>
 								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end" side="top" sideOffset={-5}>
+								<DropdownMenuContent
+									align="end"
+									side="top"
+									sideOffset={-5}
+									onClick={(e) => e.stopPropagation()}
+								>
 									<DropdownMenuItem
-										onClick={() => {
+										onClick={(e) => {
+											e.stopPropagation();
 											if (activeTab === "later" || task.status === "later") {
 												handleUnsnooze();
 											} else {
@@ -256,7 +289,10 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 											: "Snooze"}
 									</DropdownMenuItem>
 									<DropdownMenuItem
-										onClick={() => setShowDeleteDialog(true)}
+										onClick={(e) => {
+											e.stopPropagation();
+											setShowDeleteDialog(true);
+										}}
 										variant="destructive"
 										className="cursor-pointer"
 									>
@@ -307,6 +343,6 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-		</>
+		</AnimatedTaskItem>
 	);
 }
