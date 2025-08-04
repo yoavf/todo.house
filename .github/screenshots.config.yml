@@ -6,14 +6,14 @@ screenshots:
     viewport:
       width: 1280
       height: 800
-    waitFor: .task-list
+    waitFor: "[data-testid='task-list']"
 
   - name: home-mobile
     url: http://localhost:3000/
     viewport:
       width: 375
       height: 812
-    waitFor: .task-list
+    waitFor: "[data-testid='task-list']"
 
   - name: fab-opened-mobile
     url: http://localhost:3000/
@@ -21,7 +21,7 @@ screenshots:
       width: 375
       height: 812
     steps:
-      - waitFor: .task-list
+      - waitFor: "[data-testid='task-list']"
       - click: ".fixed.bottom-6.right-6 button"
       - wait: 300
 
@@ -31,7 +31,7 @@ screenshots:
       width: 375
       height: 812
     steps:
-      - waitFor: .task-list
+      - waitFor: "[data-testid='task-list']"
       - click: ".fixed.bottom-6.right-6 button"
       - wait: 300
       - click: "[data-testid='fab-camera']"
@@ -43,7 +43,7 @@ screenshots:
       width: 375
       height: 812
     steps:
-      - waitFor: .task-list
+      - waitFor: "[data-testid='task-list']"
       - click: ".fixed.bottom-6.right-6 button"
       - wait: 300
       - click: "[data-testid='fab-microphone']"
@@ -55,7 +55,7 @@ screenshots:
       width: 375
       height: 812
     steps:
-      - waitFor: .task-list
+      - waitFor: "[data-testid='task-list']"
       - click: ".fixed.bottom-6.right-6 button"
       - wait: 300
       - click: "[data-testid='fab-keyboard']"
@@ -67,7 +67,7 @@ screenshots:
       width: 375
       height: 812
     steps:
-      - waitFor: .task-list
+      - waitFor: "[data-testid='task-list']"
       - click: "[data-task-id]:first-child"
       - waitFor: "h1:has-text('Task Details')"
       - wait: 500
