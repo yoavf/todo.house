@@ -27,7 +27,7 @@ When reviewing PRs during MVP phase:
 - **Database**: PostgreSQL (via Supabase or any PostgreSQL instance)
 - **Storage**: Supabase Storage for file uploads
 - **ORM**: SQLAlchemy 2.0 with async support
-- **Monorepo**: Simple workspace structure with npm workspaces
+- **Monorepo**: Simple workspace structure with pnpm workspaces
 
 ## Directory Structure
 
@@ -100,14 +100,14 @@ cd backend && uv run alembic current
 
 ```bash
 # Install all dependencies
-npm run install:all
+pnpm run install:all
 
 # Run both frontend and backend in development
-npm run dev
+pnpm run dev
 
 # Run individual services
-npm run dev:backend   # FastAPI server on :8000
-npm run dev:frontend  # Next.js app on :3000
+pnpm run dev:backend   # FastAPI server on :8000
+pnpm run dev:frontend  # Next.js app on :3000
 ```
 
 ## Environment Setup
@@ -182,16 +182,16 @@ The backend tests are organized in `backend/tests/` with the following structure
 
 ```bash
 # Run all backend tests
-npm run test:backend
+pnpm run test:backend
 
 # Run only unit tests (fast, mocked)
-npm run test:backend:unit
+pnpm run test:backend:unit
 
 # Run only integration tests (slower, real database)
-npm run test:backend:integration
+pnpm run test:backend:integration
 
 # Watch mode for development
-npm run test:backend:watch
+pnpm run test:backend:watch
 ```
 
 ### Test Markers
