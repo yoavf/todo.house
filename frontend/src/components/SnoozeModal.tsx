@@ -48,8 +48,9 @@ export function SnoozeModal({ isOpen, onClose, onSnooze }: SnoozeModalProps) {
 
 	const handleSnoozeOption = (date: Date | null) => {
 		if (date) {
-			date.setHours(8, 0, 0, 0);
-			onSnooze(date);
+			const snoozeDate = new Date(date);
+			snoozeDate.setHours(8, 0, 0, 0);
+			onSnooze(snoozeDate);
 		} else {
 			console.log("Date picker not implemented yet");
 		}
