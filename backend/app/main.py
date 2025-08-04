@@ -18,7 +18,7 @@ app = FastAPI(title="todo.house API", version="1.0.0")
 # CORS middleware for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],  # TODO: allowed all origins for dev
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

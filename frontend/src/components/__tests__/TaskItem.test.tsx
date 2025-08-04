@@ -60,7 +60,9 @@ describe("TaskItem", () => {
 			(button) => !button.textContent?.includes("Do it"),
 		);
 
-		fireEvent.click(clockButton!);
+		if (clockButton) {
+			fireEvent.click(clockButton);
+		}
 
 		// Should show snooze options
 		expect(screen.getByText("Later")).toBeInTheDocument();
@@ -77,7 +79,9 @@ describe("TaskItem", () => {
 			(button) => !button.textContent?.includes("Do it"),
 		);
 
-		fireEvent.click(clockButton!);
+		if (clockButton) {
+			fireEvent.click(clockButton);
+		}
 		expect(screen.getByText("Later")).toBeInTheDocument();
 
 		// Click outside

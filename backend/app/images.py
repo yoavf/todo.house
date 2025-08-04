@@ -1,5 +1,6 @@
 """Image analysis API endpoints."""
 
+import io
 import logging
 import uuid
 from datetime import datetime
@@ -14,7 +15,7 @@ from fastapi import (
     status,
     Depends,
 )
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from .models import ImageAnalysisResponse, ImageAnalysisError, GeneratedTask
 from .ai.image_processing import (
@@ -591,4 +592,97 @@ async def health_check():
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"status": "unhealthy", "error": str(e)},
+        )
+
+
+@router.get("/proxy/{image_id}")
+async def proxy_image(
+    image_id: str,
+    session: AsyncSession = Depends(get_session_dependency),
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+):
+    """
+    Proxy endpoint for serving images from Supabase storage.
+
+    This endpoint serves images through the backend to avoid CORS issues
+    and mixed content problems when accessing from different IPs.
+
+    Args:
+        image_id: The UUID of the image
+        x_user_id: User ID from header
+        session: Database session
+        width: Optional width for image resizing
+        height: Optional height for image resizing
+
+    Returns:
+        StreamingResponse with the image data
+    """
+    try:
+        # Parse image ID
+        try:
+            image_uuid = uuid.UUID(image_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid image ID format",
+            )
+
+        # Build query - optionally filter by user if provided
+        if x_user_id:
+            try:
+                user_uuid = uuid.UUID(x_user_id)
+                query = select(ImageModel).where(
+                    and_(ImageModel.id == image_uuid, ImageModel.user_id == user_uuid)
+                )
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid user ID format",
+                )
+        else:
+            # No user ID provided - just get by image ID
+            # This is less secure but needed for browser image loading
+            query = select(ImageModel).where(ImageModel.id == image_uuid)
+
+        result = await session.execute(query)
+        image_record = result.scalar_one_or_none()
+
+        if not image_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+            )
+
+        # Download image from storage
+        try:
+            image_data = await storage.download_file(image_record.storage_path)
+
+            # Determine content type
+            content_type = image_record.content_type or "image/jpeg"
+
+            # Return as streaming response
+            return StreamingResponse(
+                io.BytesIO(image_data),
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "public, max-age=3600",  # Cache for 1 hour
+                    "Content-Disposition": f"inline; filename={image_record.filename}",
+                },
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to download image from storage: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to retrieve image from storage",
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in image proxy: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
         )

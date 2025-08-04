@@ -120,11 +120,15 @@ describe("GeneratedTasksModal", () => {
 		expect(task1).toHaveClass("border-gray-200");
 
 		// Click to select
-		fireEvent.click(task1!);
+		if (task1) {
+			fireEvent.click(task1);
+		}
 		expect(task1).toHaveClass("border-orange-500", "bg-orange-50");
 
 		// Click to deselect
-		fireEvent.click(task1!);
+		if (task1) {
+			fireEvent.click(task1);
+		}
 		expect(task1).toHaveClass("border-gray-200");
 	});
 
@@ -189,7 +193,7 @@ describe("GeneratedTasksModal", () => {
 	});
 
 	it("creates selected tasks when Create button is clicked", async () => {
-		mockTasksAPI.createTask.mockResolvedValue({} as any);
+		mockTasksAPI.createTask.mockResolvedValue({} as Task);
 
 		render(
 			<GeneratedTasksModal
@@ -201,8 +205,14 @@ describe("GeneratedTasksModal", () => {
 		);
 
 		// Select first two tasks
-		fireEvent.click(screen.getByText("Task 1").closest('[role="button"]')!);
-		fireEvent.click(screen.getByText("Task 2").closest('[role="button"]')!);
+		const task1Button = screen.getByText("Task 1").closest('[role="button"]');
+		if (task1Button) {
+			fireEvent.click(task1Button);
+		}
+		const task2Button = screen.getByText("Task 2").closest('[role="button"]');
+		if (task2Button) {
+			fireEvent.click(task2Button);
+		}
 
 		// Click create
 		fireEvent.click(screen.getByText("Create 2 Tasks"));
@@ -281,7 +291,8 @@ describe("GeneratedTasksModal", () => {
 			/>,
 		);
 
-		const task1 = screen.getByText("Task 1").closest('[role="button"]')!;
+		const task1 = screen.getByText("Task 1").closest('[role="button"]');
+		if (!task1) throw new Error("Task 1 button not found");
 
 		// Simulate Enter key
 		fireEvent.keyDown(task1, { key: "Enter" });

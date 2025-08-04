@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:frontend\"",
+    "dev": "./start-dev.sh",
     "dev:frontend": "cd frontend && pnpm run dev",
-    "dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
+    "dev:backend": "cd backend && uv run uvicorn app.main:app --reload --port 8000 --host 0.0.0.0",
     "install:all": "pnpm install && cd backend && uv sync",
     "test:backend": "cd backend && uv run pytest",
     "test:backend:unit": "cd backend && uv run pytest tests/test_*_unit.py -v",

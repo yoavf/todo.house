@@ -1,8 +1,8 @@
 import { ImageIcon, XIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ImageAnalysisResponse } from "@/lib/api";
+import { tasksAPI } from "@/lib/api";
 import { ImageProcessing } from "./ImageProcessing";
-import { SuggestionResults } from "./SuggestionResults";
 
 interface CameraViewProps {
 	isOpen: boolean;
@@ -20,72 +20,230 @@ export function CameraView({
 		null | "processing" | "results"
 	>(null);
 	const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
+	const [analysisResponse, setAnalysisResponse] =
+		useState<ImageAnalysisResponse | null>(null);
+	const [isApiComplete, setIsApiComplete] = useState(false);
+	const [stream, setStream] = useState<MediaStream | null>(null);
+	const [cameraError, setCameraError] = useState<string | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const videoRef = useRef<HTMLVideoElement>(null);
+	const canvasRef = useRef<HTMLCanvasElement>(null);
 
-	// Mock image URLs for simulation
-	const mockImageUrls = [
-		"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-		"https://images.unsplash.com/photo-1556911220-e15b29be8c8f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-		"https://images.unsplash.com/photo-1521207418485-99c705420785?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-	];
+	// Reset state when closing
+	useEffect(() => {
+		if (!isOpen) {
+			setProcessingState(null);
+			// Revoke the object URL before clearing it
+			if (capturedImageUrl) {
+				URL.revokeObjectURL(capturedImageUrl);
+			}
+			setCapturedImageUrl(null);
+			setAnalysisResponse(null);
+			setIsApiComplete(false);
+			setCameraError(null);
+			// Stop camera stream
+			if (stream) {
+				stream.getTracks().forEach((track) => track.stop());
+				setStream(null);
+			}
+		}
+	}, [isOpen, stream, capturedImageUrl]);
+
+	// Clean up object URLs when capturedImageUrl changes or component unmounts
+	useEffect(() => {
+		return () => {
+			if (capturedImageUrl) {
+				URL.revokeObjectURL(capturedImageUrl);
+			}
+		};
+	}, [capturedImageUrl]);
+
+	// Start camera when opening
+	useEffect(() => {
+		if (isOpen && !processingState) {
+			const start = async () => {
+				try {
+					// Check if mediaDevices is available (requires HTTPS or localhost)
+					if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+						setCameraError(
+							"Camera access requires HTTPS. Please use localhost or upload a photo instead.",
+						);
+						return;
+					}
+
+					const mediaStream = await navigator.mediaDevices.getUserMedia({
+						video: { facingMode: "environment" },
+						audio: false,
+					});
+					setStream(mediaStream);
+					if (videoRef.current) {
+						videoRef.current.srcObject = mediaStream;
+					}
+				} catch (error) {
+					console.error("Camera access error:", error);
+					if (error instanceof Error && error.name === "NotAllowedError") {
+						setCameraError(
+							"Camera permission denied. Please check your browser settings.",
+						);
+					} else {
+						setCameraError(
+							"Unable to access camera. Please check permissions or use HTTPS.",
+						);
+					}
+				}
+			};
+			start();
+		}
+	}, [isOpen, processingState]);
+
+	const capturePhoto = async () => {
+		if (!videoRef.current || !canvasRef.current) return;
+
+		// Trigger flash effect
+		setIsCapturing(true);
+
+		// Wait a brief moment for the flash effect to show
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		const video = videoRef.current;
+		const canvas = canvasRef.current;
+		const context = canvas.getContext("2d");
+
+		if (!context) return;
+
+		// Set canvas size to video size
+		canvas.width = video.videoWidth;
+		canvas.height = video.videoHeight;
+
+		// Draw video frame to canvas
+		context.drawImage(video, 0, 0);
+
+		// Remove flash effect after capture
+		setIsCapturing(false);
+
+		// Convert canvas to blob
+		canvas.toBlob(
+			async (blob) => {
+				if (!blob) {
+					// Stop camera stream even if blob creation fails
+					if (stream) {
+						stream.getTracks().forEach((track) => track.stop());
+						setStream(null);
+					}
+					alert("Failed to capture photo. Please try again.");
+					return;
+				}
+
+				// Create a File object from the blob
+				const file = new File([blob], `capture-${Date.now()}.jpg`, {
+					type: "image/jpeg",
+				});
+
+				// Create preview URL
+				const url = URL.createObjectURL(blob);
+				setCapturedImageUrl(url);
+
+				// Stop camera stream
+				if (stream) {
+					stream.getTracks().forEach((track) => track.stop());
+					setStream(null);
+				}
+
+				// Start processing
+				setProcessingState("processing");
+
+				try {
+					const response = await tasksAPI.analyzeImage(file);
+					setAnalysisResponse(response);
+					setIsApiComplete(true);
+				} catch (error) {
+					console.error("Failed to analyze image:", error);
+					setProcessingState(null);
+					// Revoke the object URL before clearing it
+					if (url) {
+						URL.revokeObjectURL(url);
+					}
+					setCapturedImageUrl(null);
+					setAnalysisResponse(null);
+					setIsApiComplete(false);
+					alert("Failed to analyze image. Please try again.");
+				}
+			},
+			"image/jpeg",
+			0.9,
+		);
+	};
 
 	const handleCapture = () => {
-		// Simulate capturing a photo
-		setIsCapturing(true);
-		setTimeout(() => {
-			setIsCapturing(false);
-			// Select a random mock image URL
-			const randomImage =
-				mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)];
-			setCapturedImageUrl(randomImage);
-			// Start processing
-			setProcessingState("processing");
-		}, 300);
+		if (stream && videoRef.current) {
+			capturePhoto();
+		} else {
+			fileInputRef.current?.click();
+		}
 	};
 
 	const handleSelectFromDevice = () => {
-		// In a real app, this would open the device's file picker
-		console.log("Select from device clicked");
-		// For simulation, use a mock image and start processing
-		const randomImage =
-			mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)];
-		setCapturedImageUrl(randomImage);
+		fileInputRef.current?.click();
+	};
+
+	const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		// Create a URL for preview
+		const url = URL.createObjectURL(file);
+		setCapturedImageUrl(url);
+
+		// Start processing
 		setProcessingState("processing");
+
+		try {
+			const response = await tasksAPI.analyzeImage(file);
+			setAnalysisResponse(response);
+			setIsApiComplete(true);
+		} catch (error) {
+			console.error("Failed to analyze image:", error);
+			// Reset state on error
+			setProcessingState(null);
+			// Revoke the object URL before clearing it
+			if (url) {
+				URL.revokeObjectURL(url);
+			}
+			setCapturedImageUrl(null);
+			setAnalysisResponse(null);
+			setIsApiComplete(false);
+			alert("Failed to analyze image. Please try again.");
+		}
+
+		// Clear the input so the same file can be selected again
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
 	};
 
 	const handleProcessingComplete = () => {
-		setProcessingState("results");
+		// Only show results if we have the API response
+		if (isApiComplete && analysisResponse) {
+			setProcessingState("results");
+		} else {
+			// If API isn't done yet, wait and keep checking
+			const checkInterval = setInterval(() => {
+				if (isApiComplete && analysisResponse) {
+					clearInterval(checkInterval);
+					setProcessingState("results");
+				}
+			}, 500);
+		}
 	};
 
-	const handleAddTasks = (
-		tasks: Array<{
-			title: string;
-			description?: string;
-			priority?: string;
-			category?: string;
-		}>,
-	) => {
-		// In a real app, this would add the tasks to the user's task list
-		console.log("Adding tasks:", tasks);
-		// Create a mock response similar to ImageAnalysisResponse
-		const mockResponse = {
-			image_id: "mock-image-id",
-			tasks: tasks.map((task) => ({
-				title: task.title,
-				description: task.description || "",
-				priority: (task.priority || "medium") as "low" | "medium" | "high",
-				category: task.category || "general",
-				confidence_score: 0.95,
-				task_types: [],
-			})),
-			analysis_summary: "Tasks generated from image",
-			processing_time: 2.5,
-			provider_used: "mock",
-			image_metadata: {},
-			retry_count: 0,
-		};
-		onTasksGenerated?.(mockResponse);
-		onClose();
-	};
+	// Handle completion after results are ready
+	useEffect(() => {
+		if (processingState === "results" && analysisResponse) {
+			// Pass the response to parent and close
+			onTasksGenerated?.(analysisResponse);
+			onClose();
+		}
+	}, [processingState, analysisResponse, onTasksGenerated, onClose]);
 
 	if (!isOpen) return null;
 
@@ -99,15 +257,9 @@ export function CameraView({
 		);
 	}
 
-	// Show results screen if in results state
+	// Show nothing while transitioning to results
 	if (processingState === "results") {
-		return (
-			<SuggestionResults
-				imageUrl={capturedImageUrl || ""}
-				onClose={onClose}
-				onAddTasks={handleAddTasks}
-			/>
-		);
+		return null;
 	}
 
 	// Otherwise show camera view
@@ -115,25 +267,37 @@ export function CameraView({
 		<div className="fixed inset-0 bg-black z-50 flex flex-col">
 			{/* Camera viewfinder */}
 			<div className="relative flex-1 bg-gray-900 flex items-center justify-center overflow-hidden">
-				{/* Simulated camera feed */}
-				<div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
-					<div
-						className="absolute inset-0 opacity-10"
-						style={{
-							backgroundImage:
-								"url('https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80')",
-							backgroundSize: "cover",
-							backgroundPosition: "center",
-						}}
-					></div>
-				</div>
+				{/* Live camera feed or error message */}
+				{cameraError ? (
+					<div className="text-white text-center p-4">
+						<p className="mb-4">{cameraError}</p>
+						<button
+							type="button"
+							className="px-4 py-2 bg-orange-500 text-white rounded-lg"
+							onClick={() => fileInputRef.current?.click()}
+						>
+							Select Photo Instead
+						</button>
+					</div>
+				) : (
+					<>
+						<video
+							ref={videoRef}
+							autoPlay
+							playsInline
+							muted
+							className="absolute inset-0 w-full h-full object-cover"
+						/>
+						<canvas ref={canvasRef} className="hidden" />
+					</>
+				)}
 				{/* Camera UI elements */}
 				<div className="absolute inset-0 pointer-events-none">
-					{/* Corner markers to indicate viewfinder */}
-					<div className="absolute top-8 left-8 w-12 h-12 border-l-2 border-t-2 border-white opacity-60"></div>
-					<div className="absolute top-8 right-8 w-12 h-12 border-r-2 border-t-2 border-white opacity-60"></div>
-					<div className="absolute bottom-8 left-8 w-12 h-12 border-l-2 border-b-2 border-white opacity-60"></div>
-					<div className="absolute bottom-8 right-8 w-12 h-12 border-r-2 border-b-2 border-white opacity-60"></div>
+					{/* Corner markers to indicate viewfinder - narrower frame */}
+					<div className="absolute top-20 left-12 w-12 h-12 border-l-2 border-t-2 border-white opacity-60"></div>
+					<div className="absolute top-20 right-12 w-12 h-12 border-r-2 border-t-2 border-white opacity-60"></div>
+					<div className="absolute bottom-20 left-12 w-12 h-12 border-l-2 border-b-2 border-white opacity-60"></div>
+					<div className="absolute bottom-20 right-12 w-12 h-12 border-r-2 border-b-2 border-white opacity-60"></div>
 				</div>
 				{/* Flash effect when capturing */}
 				{isCapturing && (
@@ -149,7 +313,9 @@ export function CameraView({
 				</button>
 				{/* Capture hint text */}
 				<div className="absolute top-4 left-0 right-0 text-center">
-					<p className="text-white/70 text-sm">Tap to capture your task</p>
+					<p className="text-white/70 text-base">
+						Take a photo of what needs attention
+					</p>
 				</div>
 			</div>
 			{/* Bottom controls */}
@@ -171,6 +337,15 @@ export function CameraView({
 					<ImageIcon size={20} />
 				</button>
 			</div>
+			{/* Hidden file input with camera capture for mobile */}
+			<input
+				ref={fileInputRef}
+				type="file"
+				accept="image/*"
+				capture="environment"
+				className="hidden"
+				onChange={handleFileSelected}
+			/>
 		</div>
 	);
 }

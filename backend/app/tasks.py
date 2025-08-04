@@ -16,7 +16,6 @@ from .models import (
 )
 from .database import get_session_dependency, Task as TaskModel, Image as ImageModel
 from .services.task_service import TaskService
-from .storage import storage
 from .logging_config import StructuredLogger
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -41,7 +40,7 @@ async def populate_task_image_urls(
     1. Fetches all unique images in a single database query for performance
     2. Caches storage URLs to avoid duplicate API calls
     3. Handles database and storage errors gracefully
-    
+
     Args:
         tasks: List of task models from database
         session: Database session
@@ -74,14 +73,11 @@ async def populate_task_image_urls(
             error_type=type(e).__name__,
             error_message=str(e),
             image_count=len(image_ids),
-            task_count=len(tasks)
+            task_count=len(tasks),
         )
         # Return tasks without URLs rather than failing completely
         return [Task.model_validate(task) for task in tasks]
 
-    # Cache for storage URLs to avoid duplicate calls
-    url_cache: Dict[str, str] = {}
-    
     # Convert tasks and populate image URLs
     task_models = []
     for task in tasks:
@@ -89,20 +85,13 @@ async def populate_task_image_urls(
 
         if task.source_image_id and task.source_image_id in images:
             image = images[task.source_image_id]
-            
-            # Get or cache the public URL with error handling
+
+            # Use proxy endpoint instead of direct Supabase URL
             try:
-                if image.storage_path not in url_cache:
-                    # Generate and cache the URL
-                    public_url = storage.get_public_url(image.storage_path)
-                    url_cache[image.storage_path] = public_url
-                
-                # Use cached URL
-                public_url = url_cache[image.storage_path]
-                task_dict["image_url"] = public_url
-                # For now, use the same URL for thumbnail (could be optimized later)
-                task_dict["thumbnail_url"] = public_url
-                
+                proxy_url = f"/api/images/proxy/{image.id}"
+                task_dict["image_url"] = proxy_url
+                task_dict["thumbnail_url"] = proxy_url
+
             except Exception as e:
                 # Log error but don't fail the entire operation
                 logger.warning(
@@ -111,7 +100,7 @@ async def populate_task_image_urls(
                     error_message=str(e),
                     image_id=str(image.id),
                     storage_path=image.storage_path,
-                    task_id=str(task.id)
+                    task_id=str(task.id),
                 )
                 # Task will be returned without image URLs
 
