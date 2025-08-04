@@ -1,9 +1,14 @@
 "use client";
 
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+import {
+	CheckIcon,
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	CircleIcon,
+} from "lucide-react";
 import type * as React from "react";
-
+import { useLocale } from "@/hooks/useLocale";
 import { cn } from "@/lib/utils";
 
 function DropdownMenu({
@@ -206,18 +211,21 @@ function DropdownMenuSubTrigger({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
 	inset?: boolean;
 }) {
+	const { isRTL } = useLocale();
+	const ChevronIcon = isRTL ? ChevronLeftIcon : ChevronRightIcon;
+
 	return (
 		<DropdownMenuPrimitive.SubTrigger
 			data-slot="dropdown-menu-sub-trigger"
 			data-inset={inset}
 			className={cn(
-				"focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
+				"focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:ps-8",
 				className,
 			)}
 			{...props}
 		>
 			{children}
-			<ChevronRightIcon className="ml-auto size-4" />
+			<ChevronIcon className="ms-auto size-4" />
 		</DropdownMenuPrimitive.SubTrigger>
 	);
 }

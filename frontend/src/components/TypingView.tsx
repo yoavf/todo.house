@@ -1,5 +1,6 @@
-import { ArrowRightIcon, WandIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, WandIcon, XIcon } from "lucide-react";
 import React, { useState } from "react";
+import { useLocale } from "@/hooks/useLocale";
 import type { TaskCreate } from "@/lib/api";
 import { LocationSelector } from "./LocationSelector";
 
@@ -19,6 +20,10 @@ export function TypingView({
 	const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 	const [isAIGenerating, setIsAIGenerating] = useState(false);
 	const [showFullForm, setShowFullForm] = useState(false);
+
+	// RTL support
+	const { isRTL } = useLocale();
+	const ArrowIcon = isRTL ? ArrowLeftIcon : ArrowRightIcon;
 
 	// Reset state when closed
 	React.useEffect(() => {
@@ -148,7 +153,7 @@ export function TypingView({
 								className="w-full py-3 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center justify-center"
 								onClick={handleContinueManually}
 							>
-								<ArrowRightIcon size={18} className="mr-2" />
+								<ArrowIcon size={18} className="me-2" />
 								Continue manually
 							</button>
 						</div>

@@ -35,10 +35,20 @@ export function useRTLClasses() {
 		// Helper to get directional arrow icon
 		getArrowIcon: () => (isRTL ? "ArrowLeftIcon" : "ArrowRightIcon"),
 
+		// Helper to get back arrow icon
+		getBackArrowIcon: () => (isRTL ? "ArrowRightIcon" : "ArrowLeftIcon"),
+
+		// Helper to get chevron icon
+		getChevronIcon: () => (isRTL ? "ChevronLeftIcon" : "ChevronRightIcon"),
+
 		// Helper for swipe directions
 		getSwipeDirection: () => ({
 			positive: isRTL ? "left" : "right",
 			negative: isRTL ? "right" : "left",
 		}),
+
+		// Helper to apply RTL mirroring class to any directional icon
+		getMirrorClass: (shouldMirror = true) =>
+			shouldMirror && isRTL ? "rtl:mirror" : "",
 	};
 }

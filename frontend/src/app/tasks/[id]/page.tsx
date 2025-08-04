@@ -2,6 +2,7 @@
 
 import {
 	ArrowLeft,
+	ArrowRight,
 	Check,
 	Clock,
 	MapPin,
@@ -15,6 +16,7 @@ import ReactMarkdown from "react-markdown";
 import { SnoozeModal } from "@/components/SnoozeModal";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLocale } from "@/hooks/useLocale";
 import { type ShoppingListItem, type Task, tasksAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +61,10 @@ export default function TaskDetailPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
 	const [snoozeError, setSnoozeError] = useState<string | null>(null);
+
+	// RTL support
+	const { isRTL } = useLocale();
+	const BackArrowIcon = isRTL ? ArrowRight : ArrowLeft;
 
 	useEffect(() => {
 		const loadTask = async () => {
@@ -138,7 +144,7 @@ export default function TaskDetailPage() {
 				<div className="text-center">
 					<p className="text-red-500 mb-4">{error}</p>
 					<Button onClick={() => router.back()} variant="outline">
-						<ArrowLeft className="w-4 h-4 mr-2" />
+						<BackArrowIcon className="w-4 h-4 me-2" />
 						Go Back
 					</Button>
 				</div>
@@ -182,9 +188,9 @@ export default function TaskDetailPage() {
 					<button
 						type="button"
 						onClick={() => router.back()}
-						className="mr-4 p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
+						className="me-4 p-2 -ms-2 rounded-full hover:bg-gray-100 transition-colors"
 					>
-						<ArrowLeft className="w-5 h-5" />
+						<BackArrowIcon className="w-5 h-5" />
 					</button>
 					<h1 className="text-lg font-semibold">Task Details</h1>
 				</div>
