@@ -208,7 +208,7 @@ export function MicrophoneView({
 									SpeechRecognition.startListening({
 										continuous: true,
 										language: "en-US",
-									}).catch((err) => {
+									}).catch((_err) => {
 										SpeechRecognition.stopListening();
 										setError(
 											"Failed to start speech recognition. Please try again.",

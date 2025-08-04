@@ -146,7 +146,11 @@ class ImageProcessingService:
     # Validation constants
     MAX_TITLE_LENGTH = 50  # Maximum task title length (characters)
 
-    def __init__(self, ai_provider: Optional[AIProvider] = None, prompt_service: Optional[PromptService] = None):
+    def __init__(
+        self,
+        ai_provider: Optional[AIProvider] = None,
+        prompt_service: Optional[PromptService] = None,
+    ):
         """
         Initialize image processing service.
 

@@ -123,7 +123,7 @@ SUPABASE_KEY=your-anon-key
 
 # AI Provider Configuration (optional)
 GEMINI_API_KEY=your-api-key
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-2.5-flash-lite
 DEFAULT_AI_PROVIDER=gemini
 
 # Logging
