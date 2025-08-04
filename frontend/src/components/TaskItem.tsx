@@ -6,8 +6,24 @@ import {
 	ClockIcon,
 	type LucideIcon,
 	MoreHorizontalIcon,
+	TrashIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { tasksAPI } from "@/lib/api";
 import { SnoozeModal } from "./SnoozeModal";
 
@@ -25,14 +41,17 @@ interface TaskItemProps {
 		image_url?: string;
 	};
 	onTaskUpdate?: () => void;
+	activeTab?: "do-next" | "later" | "suggested" | "all";
 }
 
 const SWIPE_THRESHOLD = -100;
 const SWIPE_FULL_THRESHOLD = -200;
 
-export function TaskItem({ task, onTaskUpdate }: TaskItemProps) {
+export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
 	const [snoozeError, setSnoozeError] = useState<string | null>(null);
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const Icon = task.icon;
 	const controls = useAnimation();
 	const x = useMotionValue(0);
@@ -84,6 +103,34 @@ export function TaskItem({ task, onTaskUpdate }: TaskItemProps) {
 			setSnoozeError(
 				"Failed to snooze task. Please check your connection and try again.",
 			);
+		}
+	};
+
+	const handleUnsnooze = async () => {
+		try {
+			await tasksAPI.unsnoozeTask(task.id);
+			if (onTaskUpdate) {
+				onTaskUpdate();
+			}
+		} catch (error) {
+			console.error("Failed to unsnooze task:", error);
+			alert("Failed to unsnooze task. Please try again.");
+		}
+	};
+
+	const handleDelete = async () => {
+		setIsDeleting(true);
+		try {
+			await tasksAPI.deleteTask(task.id);
+			setShowDeleteDialog(false);
+			if (onTaskUpdate) {
+				onTaskUpdate();
+			}
+		} catch (error) {
+			console.error("Failed to delete task:", error);
+			alert("Failed to delete task. Please try again.");
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
@@ -158,12 +205,41 @@ export function TaskItem({ task, onTaskUpdate }: TaskItemProps) {
 									· {task.estimatedTime}
 								</span>
 							</button>
-							<button
-								type="button"
-								className="p-2 text-gray-400 hover:text-gray-600 flex-shrink-0"
-							>
-								<MoreHorizontalIcon size={18} />
-							</button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<button
+										type="button"
+										className="p-2 text-gray-400 hover:text-gray-600 flex-shrink-0 outline-none focus:outline-none active:outline-none rounded-md"
+									>
+										<MoreHorizontalIcon size={18} />
+									</button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end" side="top" sideOffset={-5}>
+									<DropdownMenuItem
+										onClick={() => {
+											if (activeTab === "later" || task.status === "later") {
+												handleUnsnooze();
+											} else {
+												setShowSnoozeModal(true);
+											}
+										}}
+										className="cursor-pointer"
+									>
+										<ClockIcon className="mr-2 h-4 w-4" />
+										{activeTab === "later" || task.status === "later"
+											? "Unsnooze"
+											: "Snooze"}
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => setShowDeleteDialog(true)}
+										variant="destructive"
+										className="cursor-pointer"
+									>
+										<TrashIcon className="mr-2 h-4 w-4" />
+										Delete
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</div>
 					</div>
 				</motion.div>
@@ -178,6 +254,34 @@ export function TaskItem({ task, onTaskUpdate }: TaskItemProps) {
 				onSnooze={handleSnooze}
 				error={snoozeError}
 			/>
+
+			<Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Delete Task</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to delete "{task.title}"? This action cannot
+							be undone.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowDeleteDialog(false)}
+							disabled={isDeleting}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleDelete}
+							disabled={isDeleting}
+						>
+							{isDeleting ? "Deleting..." : "Delete"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

@@ -155,7 +155,12 @@ export function TaskList() {
 
 			<div className="space-y-4">
 				{filteredTasks.map((task) => (
-					<TaskItem key={task.id} task={task} onTaskUpdate={refetch} />
+					<TaskItem
+						key={task.id}
+						task={task}
+						onTaskUpdate={refetch}
+						activeTab={activeTab}
+					/>
 				))}
 
 				{filteredTasks.length === 0 && (
