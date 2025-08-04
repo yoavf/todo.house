@@ -51,14 +51,11 @@ export function MicrophoneView({
 
 		recognition.onresult = (event: SpeechRecognitionEvent) => {
 			let finalTranscript = "";
-			let _interimTranscript = "";
 
 			for (let i = event.resultIndex; i < event.results.length; i++) {
 				const transcript = event.results[i][0].transcript;
 				if (event.results[i].isFinal) {
 					finalTranscript += `${transcript} `;
-				} else {
-					_interimTranscript += transcript;
 				}
 			}
 
@@ -68,7 +65,6 @@ export function MicrophoneView({
 		};
 
 		recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-			console.error("Speech recognition error:", event.error);
 			if (event.error === "not-allowed") {
 				setError(
 					"Microphone access denied. Please allow microphone permissions and try again.",
@@ -89,7 +85,7 @@ export function MicrophoneView({
 		try {
 			recognition.start();
 		} catch (error) {
-			console.error("Failed to start recognition:", error);
+			setError("Failed to start speech recognition. Please try again.");
 		}
 
 		return () => {
@@ -97,7 +93,7 @@ export function MicrophoneView({
 				try {
 					recognitionRef.current.stop();
 				} catch (error) {
-					console.error("Error stopping recognition:", error);
+					// Ignore errors when stopping - component is unmounting
 				}
 			}
 		};
