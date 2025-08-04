@@ -96,20 +96,24 @@ describe("TaskItem", () => {
 			return svg?.classList.contains("lucide-clock");
 		});
 
-		if (snoozeButton) {
-			fireEvent.click(snoozeButton);
-
-			// Wait for modal to appear
-			await waitFor(() => {
-				expect(screen.getByText("Snooze until")).toBeInTheDocument();
-			});
-
-			// Check snooze options are shown
-			expect(screen.getByText("Tomorrow")).toBeInTheDocument();
-			expect(screen.getByText("This weekend")).toBeInTheDocument();
-			expect(screen.getByText("Next week")).toBeInTheDocument();
-			expect(screen.getByText("Select date")).toBeInTheDocument();
+		// Ensure snooze button exists
+		expect(snoozeButton).toBeTruthy();
+		if (!snoozeButton) {
+			throw new Error("Snooze button not found in the DOM");
 		}
+
+		fireEvent.click(snoozeButton);
+
+		// Wait for modal to appear
+		await waitFor(() => {
+			expect(screen.getByText("Snooze until")).toBeInTheDocument();
+		});
+
+		// Check snooze options are shown
+		expect(screen.getByText("Tomorrow")).toBeInTheDocument();
+		expect(screen.getByText("This weekend")).toBeInTheDocument();
+		expect(screen.getByText("Next week")).toBeInTheDocument();
+		expect(screen.getByText("Select date")).toBeInTheDocument();
 	});
 
 	it("renders background image when provided", () => {

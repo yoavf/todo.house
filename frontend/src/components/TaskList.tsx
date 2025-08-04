@@ -76,7 +76,7 @@ export function TaskList() {
 	const [activeTab, setActiveTab] = useState<
 		"do-next" | "later" | "suggested" | "all"
 	>("do-next");
-	const { tasks, loading, error } = useTasks();
+	const { tasks, loading, error, refetch } = useTasks();
 
 	if (loading) {
 		return (
@@ -155,11 +155,7 @@ export function TaskList() {
 
 			<div className="space-y-4">
 				{filteredTasks.map((task) => (
-					<TaskItem
-						key={task.id}
-						task={task}
-						onTaskUpdate={() => window.location.reload()}
-					/>
+					<TaskItem key={task.id} task={task} onTaskUpdate={refetch} />
 				))}
 
 				{filteredTasks.length === 0 && (
