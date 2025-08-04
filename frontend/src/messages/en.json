@@ -1,0 +1,98 @@
+{
+	"common": {
+		"delete": "Delete",
+		"cancel": "Cancel",
+		"confirm": "Confirm",
+		"save": "Save",
+		"edit": "Edit",
+		"loading": "Loading...",
+		"ok": "OK",
+		"goBack": "Go Back",
+		"addTask": "Add Task",
+		"doIt": "Do it",
+		"snooze": "Snooze",
+		"unsnooze": "Unsnooze",
+		"complete": "Complete",
+		"selectDate": "Select date"
+	},
+	"dialogs": {
+		"deleteConfirm": "Are you sure you want to delete \"{title}\"?",
+		"deleteTask": "Delete Task",
+		"deleteTaskDescription": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+		"unsavedChanges": "You have unsaved changes. Are you sure you want to leave?",
+		"error": "Error"
+	},
+	"time": {
+		"tomorrow": "Tomorrow",
+		"thisWeekend": "This weekend",
+		"nextWeek": "Next week",
+		"later": "Later",
+		"andTime": "and time",
+		"estimatedTime": "Estimated time"
+	},
+	"tasks": {
+		"priority": {
+			"low": "Low",
+			"medium": "Medium",
+			"high": "High"
+		},
+		"status": {
+			"active": "Active",
+			"snoozed": "Snoozed",
+			"completed": "Completed",
+			"later": "Later"
+		},
+		"types": {
+			"interior": "Interior",
+			"exterior": "Exterior",
+			"electricity": "Electricity",
+			"plumbing": "Plumbing",
+			"hvac": "HVAC",
+			"appliances": "Appliances",
+			"general": "General",
+			"maintenance": "Maintenance"
+		},
+		"fields": {
+			"title": "Task Title",
+			"description": "Description",
+			"descriptionOptional": "Description (optional)",
+			"priority": "Priority",
+			"category": "Category"
+		},
+		"placeholders": {
+			"descriptionPlaceholder": "Add any additional details..."
+		},
+		"actions": {
+			"reviewTask": "Review Your Task",
+			"createTask": "Create Task",
+			"viewTask": "View Task",
+			"editTask": "Edit Task",
+			"deleteTask": "Delete Task",
+			"snoozeTask": "Snooze Task",
+			"completeTask": "Complete Task"
+		},
+		"tabs": {
+			"guide": "Guide",
+			"shoppingList": "Shopping List",
+			"steps": "Steps"
+		}
+	},
+	"speech": {
+		"iHeard": "I heard:",
+		"reviewYourTask": "Review Your Task"
+	},
+	"errors": {
+		"generic": "Something went wrong. Please try again.",
+		"network": "Network error. Please check your connection.",
+		"validation": "Please check your input and try again.",
+		"notFound": "The requested item was not found.",
+		"invalidTaskId": "Invalid task ID",
+		"failedToLoadTask": "Failed to load task",
+		"failedToCreateTask": "Failed to create task",
+		"failedToUpdateTask": "Failed to update task",
+		"failedToDeleteTask": "Failed to delete task",
+		"failedToSnoozeTask": "Failed to snooze task",
+		"failedToUnsnoozeTask": "Failed to unsnooze task",
+		"actionFailed": "Failed to {action} task. Please check your connection and try again."
+	}
+}

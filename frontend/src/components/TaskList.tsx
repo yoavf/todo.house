@@ -95,26 +95,6 @@ export function TaskList() {
 		setLocalTasks(tasks);
 	}, [tasks]);
 
-	if (loading) {
-		return (
-			<div className="flex justify-center items-center py-12">
-				<div
-					className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"
-					data-testid="loading-spinner"
-				></div>
-			</div>
-		);
-	}
-
-	if (error) {
-		return (
-			<div className="text-center py-8">
-				<p className="text-red-500 mb-2">Failed to load tasks</p>
-				<p className="text-sm text-gray-500">{error}</p>
-			</div>
-		);
-	}
-
 	// Map backend tasks to UI format
 	const uiTasks = localTasks.map(mapTaskToUI);
 	const filteredTasks = uiTasks.filter(
@@ -216,48 +196,64 @@ export function TaskList() {
 
 	return (
 		<div className="space-y-4 pb-20">
-			{activeTab === "later" ? (
-				// Time-organized view for "later" tab
-				<>
-					{renderTimeOrganizedTasks()}
-					{localTasks.filter((task) => task.status === "snoozed").length ===
-						0 && (
-						<div className="text-center py-8">
-							<p className="text-gray-500">No tasks in this category</p>
-						</div>
-					)}
-				</>
+			{loading ? (
+				<div className="flex justify-center items-center py-12">
+					<div
+						className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"
+						data-testid="loading-spinner"
+					></div>
+				</div>
+			) : error ? (
+				<div className="text-center py-8">
+					<p className="text-red-500 mb-2">Failed to load tasks</p>
+					<p className="text-sm text-gray-500">{error}</p>
+				</div>
 			) : (
-				// Regular list view for other tabs
 				<>
-					<AnimatePresence mode="popLayout">
-						{filteredTasks.map((task) => (
-							<TaskItem
-								key={task.id}
-								task={task}
-								onTaskUpdate={() => handleTaskRemoval(task.id)}
-								activeTab={activeTab}
-							/>
-						))}
-					</AnimatePresence>
+					{activeTab === "later" ? (
+						// Time-organized view for "later" tab
+						<>
+							{renderTimeOrganizedTasks()}
+							{localTasks.filter((task) => task.status === "snoozed").length ===
+								0 && (
+								<div className="text-center py-8">
+									<p className="text-gray-500">No tasks in this category</p>
+								</div>
+							)}
+						</>
+					) : (
+						// Regular list view for other tabs
+						<>
+							<AnimatePresence mode="popLayout">
+								{filteredTasks.map((task) => (
+									<TaskItem
+										key={task.id}
+										task={task}
+										onTaskUpdate={() => handleTaskRemoval(task.id)}
+										activeTab={activeTab}
+									/>
+								))}
+							</AnimatePresence>
 
-					{filteredTasks.length === 0 && (
-						<div className="text-center py-8">
-							<p className="text-gray-500">No tasks in this category</p>
-						</div>
+							{filteredTasks.length === 0 && (
+								<div className="text-center py-8">
+									<p className="text-gray-500">No tasks in this category</p>
+								</div>
+							)}
+						</>
 					)}
+
+					<hr className="my-4 border-gray-200" />
+					<div className="text-left">
+						<Link
+							href="/tasks"
+							className="text-sm text-gray-500 hover:text-orange-500"
+						>
+							All tasks &gt;
+						</Link>
+					</div>
 				</>
 			)}
-
-			<hr className="my-4 border-gray-200" />
-			<div className="text-left">
-				<Link
-					href="/tasks"
-					className="text-sm text-gray-500 hover:text-orange-500"
-				>
-					All tasks &gt;
-				</Link>
-			</div>
 		</div>
 	);
 }
