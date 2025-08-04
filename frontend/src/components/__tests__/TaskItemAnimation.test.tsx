@@ -16,9 +16,23 @@ jest.mock("framer-motion", () => ({
 	motion: {
 		div: ({
 			children,
+			drag,
+			dragConstraints,
+			dragElastic,
+			onDragEnd,
+			animate,
+			style,
+			onClick,
+			initial,
+			exit,
+			variants,
+			layout,
 			...props
 		}: React.PropsWithChildren<Record<string, unknown>>) => (
-			<div {...props}>{children}</div>
+			// biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: Mock component for testing
+			<div onClick={onClick} style={style} {...props}>
+				{children}
+			</div>
 		),
 	},
 	useAnimation: () => ({
@@ -199,6 +213,21 @@ describe("TaskItem Animation Integration", () => {
 	};
 
 	const mockOnTaskUpdate = jest.fn();
+
+	// Silence console methods
+	const originalConsole = { ...console };
+
+	beforeAll(() => {
+		console.log = jest.fn();
+		console.error = jest.fn();
+		console.warn = jest.fn();
+	});
+
+	afterAll(() => {
+		console.log = originalConsole.log;
+		console.error = originalConsole.error;
+		console.warn = originalConsole.warn;
+	});
 
 	beforeEach(() => {
 		jest.clearAllMocks();

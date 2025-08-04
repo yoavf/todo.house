@@ -10,6 +10,12 @@ interface AnimatedTaskItemProps {
 	onAnimationComplete?: () => void;
 }
 
+// Animation timing constants (matching TaskItem)
+const ANIMATION_TIMING = {
+	slideOut: 0.3,
+	heightCollapseDelay: 0.1,
+} as const;
+
 const exitVariants = {
 	initial: { opacity: 1, x: 0, height: "auto" },
 	exit: {
@@ -20,9 +26,9 @@ const exitVariants = {
 		paddingTop: 0,
 		paddingBottom: 0,
 		transition: {
-			duration: 0.3,
+			duration: ANIMATION_TIMING.slideOut,
 			ease: "easeInOut" as const,
-			height: { delay: 0.1 },
+			height: { delay: ANIMATION_TIMING.heightCollapseDelay },
 		},
 	},
 };

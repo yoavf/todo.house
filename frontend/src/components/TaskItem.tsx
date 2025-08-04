@@ -49,16 +49,29 @@ interface TaskItemProps {
 const SWIPE_THRESHOLD = -100;
 const SWIPE_FULL_THRESHOLD = -200;
 
+// Animation timing constants
+const ANIMATION_TIMING = {
+	dialogCloseDelay: 200,
+	slideOut: 300,
+	heightCollapseDelay: 100,
+} as const;
+
+// Discriminated union for pending actions
+type PendingAction =
+	| { type: "snooze"; date: Date }
+	| { type: "delete" }
+	| { type: "unsnooze" };
+
 export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
 	const [snoozeError, setSnoozeError] = useState<string | null>(null);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-	const [isDeleting] = useState(false);
+	const [showErrorDialog, setShowErrorDialog] = useState(false);
+	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [isRemoving, setIsRemoving] = useState(false);
-	const [pendingAction, setPendingAction] = useState<{
-		type: "snooze" | "delete" | "unsnooze";
-		data?: Date;
-	} | null>(null);
+	const [pendingAction, setPendingAction] = useState<PendingAction | null>(
+		null,
+	);
 	const Icon = task.icon;
 	const controls = useAnimation();
 	const x = useMotionValue(0);
@@ -76,8 +89,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 			if (pendingAction.type === "snooze") {
 				await tasksAPI.updateTask(task.id, {
 					status: "snoozed",
-					snoozed_until:
-						pendingAction.data?.toISOString() || new Date().toISOString(),
+					snoozed_until: pendingAction.date.toISOString(),
 				});
 			} else if (pendingAction.type === "delete") {
 				await tasksAPI.deleteTask(task.id);
@@ -94,13 +106,13 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 			setIsRemoving(false);
 			setPendingAction(null);
 
-			if (pendingAction.type === "snooze") {
-				setSnoozeError(
-					"Failed to snooze task. Please check your connection and try again.",
-				);
-			} else {
-				alert(`Failed to ${pendingAction.type} task. Please try again.`);
-			}
+			// Use consistent error dialog for all actions
+			const actionName =
+				pendingAction.type === "unsnooze" ? "unsnooze" : pendingAction.type;
+			setErrorMessage(
+				`Failed to ${actionName} task. Please check your connection and try again.`,
+			);
+			setShowErrorDialog(true);
 		}
 	};
 
@@ -136,9 +148,9 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 
 		// Delay animation to allow modal to fade out
 		setTimeout(() => {
-			setPendingAction({ type: "snooze", data: date });
+			setPendingAction({ type: "snooze", date });
 			setIsRemoving(true);
-		}, 200);
+		}, ANIMATION_TIMING.dialogCloseDelay);
 	};
 
 	const handleUnsnooze = async () => {
@@ -154,7 +166,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 		setTimeout(() => {
 			setPendingAction({ type: "delete" });
 			setIsRemoving(true);
-		}, 200);
+		}, ANIMATION_TIMING.dialogCloseDelay);
 	};
 
 	const handleViewTask = () => {
@@ -329,16 +341,25 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 						<Button
 							variant="outline"
 							onClick={() => setShowDeleteDialog(false)}
-							disabled={isDeleting}
 						>
 							Cancel
 						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleDelete}
-							disabled={isDeleting}
-						>
-							{isDeleting ? "Deleting..." : "Delete"}
+						<Button variant="destructive" onClick={handleDelete}>
+							Delete
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Error</DialogTitle>
+						<DialogDescription>{errorMessage}</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setShowErrorDialog(false)}>
+							OK
 						</Button>
 					</DialogFooter>
 				</DialogContent>

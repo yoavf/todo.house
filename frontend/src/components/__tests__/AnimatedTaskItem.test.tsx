@@ -13,7 +13,7 @@ jest.mock("framer-motion", () => ({
 	},
 	motion: {
 		// biome-ignore lint/suspicious/noExplicitAny: Mock type for testing
-		div: ({ children, ...props }: any) => (
+		div: ({ children, initial, exit, variants, layout, ...props }: any) => (
 			<div data-testid="motion-div" {...props}>
 				{children}
 			</div>

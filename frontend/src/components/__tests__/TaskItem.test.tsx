@@ -15,9 +15,23 @@ jest.mock("framer-motion", () => ({
 	motion: {
 		div: ({
 			children,
+			drag,
+			dragConstraints,
+			dragElastic,
+			onDragEnd,
+			animate,
+			style,
+			onClick,
+			initial,
+			exit,
+			variants,
+			layout,
 			...props
 		}: React.PropsWithChildren<Record<string, unknown>>) => (
-			<div {...props}>{children}</div>
+			// biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: Mock component for testing
+			<div onClick={onClick} style={style} {...props}>
+				{children}
+			</div>
 		),
 	},
 	useAnimation: () => ({
