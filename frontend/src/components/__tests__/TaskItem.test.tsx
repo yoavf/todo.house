@@ -15,9 +15,23 @@ jest.mock("framer-motion", () => ({
 	motion: {
 		div: ({
 			children,
+			drag,
+			dragConstraints,
+			dragElastic,
+			onDragEnd,
+			animate,
+			style,
+			onClick,
+			initial,
+			exit,
+			variants,
+			layout,
 			...props
 		}: React.PropsWithChildren<Record<string, unknown>>) => (
-			<div {...props}>{children}</div>
+			// biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: Mock component for testing
+			<div onClick={onClick} style={style} {...props}>
+				{children}
+			</div>
 		),
 	},
 	useAnimation: () => ({
@@ -27,6 +41,14 @@ jest.mock("framer-motion", () => ({
 		set: jest.fn(),
 		get: () => 0,
 	}),
+	// biome-ignore lint/suspicious/noExplicitAny: Mock type for testing
+	AnimatePresence: ({ children, onExitComplete }: any) => {
+		// Simulate exit complete after a short delay
+		setTimeout(() => {
+			if (onExitComplete) onExitComplete();
+		}, 0);
+		return <div data-testid="animate-presence">{children}</div>;
+	},
 }));
 
 // Mock Radix UI components to avoid portal issues in tests
@@ -239,6 +261,31 @@ describe("TaskItem", () => {
 		await waitFor(() => {
 			expect(screen.getByText("Snooze")).toBeInTheDocument();
 			expect(screen.getByText("Delete")).toBeInTheDocument();
+		});
+	});
+
+	it("does not navigate when clicking dropdown menu items", async () => {
+		const mockRouter = require("next/navigation").useRouter();
+		render(<TaskItem task={mockTask} onTaskUpdate={mockOnTaskUpdate} />);
+
+		// Open dropdown menu
+		const buttons = screen.getAllByRole("button");
+		const moreButton = buttons.find((button) =>
+			button.querySelector(".lucide-ellipsis"),
+		);
+		expect(moreButton).toBeTruthy();
+		if (moreButton) fireEvent.click(moreButton);
+
+		// Click snooze menu item
+		const snoozeButton = await screen.findByText("Snooze");
+		fireEvent.click(snoozeButton);
+
+		// Verify router.push was NOT called
+		expect(mockRouter.push).not.toHaveBeenCalled();
+
+		// Verify snooze modal opens instead
+		await waitFor(() => {
+			expect(screen.getByText("Snooze until")).toBeInTheDocument();
 		});
 	});
 
