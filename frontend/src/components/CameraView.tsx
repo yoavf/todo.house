@@ -33,6 +33,10 @@ export function CameraView({
 	useEffect(() => {
 		if (!isOpen) {
 			setProcessingState(null);
+			// Revoke the object URL before clearing it
+			if (capturedImageUrl) {
+				URL.revokeObjectURL(capturedImageUrl);
+			}
 			setCapturedImageUrl(null);
 			setAnalysisResponse(null);
 			setIsApiComplete(false);
@@ -43,7 +47,16 @@ export function CameraView({
 				setStream(null);
 			}
 		}
-	}, [isOpen, stream]);
+	}, [isOpen, stream, capturedImageUrl]);
+
+	// Clean up object URLs when capturedImageUrl changes or component unmounts
+	useEffect(() => {
+		return () => {
+			if (capturedImageUrl) {
+				URL.revokeObjectURL(capturedImageUrl);
+			}
+		};
+	}, [capturedImageUrl]);
 
 	// Start camera when opening
 	useEffect(() => {
@@ -129,6 +142,10 @@ export function CameraView({
 				} catch (error) {
 					console.error("Failed to analyze image:", error);
 					setProcessingState(null);
+					// Revoke the object URL before clearing it
+					if (url) {
+						URL.revokeObjectURL(url);
+					}
 					setCapturedImageUrl(null);
 					setAnalysisResponse(null);
 					setIsApiComplete(false);
@@ -171,6 +188,10 @@ export function CameraView({
 			console.error("Failed to analyze image:", error);
 			// Reset state on error
 			setProcessingState(null);
+			// Revoke the object URL before clearing it
+			if (url) {
+				URL.revokeObjectURL(url);
+			}
 			setCapturedImageUrl(null);
 			setAnalysisResponse(null);
 			setIsApiComplete(false);

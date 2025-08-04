@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	addDays,
-	addHours,
-	addWeeks,
-	formatDistanceToNow,
-	nextSaturday,
-} from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import {
 	BoxIcon,
 	HammerIcon,
@@ -82,7 +76,7 @@ export function TaskList() {
 	const [activeTab, setActiveTab] = useState<
 		"do-next" | "later" | "suggested" | "all"
 	>("do-next");
-	const { tasks, loading, error, updateTask } = useTasks();
+	const { tasks, loading, error } = useTasks();
 
 	if (loading) {
 		return (
@@ -109,29 +103,6 @@ export function TaskList() {
 	const filteredTasks = uiTasks.filter(
 		(task) => activeTab === "all" || task.status === activeTab,
 	);
-
-	const _handleSnooze = async (taskId: number, duration: string) => {
-		let snoozedUntil: Date;
-
-		switch (duration) {
-			case "Later":
-				snoozedUntil = addHours(new Date(), 4);
-				break;
-			case "+1w":
-				snoozedUntil = addWeeks(new Date(), 1);
-				break;
-			case "Wknd":
-				snoozedUntil = nextSaturday(new Date());
-				break;
-			default:
-				snoozedUntil = addDays(new Date(), 1);
-		}
-
-		await updateTask(taskId, {
-			status: "snoozed",
-			snoozed_until: snoozedUntil.toISOString(),
-		});
-	};
 
 	return (
 		<div>
