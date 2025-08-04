@@ -172,3 +172,4 @@ async def delete_location(
     await session.commit()
 
     logger.info(f"Deleted location {location_id} for user {user_id}")
+    return

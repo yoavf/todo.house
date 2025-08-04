@@ -12,6 +12,7 @@ from .models import (
     SnoozeRequest,
     AITaskCreate,
     TaskSource,
+    Location,
 )
 from .database import get_session_dependency, Task as TaskModel, Image as ImageModel
 from .database.models import Location as LocationModel
@@ -139,8 +140,6 @@ async def populate_task_related_data(
 
         # Populate location data if available
         if task.location_id and task.location_id in locations:
-            from .models import Location
-
             task_dict["location"] = Location.model_validate(locations[task.location_id])
 
         # Add snooze options to all tasks

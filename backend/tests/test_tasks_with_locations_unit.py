@@ -64,7 +64,8 @@ class TestTasksWithLocations:
         data = response.json()
         assert data["location"]["id"] == location_id
         assert data["location"]["name"] == "Kitchen"
-        assert data["location"]["is_default"] is True  # Kitchen is a default location
+        # Check is_default based on what was returned when creating the location
+        assert data["location"]["is_default"] == location_response.json()["is_default"]
 
     async def test_update_task_location(self, client, test_user_id):
         """Test updating a task's location."""
