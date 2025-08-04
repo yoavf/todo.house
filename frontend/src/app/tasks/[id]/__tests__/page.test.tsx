@@ -17,6 +17,32 @@ jest.mock("@/lib/api", () => ({
 	},
 }));
 
+jest.mock("@/components/SnoozeModal", () => ({
+	SnoozeModal: ({
+		isOpen,
+		onClose,
+		onSnooze,
+		error,
+	}: {
+		isOpen: boolean;
+		onClose: () => void;
+		onSnooze: (date: Date) => void;
+		error: string | null;
+	}) =>
+		isOpen ? (
+			<div>
+				<div>When would you like to be reminded?</div>
+				{error && <div>{error}</div>}
+				<button type="button" onClick={() => onClose()}>
+					Close
+				</button>
+				<button type="button" onClick={() => onSnooze(new Date())}>
+					Tomorrow
+				</button>
+			</div>
+		) : null,
+}));
+
 const mockTask = {
 	id: 1,
 	title: "Test Task",
@@ -153,12 +179,8 @@ describe("TaskDetailPage", () => {
 		expect(screen.getByText("Bread")).toBeInTheDocument();
 	});
 
-	it("handles snooze action", async () => {
+	it("opens snooze modal when snooze button is clicked", async () => {
 		(tasksAPI.getTask as jest.Mock).mockResolvedValue(mockTask);
-		(tasksAPI.snoozeTask as jest.Mock).mockResolvedValue({
-			...mockTask,
-			status: "snoozed",
-		});
 
 		render(<TaskDetailPage />);
 
@@ -179,8 +201,11 @@ describe("TaskDetailPage", () => {
 			fireEvent.click(snoozeButton);
 		}
 
+		// Check that snooze modal content appears
 		await waitFor(() => {
-			expect(tasksAPI.snoozeTask).toHaveBeenCalledWith(1, "tomorrow");
+			expect(
+				screen.getByText("When would you like to be reminded?"),
+			).toBeInTheDocument();
 		});
 	});
 

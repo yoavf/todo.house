@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { SnoozeModal } from "@/components/SnoozeModal";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type ShoppingListItem, type Task, tasksAPI } from "@/lib/api";
@@ -56,6 +57,8 @@ export default function TaskDetailPage() {
 
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
+	const [snoozeError, setSnoozeError] = useState<string | null>(null);
 
 	useEffect(() => {
 		const loadTask = async () => {
@@ -81,16 +84,27 @@ export default function TaskDetailPage() {
 		loadTask();
 	}, [taskId, isValidTaskId]);
 
-	const handleSnooze = async () => {
+	const handleSnooze = async (date: Date) => {
 		if (!task) return;
+		setSnoozeError(null);
 		try {
-			const snoozedTask = await tasksAPI.snoozeTask(task.id, "tomorrow");
-			setTask(snoozedTask);
+			await tasksAPI.updateTask(task.id, {
+				status: "snoozed",
+				snoozed_until: date.toISOString(),
+			});
+			setShowSnoozeModal(false);
 			// Navigate back after snoozing
 			router.back();
-		} catch (err) {
-			console.error("Error snoozing task:", err);
+		} catch (error) {
+			console.error("Error snoozing task:", error);
+			setSnoozeError(
+				"Failed to snooze task. Please check your connection and try again.",
+			);
 		}
+	};
+
+	const handleSnoozeClick = () => {
+		setShowSnoozeModal(true);
 	};
 
 	const handleComplete = async () => {
@@ -369,7 +383,7 @@ export default function TaskDetailPage() {
 				) : (
 					<>
 						<Button
-							onClick={handleSnooze}
+							onClick={handleSnoozeClick}
 							variant="ghost"
 							size="lg"
 							className="w-12 h-12 p-0 rounded-full"
@@ -388,6 +402,16 @@ export default function TaskDetailPage() {
 					</>
 				)}
 			</div>
+
+			<SnoozeModal
+				isOpen={showSnoozeModal}
+				onClose={() => {
+					setShowSnoozeModal(false);
+					setSnoozeError(null);
+				}}
+				onSnooze={handleSnooze}
+				error={snoozeError}
+			/>
 		</div>
 	);
 }
