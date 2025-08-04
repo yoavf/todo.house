@@ -32,6 +32,7 @@ const SWIPE_FULL_THRESHOLD = -200;
 
 export function TaskItem({ task, onTaskUpdate }: TaskItemProps) {
 	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
+	const [snoozeError, setSnoozeError] = useState<string | null>(null);
 	const Icon = task.icon;
 	const controls = useAnimation();
 	const x = useMotionValue(0);
@@ -68,16 +69,21 @@ export function TaskItem({ task, onTaskUpdate }: TaskItemProps) {
 	};
 
 	const handleSnooze = async (date: Date) => {
+		setSnoozeError(null);
 		try {
 			await tasksAPI.updateTask(task.id, {
 				status: "snoozed",
 				snoozed_until: date.toISOString(),
 			});
+			setShowSnoozeModal(false);
 			if (onTaskUpdate) {
 				onTaskUpdate();
 			}
 		} catch (error) {
 			console.error("Failed to snooze task:", error);
+			setSnoozeError(
+				"Failed to snooze task. Please check your connection and try again.",
+			);
 		}
 	};
 
@@ -165,8 +171,12 @@ export function TaskItem({ task, onTaskUpdate }: TaskItemProps) {
 
 			<SnoozeModal
 				isOpen={showSnoozeModal}
-				onClose={() => setShowSnoozeModal(false)}
+				onClose={() => {
+					setShowSnoozeModal(false);
+					setSnoozeError(null);
+				}}
 				onSnooze={handleSnooze}
+				error={snoozeError}
 			/>
 		</>
 	);

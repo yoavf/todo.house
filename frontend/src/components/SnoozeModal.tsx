@@ -14,9 +14,15 @@ interface SnoozeModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSnooze: (date: Date) => void;
+	error?: string | null;
 }
 
-export function SnoozeModal({ isOpen, onClose, onSnooze }: SnoozeModalProps) {
+export function SnoozeModal({
+	isOpen,
+	onClose,
+	onSnooze,
+	error,
+}: SnoozeModalProps) {
 	const now = new Date();
 
 	const snoozeOptions = [
@@ -65,6 +71,11 @@ export function SnoozeModal({ isOpen, onClose, onSnooze }: SnoozeModalProps) {
 						Snooze until
 					</DialogTitle>
 				</DialogHeader>
+				{error && (
+					<div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+						<p className="text-sm text-red-600">{error}</p>
+					</div>
+				)}
 				<div className="grid grid-cols-2 gap-4 mt-6">
 					{snoozeOptions.map((option) => {
 						const Icon = option.icon;

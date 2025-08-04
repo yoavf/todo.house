@@ -173,4 +173,31 @@ describe("SnoozeModal", () => {
 		const timeElements = screen.getAllByText(/08:00/);
 		expect(timeElements.length).toBeGreaterThan(0);
 	});
+
+	it("displays error message when error prop is provided", () => {
+		const errorMessage = "Failed to snooze task";
+		render(
+			<SnoozeModal
+				isOpen={true}
+				onClose={mockOnClose}
+				onSnooze={mockOnSnooze}
+				error={errorMessage}
+			/>,
+		);
+
+		expect(screen.getByText(errorMessage)).toBeInTheDocument();
+	});
+
+	it("does not display error message when error prop is null", () => {
+		render(
+			<SnoozeModal
+				isOpen={true}
+				onClose={mockOnClose}
+				onSnooze={mockOnSnooze}
+				error={null}
+			/>,
+		);
+
+		expect(screen.queryByText(/Failed to snooze task/)).not.toBeInTheDocument();
+	});
 });
