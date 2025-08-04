@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { addDays, addWeeks, startOfWeek } from "date-fns";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { useTasks } from "@/hooks/useTasks";
 import type { Task } from "@/lib/api";
@@ -149,9 +150,9 @@ describe("TaskList", () => {
 		expect(screen.queryByText("Replace light bulbs")).not.toBeInTheDocument();
 		expect(screen.getByText("Clean gutters")).toBeInTheDocument(); // AI generated now goes to do-next
 
-		// Click Later tab - should navigate to /snoozed
+		// Click Later tab - should navigate to /later
 		await user.click(screen.getByRole("button", { name: "Later" }));
-		expect(mockPush).toHaveBeenCalledWith("/snoozed");
+		expect(mockPush).toHaveBeenCalledWith("/later");
 
 		// Click All tab - should navigate to /tasks
 		await user.click(screen.getByRole("button", { name: "All" }));
@@ -216,5 +217,151 @@ describe("TaskList", () => {
 		const allTasksLink = screen.getByText("All tasks >");
 		expect(allTasksLink).toBeInTheDocument();
 		expect(allTasksLink.closest("a")).toHaveAttribute("href", "/tasks");
+	});
+
+	describe("time-organized later tab", () => {
+		beforeAll(() => {
+			jest.useFakeTimers();
+			jest.setSystemTime(new Date("2024-01-15T10:00:00Z")); // Monday
+		});
+
+		afterAll(() => {
+			jest.useRealTimers();
+		});
+
+		it("organizes snoozed tasks by time periods in later tab", () => {
+			const now = new Date("2024-01-15T10:00:00Z");
+			const thisWeekDate = addDays(now, 2).toISOString(); // Wednesday this week
+			const nextWeekDate = addWeeks(now, 1).toISOString(); // Next week
+			const laterDate = addWeeks(now, 3).toISOString(); // 3 weeks from now
+
+			const timeOrganizedTasks: Task[] = [
+				{
+					...mockTasks[0],
+					id: 10,
+					title: "This week task",
+					status: "snoozed",
+					snoozed_until: thisWeekDate,
+				},
+				{
+					...mockTasks[1],
+					id: 11,
+					title: "Next week task",
+					status: "snoozed",
+					snoozed_until: nextWeekDate,
+				},
+				{
+					...mockTasks[2],
+					id: 12,
+					title: "Later task",
+					status: "snoozed",
+					snoozed_until: laterDate,
+				},
+			];
+
+			mockUsePathname.mockReturnValue("/later");
+			mockUseTasks.mockReturnValue(
+				getMockTasksState({ tasks: timeOrganizedTasks }),
+			);
+
+			render(
+				<TaskProvider>
+					<TaskList />
+				</TaskProvider>,
+			);
+
+			// Check section headers are displayed
+			expect(screen.getByText("This week")).toBeInTheDocument();
+			expect(screen.getByText("Next week")).toBeInTheDocument();
+			expect(
+				screen.getByRole("heading", { name: "Later" }),
+			).toBeInTheDocument();
+
+			// Check tasks are displayed
+			expect(screen.getByText("This week task")).toBeInTheDocument();
+			expect(screen.getByText("Next week task")).toBeInTheDocument();
+			expect(screen.getByText("Later task")).toBeInTheDocument();
+		});
+
+		it("shows single list without headers when only later tasks exist", () => {
+			const laterDate = addWeeks(
+				new Date("2024-01-15T10:00:00Z"),
+				3,
+			).toISOString();
+
+			const laterOnlyTasks: Task[] = [
+				{
+					...mockTasks[0],
+					id: 20,
+					title: "Only later task 1",
+					status: "snoozed",
+					snoozed_until: laterDate,
+				},
+				{
+					...mockTasks[1],
+					id: 21,
+					title: "Only later task 2",
+					status: "snoozed",
+					snoozed_until: laterDate,
+				},
+			];
+
+			mockUsePathname.mockReturnValue("/later");
+			mockUseTasks.mockReturnValue(
+				getMockTasksState({ tasks: laterOnlyTasks }),
+			);
+
+			render(
+				<TaskProvider>
+					<TaskList />
+				</TaskProvider>,
+			);
+
+			// Section headers should NOT be displayed
+			expect(screen.queryByText("This week")).not.toBeInTheDocument();
+			expect(screen.queryByText("Next week")).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("heading", { name: "Later" }),
+			).not.toBeInTheDocument();
+
+			// Tasks should still be displayed
+			expect(screen.getByText("Only later task 1")).toBeInTheDocument();
+			expect(screen.getByText("Only later task 2")).toBeInTheDocument();
+		});
+
+		it("hides empty sections in later tab", () => {
+			const nextWeekDate = addWeeks(
+				new Date("2024-01-15T10:00:00Z"),
+				1,
+			).toISOString();
+
+			const partialTasks: Task[] = [
+				{
+					...mockTasks[0],
+					id: 30,
+					title: "Next week only task",
+					status: "snoozed",
+					snoozed_until: nextWeekDate,
+				},
+			];
+
+			mockUsePathname.mockReturnValue("/later");
+			mockUseTasks.mockReturnValue(getMockTasksState({ tasks: partialTasks }));
+
+			render(
+				<TaskProvider>
+					<TaskList />
+				</TaskProvider>,
+			);
+
+			// Only next week section should be shown
+			expect(screen.queryByText("This week")).not.toBeInTheDocument();
+			expect(screen.getByText("Next week")).toBeInTheDocument();
+			expect(
+				screen.queryByRole("heading", { name: "Later" }),
+			).not.toBeInTheDocument();
+
+			expect(screen.getByText("Next week only task")).toBeInTheDocument();
+		});
 	});
 });

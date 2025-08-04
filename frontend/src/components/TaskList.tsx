@@ -17,6 +17,10 @@ import { useEffect, useState } from "react";
 import { useTaskContext } from "@/contexts/TaskContext";
 import { useTasks } from "@/hooks/useTasks";
 import type { Task, TaskType } from "@/lib/api";
+import {
+	categorizeSnoozedTasks,
+	shouldShowAsSingleList,
+} from "@/lib/taskCategorization";
 import { TaskItem } from "./TaskItem";
 
 // Map task types to icons
@@ -76,7 +80,7 @@ export function TaskList() {
 
 	// Determine active tab based on URL
 	const getActiveTab = (): "do-next" | "later" | "all" => {
-		if (pathname === "/snoozed") return "later";
+		if (pathname === "/later") return "later";
 		if (pathname === "/tasks") return "all";
 		return "do-next"; // Default for "/" and other paths
 	};
@@ -101,7 +105,7 @@ export function TaskList() {
 	// Update active tab when URL changes
 	useEffect(() => {
 		const newTab =
-			pathname === "/snoozed"
+			pathname === "/later"
 				? "later"
 				: pathname === "/tasks"
 					? "all"
@@ -140,6 +144,92 @@ export function TaskList() {
 		setLocalTasks((prev) => prev.filter((t) => t.id !== taskId));
 	};
 
+	// Function to render time-organized tasks for "later" tab
+	const renderTimeOrganizedTasks = () => {
+		const categorized = categorizeSnoozedTasks(localTasks);
+		const showAsSingleList = shouldShowAsSingleList(categorized);
+
+		if (showAsSingleList) {
+			// Show as single list without section headers
+			const laterUiTasks = categorized.later.map(mapTaskToUI);
+			return (
+				<AnimatePresence mode="popLayout">
+					{laterUiTasks.map((task) => (
+						<TaskItem
+							key={task.id}
+							task={task}
+							onTaskUpdate={() => handleTaskRemoval(task.id)}
+							activeTab={activeTab}
+						/>
+					))}
+				</AnimatePresence>
+			);
+		}
+
+		// Show with section headers
+		return (
+			<div className="space-y-6">
+				{categorized.thisWeek.length > 0 && (
+					<div>
+						<h3 className="text-sm font-medium text-gray-900 mb-3">
+							This week
+						</h3>
+						<div className="space-y-4">
+							<AnimatePresence mode="popLayout">
+								{categorized.thisWeek.map(mapTaskToUI).map((task) => (
+									<TaskItem
+										key={task.id}
+										task={task}
+										onTaskUpdate={() => handleTaskRemoval(task.id)}
+										activeTab={activeTab}
+									/>
+								))}
+							</AnimatePresence>
+						</div>
+					</div>
+				)}
+
+				{categorized.nextWeek.length > 0 && (
+					<div>
+						<h3 className="text-sm font-medium text-gray-900 mb-3">
+							Next week
+						</h3>
+						<div className="space-y-4">
+							<AnimatePresence mode="popLayout">
+								{categorized.nextWeek.map(mapTaskToUI).map((task) => (
+									<TaskItem
+										key={task.id}
+										task={task}
+										onTaskUpdate={() => handleTaskRemoval(task.id)}
+										activeTab={activeTab}
+									/>
+								))}
+							</AnimatePresence>
+						</div>
+					</div>
+				)}
+
+				{categorized.later.length > 0 && (
+					<div>
+						<h3 className="text-sm font-medium text-gray-900 mb-3">Later</h3>
+						<div className="space-y-4">
+							<AnimatePresence mode="popLayout">
+								{categorized.later.map(mapTaskToUI).map((task) => (
+									<TaskItem
+										key={task.id}
+										task={task}
+										onTaskUpdate={() => handleTaskRemoval(task.id)}
+										activeTab={activeTab}
+									/>
+								))}
+							</AnimatePresence>
+						</div>
+					</div>
+				)}
+			</div>
+		);
+	};
+
 	return (
 		<div className="task-list">
 			<div className="flex mb-4 border-b border-gray-200">
@@ -161,7 +251,7 @@ export function TaskList() {
 							? "text-orange-500 border-b-2 border-orange-500"
 							: "text-gray-500 hover:text-gray-700"
 					}`}
-					onClick={() => router.push("/snoozed")}
+					onClick={() => router.push("/later")}
 				>
 					Later
 				</button>
@@ -179,21 +269,37 @@ export function TaskList() {
 			</div>
 
 			<div className="space-y-4">
-				<AnimatePresence mode="popLayout">
-					{filteredTasks.map((task) => (
-						<TaskItem
-							key={task.id}
-							task={task}
-							onTaskUpdate={() => handleTaskRemoval(task.id)}
-							activeTab={activeTab}
-						/>
-					))}
-				</AnimatePresence>
+				{activeTab === "later" ? (
+					// Time-organized view for "later" tab
+					<>
+						{renderTimeOrganizedTasks()}
+						{localTasks.filter((task) => task.status === "snoozed").length ===
+							0 && (
+							<div className="text-center py-8">
+								<p className="text-gray-500">No tasks in this category</p>
+							</div>
+						)}
+					</>
+				) : (
+					// Regular list view for other tabs
+					<>
+						<AnimatePresence mode="popLayout">
+							{filteredTasks.map((task) => (
+								<TaskItem
+									key={task.id}
+									task={task}
+									onTaskUpdate={() => handleTaskRemoval(task.id)}
+									activeTab={activeTab}
+								/>
+							))}
+						</AnimatePresence>
 
-				{filteredTasks.length === 0 && (
-					<div className="text-center py-8">
-						<p className="text-gray-500">No tasks in this category</p>
-					</div>
+						{filteredTasks.length === 0 && (
+							<div className="text-center py-8">
+								<p className="text-gray-500">No tasks in this category</p>
+							</div>
+						)}
+					</>
 				)}
 
 				<hr className="my-4 border-gray-200" />
