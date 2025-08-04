@@ -105,7 +105,7 @@ export function TaskList() {
 	);
 
 	return (
-		<div>
+		<div className="task-list">
 			<div className="flex mb-4 border-b border-gray-200">
 				<button
 					type="button"
