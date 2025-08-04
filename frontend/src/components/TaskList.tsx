@@ -110,7 +110,6 @@ export function TaskList() {
 		(task) => activeTab === "all" || task.status === activeTab,
 	);
 
-
 	const _handleSnooze = async (taskId: number, duration: string) => {
 		let snoozedUntil: Date;
 

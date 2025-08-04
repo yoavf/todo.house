@@ -83,7 +83,6 @@ export function CameraView({
 		}
 	}, [isOpen, processingState]);
 
-
 	const capturePhoto = async () => {
 		if (!videoRef.current || !canvasRef.current) return;
 

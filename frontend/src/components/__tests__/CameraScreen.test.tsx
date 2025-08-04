@@ -17,8 +17,16 @@ jest.mock("@/lib/api", () => ({
 // Mock Next.js Image component
 jest.mock("next/image", () => ({
 	__esModule: true,
-	default: ({ src, alt, className }: any) => (
-		// eslint-disable-next-line @next/next/no-img-element
+	default: ({
+		src,
+		alt,
+		className,
+	}: {
+		src: string;
+		alt: string;
+		className?: string;
+	}) => (
+		// biome-ignore lint/performance/noImgElement: Mock component for testing
 		<img src={src} alt={alt} className={className} />
 	),
 }));
@@ -92,7 +100,9 @@ describe("CameraScreen", () => {
 		const clickSpy = jest.spyOn(fileInput, "click");
 
 		const takePhotoButton = screen.getByText("Take Photo").closest("button");
-		fireEvent.click(takePhotoButton!);
+		if (takePhotoButton) {
+			fireEvent.click(takePhotoButton);
+		}
 
 		expect(clickSpy).toHaveBeenCalled();
 	});
@@ -114,12 +124,14 @@ describe("CameraScreen", () => {
 		const mockReader = {
 			readAsDataURL: mockReadAsDataURL,
 			result: "data:image/jpeg;base64,test",
-			onloadend: null as any,
+			onloadend: null as unknown as
+				| ((this: FileReader, ev: ProgressEvent<FileReader>) => void)
+				| null,
 		};
 
 		jest
 			.spyOn(window, "FileReader")
-			.mockImplementation(() => mockReader as any);
+			.mockImplementation(() => mockReader as unknown as FileReader);
 
 		// Trigger file selection
 		Object.defineProperty(fileInput, "files", {
@@ -166,12 +178,14 @@ describe("CameraScreen", () => {
 		const mockReader = {
 			readAsDataURL: jest.fn(),
 			result: "data:image/jpeg;base64,test",
-			onloadend: null as any,
+			onloadend: null as unknown as
+				| ((this: FileReader, ev: ProgressEvent<FileReader>) => void)
+				| null,
 		};
 
 		jest
 			.spyOn(window, "FileReader")
-			.mockImplementation(() => mockReader as any);
+			.mockImplementation(() => mockReader as unknown as FileReader);
 
 		Object.defineProperty(fileInput, "files", {
 			value: [file],
@@ -220,12 +234,14 @@ describe("CameraScreen", () => {
 		const mockReader = {
 			readAsDataURL: jest.fn(),
 			result: "data:image/jpeg;base64,test",
-			onloadend: null as any,
+			onloadend: null as unknown as
+				| ((this: FileReader, ev: ProgressEvent<FileReader>) => void)
+				| null,
 		};
 
 		jest
 			.spyOn(window, "FileReader")
-			.mockImplementation(() => mockReader as any);
+			.mockImplementation(() => mockReader as unknown as FileReader);
 
 		Object.defineProperty(fileInput, "files", {
 			value: [file],
@@ -333,12 +349,14 @@ describe("CameraScreen", () => {
 		const mockReader = {
 			readAsDataURL: jest.fn(),
 			result: "data:image/jpeg;base64,test",
-			onloadend: null as any,
+			onloadend: null as unknown as
+				| ((this: FileReader, ev: ProgressEvent<FileReader>) => void)
+				| null,
 		};
 
 		jest
 			.spyOn(window, "FileReader")
-			.mockImplementation(() => mockReader as any);
+			.mockImplementation(() => mockReader as unknown as FileReader);
 
 		Object.defineProperty(fileInput, "files", {
 			value: [file],
