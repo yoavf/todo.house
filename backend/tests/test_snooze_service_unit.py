@@ -216,3 +216,24 @@ class TestSnoozeServiceHelpers:
                 assert "date" in option
                 assert "label" in option
                 assert "description" in option
+
+    def test_accept_language_header_format(self):
+        """Test that Accept-Language header format is parsed correctly."""
+        # Test various Accept-Language header formats
+        test_cases = [
+            ("en-us,en;q=0.9", "en_US"),  # Common browser format
+            ("en-US,en;q=0.9", "en_US"),  # Uppercase variant
+            ("fr-FR,fr;q=0.9,en;q=0.8", "fr_FR"),  # Multiple languages
+            ("de-DE", "de_DE"),  # Simple format without quality
+            ("en", "en"),  # Just language code
+            ("zh-CN,zh;q=0.9,en;q=0.8", "zh_CN"),  # Chinese locale
+        ]
+
+        for header_value, expected_locale in test_cases:
+            # Should not raise an error and should calculate all options
+            options = SnoozeService.calculate_snooze_options(locale_str=header_value)
+            assert len(options) == 4
+            
+            # Verify parsing worked by checking we get valid dates
+            for option in options.values():
+                assert isinstance(option["date"], datetime)
