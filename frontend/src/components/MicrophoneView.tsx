@@ -1,5 +1,8 @@
 import { LoaderIcon, MicIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import SpeechRecognition, {
+	useSpeechRecognition,
+} from "react-speech-recognition";
 import { SpeechResults } from "./SpeechResults";
 
 export interface MicrophoneViewProps {
@@ -19,32 +22,70 @@ export function MicrophoneView({
 		null | "processing" | "results"
 	>(null);
 	const [recordedText, setRecordedText] = useState("");
+	const [error, setError] = useState<string | null>(null);
 
-	// Sample speech recognition examples
-	const sampleTexts = [
-		"Fix the leaking faucet in the bathroom",
-		"Clean the gutters before it rains next week",
-		"Change the air filter in the living room",
-		"Buy groceries for dinner tomorrow",
-	];
+	const {
+		transcript,
+		listening,
+		resetTranscript,
+		browserSupportsSpeechRecognition,
+	} = useSpeechRecognition();
 
-	// Start recording timer when component mounts
+	// Check browser support
+	useEffect(() => {
+		if (!isOpen) return;
+
+		if (!browserSupportsSpeechRecognition) {
+			setError(
+				"Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.",
+			);
+			return;
+		}
+
+		// Start listening when component opens
+		SpeechRecognition.startListening({ continuous: true, language: "en-US" })
+			.then(() => {
+				setError(null);
+			})
+			.catch((err) => {
+				// Ensure we stop listening on error to prevent any leaks
+				SpeechRecognition.stopListening();
+
+				if (err.message.includes("not-allowed")) {
+					setError(
+						"Microphone access denied. Please allow microphone permissions and try again.",
+					);
+				} else {
+					setError("Failed to start speech recognition. Please try again.");
+				}
+			});
+
+		// Cleanup when component closes
+		return () => {
+			SpeechRecognition.stopListening();
+		};
+	}, [isOpen, browserSupportsSpeechRecognition]);
+
+	// Reset state when component closes
 	useEffect(() => {
 		if (!isOpen) {
-			// Reset state when closed
 			setIsRecording(true);
 			setRecordingTime(0);
 			setProcessingState(null);
 			setRecordedText("");
-			return;
+			setError(null);
+			resetTranscript();
 		}
+	}, [isOpen, resetTranscript]);
 
-		let interval: NodeJS.Timeout;
-		if (isRecording && isOpen) {
-			interval = setInterval(() => {
-				setRecordingTime((prev) => prev + 1);
-			}, 1000);
-		}
+	// Start recording timer
+	useEffect(() => {
+		if (!isOpen || !isRecording) return;
+
+		const interval = setInterval(() => {
+			setRecordingTime((prev) => prev + 1);
+		}, 1000);
+
 		return () => clearInterval(interval);
 	}, [isRecording, isOpen]);
 
@@ -60,16 +101,22 @@ export function MicrophoneView({
 	const handleProcessRecording = () => {
 		// Stop recording first
 		setIsRecording(false);
-		// Select a random sample text as our "recognized speech"
-		const randomText =
-			sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
-		setRecordedText(randomText);
+		SpeechRecognition.stopListening();
+
+		// Use the transcript or show error if empty
+		const finalText = transcript.trim();
+		if (!finalText) {
+			setError("No speech detected. Please try again.");
+			return;
+		}
+
+		setRecordedText(finalText);
 		// Start processing
 		setProcessingState("processing");
 		// Simulate processing time
 		setTimeout(() => {
 			setProcessingState("results");
-		}, 1500);
+		}, 500);
 	};
 
 	if (!isOpen) return null;
@@ -98,9 +145,7 @@ export function MicrophoneView({
 			<SpeechResults
 				speechText={recordedText}
 				onClose={onClose}
-				onAddTask={(task) => {
-					// In a real app, this would add the task to the user's task list
-					console.log("Adding task:", task);
+				onAddTask={() => {
 					onTaskCreated?.();
 					onClose();
 				}}
@@ -122,7 +167,7 @@ export function MicrophoneView({
 				{/* Recording indicator */}
 				<div className="relative mb-8">
 					{/* Pulsing circles animation */}
-					{isRecording && (
+					{isRecording && listening && (
 						<>
 							<div className="absolute inset-0 rounded-full bg-orange-500/20 animate-ping-slow"></div>
 							<div className="absolute inset-0 -m-4 rounded-full bg-orange-500/10 animate-ping-slower"></div>
@@ -141,15 +186,45 @@ export function MicrophoneView({
 				{/* Prompt text */}
 				<div className="text-center mb-12">
 					<h2 className="text-white text-xl font-medium mb-2">
-						I'm listening...
+						{listening ? "I'm listening..." : "Preparing microphone..."}
 					</h2>
 					<p className="text-gray-400 max-w-xs">
 						Say what needs to be done. Feel free to include when, where, and any
 						additional details.
 					</p>
-					<p className="text-gray-500 text-sm mt-4 italic">
-						Example: "Clean the gutters before it rains next week"
-					</p>
+					{transcript && (
+						<div className="mt-4 p-3 bg-white/10 rounded-lg">
+							<p className="text-white text-sm">{transcript}</p>
+						</div>
+					)}
+					{error && (
+						<div className="mt-4 p-3 bg-red-500/20 rounded-lg">
+							<p className="text-red-200 text-sm">{error}</p>
+							<button
+								type="button"
+								className="mt-2 text-xs text-red-300 underline"
+								onClick={() => {
+									setError(null);
+									SpeechRecognition.startListening({
+										continuous: true,
+										language: "en-US",
+									}).catch((err) => {
+										SpeechRecognition.stopListening();
+										setError(
+											"Failed to start speech recognition. Please try again.",
+										);
+									});
+								}}
+							>
+								Try again
+							</button>
+						</div>
+					)}
+					{!error && !transcript && (
+						<p className="text-gray-500 text-sm mt-4 italic">
+							Example: "Clean the gutters before it rains next week"
+						</p>
+					)}
 				</div>
 				{/* Action buttons */}
 				<div className="flex space-x-4">
@@ -162,8 +237,13 @@ export function MicrophoneView({
 					</button>
 					<button
 						type="button"
-						className="px-6 py-3 bg-orange-500 text-white rounded-full font-medium"
+						className={`px-6 py-3 rounded-full font-medium transition-colors ${
+							transcript.trim()
+								? "bg-orange-500 text-white hover:bg-orange-600"
+								: "bg-gray-600 text-gray-400 cursor-not-allowed"
+						}`}
 						onClick={handleProcessRecording}
+						disabled={!transcript.trim()}
 					>
 						Process
 					</button>
