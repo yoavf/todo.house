@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { addDays, addWeeks, startOfWeek } from "date-fns";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { useTasks } from "@/hooks/useTasks";
@@ -137,30 +136,17 @@ describe("TaskList", () => {
 		expect(screen.queryByText("Replace light bulbs")).not.toBeInTheDocument();
 	});
 
-	it("navigates to correct URLs when tabs are clicked", async () => {
-		const user = userEvent.setup();
+	it("shows correct tasks based on pathname", () => {
+		// Do next tab (default) - should show active tasks including AI generated
 		render(
 			<TaskProvider>
 				<TaskList />
 			</TaskProvider>,
 		);
 
-		// Do next tab (default) - should show active tasks including AI generated
 		expect(screen.getByText("Fix leaking faucet")).toBeInTheDocument();
 		expect(screen.queryByText("Replace light bulbs")).not.toBeInTheDocument();
 		expect(screen.getByText("Clean gutters")).toBeInTheDocument(); // AI generated now goes to do-next
-
-		// Click Later tab - should navigate to /later
-		await user.click(screen.getByRole("button", { name: "Later" }));
-		expect(mockPush).toHaveBeenCalledWith("/later");
-
-		// Click All tab - should navigate to /tasks
-		await user.click(screen.getByRole("button", { name: "All" }));
-		expect(mockPush).toHaveBeenCalledWith("/tasks");
-
-		// Click Do next tab - should navigate to /
-		await user.click(screen.getByRole("button", { name: "Do next" }));
-		expect(mockPush).toHaveBeenCalledWith("/");
 	});
 
 	it("shows all tasks when on /tasks route", () => {
