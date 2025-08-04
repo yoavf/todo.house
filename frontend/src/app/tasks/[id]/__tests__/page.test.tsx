@@ -226,4 +226,30 @@ describe("TaskDetailPage", () => {
 
 		expect(mockBack).toHaveBeenCalled();
 	});
+
+	it("shows error for invalid task ID", async () => {
+		(useParams as jest.Mock).mockReturnValue({ id: "invalid" });
+
+		render(<TaskDetailPage />);
+
+		await waitFor(() => {
+			expect(screen.getByText("Invalid task ID")).toBeInTheDocument();
+		});
+
+		// Verify that no API call was made
+		expect(tasksAPI.getTask).not.toHaveBeenCalled();
+	});
+
+	it("shows error for negative task ID", async () => {
+		(useParams as jest.Mock).mockReturnValue({ id: "-5" });
+
+		render(<TaskDetailPage />);
+
+		await waitFor(() => {
+			expect(screen.getByText("Invalid task ID")).toBeInTheDocument();
+		});
+
+		// Verify that no API call was made
+		expect(tasksAPI.getTask).not.toHaveBeenCalled();
+	});
 });

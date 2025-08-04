@@ -21,7 +21,11 @@ export default function TaskDetailPage() {
 	const params = useParams();
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const taskId = params.id as string;
+	const taskIdParam = params.id as string;
+	const taskId = parseInt(taskIdParam);
+
+	// Validate taskId
+	const isValidTaskId = !Number.isNaN(taskId) && taskId > 0;
 
 	// Get initial data from URL params
 	const initialTitle = searchParams.get("title");
@@ -31,9 +35,9 @@ export default function TaskDetailPage() {
 
 	const [task, setTask] = useState<Task | null>(() => {
 		// Create partial task from URL params if available
-		if (initialTitle) {
+		if (initialTitle && isValidTaskId) {
 			return {
-				id: parseInt(taskId),
+				id: taskId,
 				title: initialTitle,
 				description: initialDescription || undefined,
 				image_url: initialImageUrl || undefined,
@@ -55,10 +59,17 @@ export default function TaskDetailPage() {
 
 	useEffect(() => {
 		const loadTask = async () => {
+			// Check if taskId is valid before making API call
+			if (!isValidTaskId) {
+				setError("Invalid task ID");
+				setLoading(false);
+				return;
+			}
+
 			try {
 				setLoading(true);
 				setError(null);
-				const data = await tasksAPI.getTask(parseInt(taskId));
+				const data = await tasksAPI.getTask(taskId);
 				setTask(data);
 			} catch (err) {
 				setError("Failed to load task");
@@ -68,7 +79,7 @@ export default function TaskDetailPage() {
 			}
 		};
 		loadTask();
-	}, [taskId]);
+	}, [taskId, isValidTaskId]);
 
 	const handleSnooze = async () => {
 		if (!task) return;
