@@ -178,6 +178,7 @@ class TaskBase(BaseModel, EnhancedFieldsMixin):
     status: TaskStatus = TaskStatus.ACTIVE
     snoozed_until: Optional[datetime] = None
     task_types: List[TaskType] = Field(default_factory=list)
+    location_id: Optional[uuid.UUID] = None
 
     # Enhanced fields
     schedule: Optional[Union[OnceSchedule, RecurringSchedule, Dict[str, Any]]] = None
@@ -204,6 +205,7 @@ class TaskUpdate(BaseModel, EnhancedFieldsMixin):
     status: Optional[TaskStatus] = None
     snoozed_until: Optional[datetime] = None
     task_types: Optional[List[TaskType]] = None
+    location_id: Optional[uuid.UUID] = None
 
     # Enhanced fields
     schedule: Optional[Union[OnceSchedule, RecurringSchedule, Dict[str, Any]]] = None
@@ -229,6 +231,8 @@ class Task(TaskBase):
     thumbnail_url: Optional[str] = None
     # Snooze options - populated when fetching tasks for responsive UI
     snooze_options: Optional[Dict[str, SnoozeOptionData]] = None
+    # Location - populated when fetching tasks with location
+    location: Optional["Location"] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -311,3 +315,45 @@ class ImageAnalysisError(BaseModel):
     retry_after: Optional[int] = Field(
         None, description="Seconds to wait before retrying"
     )
+
+
+# Location models
+class LocationBase(BaseModel):
+    """Base model for location data"""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    is_active: bool = True
+    is_default: bool = False
+    location_metadata: Optional[Dict[str, Any]] = None
+
+
+class LocationCreate(LocationBase):
+    """Model for creating a new location"""
+
+    pass
+
+
+class LocationUpdate(BaseModel):
+    """Model for updating an existing location"""
+
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    is_active: Optional[bool] = None
+    is_default: Optional[bool] = None
+    location_metadata: Optional[Dict[str, Any]] = None
+
+
+class Location(LocationBase):
+    """Model for location response"""
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    is_from_defaults: bool = Field(
+        default=False,
+        description="Whether this location is from the default list (computed)",
+    )
+
+    model_config = ConfigDict(from_attributes=True)

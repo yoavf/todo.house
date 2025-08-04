@@ -279,4 +279,6 @@ async def test_create_todo_success(client, test_user_id):
 
 - When writing commit messages, do not include ghost fixes: meaning, if since the last commit you introduced a bug, and then fixed it, and are then committing again, that bug has no meaning in the codebase, it was never there, and shouldn't be mentioned.
 - never ever modify pre-commit hooks or bypass them in order to complete a task!!!
-- Comments should explain the "why" when it's not obvious, not document the development history 
+- **NEVER BYPASS PRE COMMIT HOOK!!!! ***NEVER***
+- Comments should explain the "why" when it's not obvious, not document the development history
+- When adding DB migrations and other, make sure we have a sqlite fallback for CI/tests

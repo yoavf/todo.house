@@ -66,6 +66,12 @@ class AppConfig(BaseSettings):
     supabase_url: str = Field(default="", description="Supabase project URL")
     supabase_key: str = Field(default="", description="Supabase anon key")
 
+    # Default locations for new users
+    default_locations: List[str] = Field(
+        default=["Kitchen", "Bedroom", "Garden", "Bathroom"],
+        description="Default location names for new users",
+    )
+
 
 # Global configuration instances
 app_config = AppConfig()

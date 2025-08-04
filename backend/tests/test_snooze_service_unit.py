@@ -233,7 +233,7 @@ class TestSnoozeServiceHelpers:
             # Should not raise an error and should calculate all options
             options = SnoozeService.calculate_snooze_options(locale_str=header_value)
             assert len(options) == 4
-            
+
             # Verify parsing worked by checking we get valid dates
             for option in options.values():
                 assert isinstance(option["date"], datetime)

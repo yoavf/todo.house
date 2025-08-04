@@ -61,10 +61,10 @@ class SnoozeService:
 
         # Parse locale from Accept-Language header format (e.g., "en-us,en;q=0.9")
         # Take the first locale before any quality values
-        locale_parts = locale_str.split(',')[0].split(';')[0].strip()
+        locale_parts = locale_str.split(",")[0].split(";")[0].strip()
         # Replace hyphen with underscore for Babel compatibility
-        locale_parts = locale_parts.replace('-', '_')
-        
+        locale_parts = locale_parts.replace("-", "_")
+
         # Get locale from Babel
         babel_locale = Locale.parse(locale_parts)
 
