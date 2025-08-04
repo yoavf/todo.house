@@ -114,11 +114,7 @@ async def test_populate_task_related_data_database_error():
     session.execute.side_effect = SQLAlchemyError("Database connection failed")
 
     with patch("app.tasks.logger") as mock_logger:
-<<<<<<< HEAD
-        result = await populate_task_image_urls(tasks, session)
-=======
         result = await populate_task_related_data(tasks, session)
->>>>>>> d780f39 (ruff/format/fix/mypy/tests)
 
     # Should return tasks without URLs
     assert len(result) == 1

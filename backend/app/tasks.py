@@ -98,8 +98,7 @@ async def populate_task_related_data(
             )
 
     # Cache for storage URLs to avoid duplicate calls
-    url_cache: Dict[str, str] = {}
-    
+
     # Calculate snooze options once for all tasks
     snooze_options = SnoozeService.calculate_snooze_options(locale_str=locale_str)
     # Convert datetime objects to ISO strings for JSON serialization
@@ -110,7 +109,7 @@ async def populate_task_related_data(
             "label": data["label"],
             "description": data["description"],
         }
-    
+
     # Convert tasks and populate image URLs, location data, and snooze options
     task_models = []
     for task in tasks:

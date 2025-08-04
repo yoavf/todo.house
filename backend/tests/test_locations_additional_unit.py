@@ -5,7 +5,6 @@ import pytest
 from unittest.mock import patch
 
 
-
 @pytest.mark.unit
 class TestLocationsCoverage:
     """Additional tests to improve coverage for locations.py."""
@@ -14,13 +13,13 @@ class TestLocationsCoverage:
         """Test that location creation logs correctly."""
         with patch("app.locations.logger") as mock_logger:
             location_data = {"name": "Test Location", "description": "Test"}
-            
+
             response = await client.post(
-                "/locations/", 
-                json=location_data, 
-                headers={"x-user-id": str(test_user_id)}
+                "/locations/",
+                json=location_data,
+                headers={"x-user-id": str(test_user_id)},
             )
-            
+
             assert response.status_code == 201
             # Check that logger.info was called
             mock_logger.info.assert_called_once()
@@ -32,10 +31,9 @@ class TestLocationsCoverage:
         """Test that listing locations logs correctly."""
         with patch("app.locations.logger") as mock_logger:
             response = await client.get(
-                "/locations/", 
-                headers={"x-user-id": str(test_user_id)}
+                "/locations/", headers={"x-user-id": str(test_user_id)}
             )
-            
+
             assert response.status_code == 200
             # Check that logger.info was called
             mock_logger.info.assert_called_once()
@@ -48,20 +46,18 @@ class TestLocationsCoverage:
         # First create a location
         location_data = {"name": "Original Name"}
         create_resp = await client.post(
-            "/locations/", 
-            json=location_data, 
-            headers={"x-user-id": str(test_user_id)}
+            "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
         )
         location_id = create_resp.json()["id"]
-        
+
         with patch("app.locations.logger") as mock_logger:
             update_data = {"description": "Updated description"}
             response = await client.patch(
                 f"/locations/{location_id}",
                 json=update_data,
-                headers={"x-user-id": str(test_user_id)}
+                headers={"x-user-id": str(test_user_id)},
             )
-            
+
             assert response.status_code == 200
             # Check that logger.info was called
             mock_logger.info.assert_called_once()
@@ -73,18 +69,15 @@ class TestLocationsCoverage:
         # First create a location
         location_data = {"name": "To Delete"}
         create_resp = await client.post(
-            "/locations/", 
-            json=location_data, 
-            headers={"x-user-id": str(test_user_id)}
+            "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
         )
         location_id = create_resp.json()["id"]
-        
+
         with patch("app.locations.logger") as mock_logger:
             response = await client.delete(
-                f"/locations/{location_id}",
-                headers={"x-user-id": str(test_user_id)}
+                f"/locations/{location_id}", headers={"x-user-id": str(test_user_id)}
             )
-            
+
             assert response.status_code == 204
             # Check that logger.info was called
             mock_logger.info.assert_called_once()
@@ -97,41 +90,45 @@ class TestLocationsCoverage:
         active_loc = await client.post(
             "/locations/",
             json={"name": "Active Location"},
-            headers={"x-user-id": str(test_user_id)}
+            headers={"x-user-id": str(test_user_id)},
         )
         active_id = active_loc.json()["id"]
-        
+
         # Create and deactivate a location
         inactive_loc = await client.post(
             "/locations/",
             json={"name": "Inactive Location"},
-            headers={"x-user-id": str(test_user_id)}
+            headers={"x-user-id": str(test_user_id)},
         )
         inactive_id = inactive_loc.json()["id"]
-        
+
         # Deactivate it
         await client.delete(
-            f"/locations/{inactive_id}",
-            headers={"x-user-id": str(test_user_id)}
+            f"/locations/{inactive_id}", headers={"x-user-id": str(test_user_id)}
         )
-        
+
         # List with active_only=False
         response = await client.get(
-            "/locations/?active_only=false",
-            headers={"x-user-id": str(test_user_id)}
+            "/locations/?active_only=false", headers={"x-user-id": str(test_user_id)}
         )
-        
+
         assert response.status_code == 200
         locations = response.json()
-        
+
         # Find both locations
-        active_found = any(loc["id"] == active_id and loc["is_active"] for loc in locations)
-        inactive_found = any(loc["id"] == inactive_id and not loc["is_active"] for loc in locations)
-        
+        active_found = any(
+            loc["id"] == active_id and loc["is_active"] for loc in locations
+        )
+        inactive_found = any(
+            loc["id"] == inactive_id and not loc["is_active"] for loc in locations
+        )
+
         assert active_found
         assert inactive_found
 
-    async def test_list_locations_with_many_saved_and_defaults(self, client, test_user_id):
+    async def test_list_locations_with_many_saved_and_defaults(
+        self, client, test_user_id
+    ):
         """Test list sorting with multiple saved locations and defaults."""
         # Create multiple custom locations
         custom_names = ["Office", "Garage", "Attic"]
@@ -139,37 +136,36 @@ class TestLocationsCoverage:
             await client.post(
                 "/locations/",
                 json={"name": name},
-                headers={"x-user-id": str(test_user_id)}
+                headers={"x-user-id": str(test_user_id)},
             )
-        
+
         # Create some default locations that will be marked as such
         default_used = ["Kitchen", "Garden"]
         for name in default_used:
             await client.post(
                 "/locations/",
                 json={"name": name, "description": f"My {name}"},
-                headers={"x-user-id": str(test_user_id)}
+                headers={"x-user-id": str(test_user_id)},
             )
-        
+
         # List all locations
         response = await client.get(
-            "/locations/",
-            headers={"x-user-id": str(test_user_id)}
+            "/locations/", headers={"x-user-id": str(test_user_id)}
         )
-        
+
         assert response.status_code == 200
         locations = response.json()
-        
+
         # Verify order: custom first, then saved defaults, then virtual defaults
         location_names = [loc["name"] for loc in locations]
-        
+
         # First should be custom (alphabetically sorted)
         custom_start = 0
         for i, name in enumerate(sorted(custom_names)):
             assert location_names[i] == name
             assert not locations[i]["is_default"]
             custom_start = i + 1
-        
+
         # Then saved defaults (alphabetically sorted)
         saved_default_start = custom_start
         for i, name in enumerate(sorted(default_used)):
@@ -177,11 +173,11 @@ class TestLocationsCoverage:
             assert location_names[idx] == name
             assert locations[idx]["is_default"]
             assert locations[idx]["is_from_defaults"]
-        
+
         # Finally virtual defaults (those not in default_used)
         # Should be Bedroom and Bathroom
         remaining_defaults = {"Bedroom", "Bathroom"}
-        remaining_names = set(location_names[saved_default_start + len(default_used):])
+        remaining_names = set(location_names[saved_default_start + len(default_used) :])
         assert remaining_defaults == remaining_names
 
     async def test_create_location_with_full_metadata(self, client, test_user_id):
@@ -196,16 +192,14 @@ class TestLocationsCoverage:
                 "square_feet": 450,
                 "has_bathroom": True,
                 "windows": 3,
-                "closets": ["walk-in", "standard"]
-            }
+                "closets": ["walk-in", "standard"],
+            },
         }
-        
+
         response = await client.post(
-            "/locations/",
-            json=location_data,
-            headers={"x-user-id": str(test_user_id)}
+            "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
         )
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Master Suite"
@@ -219,23 +213,21 @@ class TestLocationsCoverage:
         create_data = {
             "name": "Study",
             "description": "Home office",
-            "location_metadata": {"has_desk": True}
+            "location_metadata": {"has_desk": True},
         }
         create_resp = await client.post(
-            "/locations/",
-            json=create_data,
-            headers={"x-user-id": str(test_user_id)}
+            "/locations/", json=create_data, headers={"x-user-id": str(test_user_id)}
         )
         location_id = create_resp.json()["id"]
-        
+
         # Update only description
         update_data = {"description": "Reading room"}
         response = await client.patch(
             f"/locations/{location_id}",
             json=update_data,
-            headers={"x-user-id": str(test_user_id)}
+            headers={"x-user-id": str(test_user_id)},
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["name"] == "Study"  # Unchanged
@@ -246,18 +238,17 @@ class TestLocationsCoverage:
         """Test that virtual default locations have valid temporary UUIDs."""
         # Use a fresh user with no saved locations
         fresh_user_id = uuid.uuid4()
-        
+
         response = await client.get(
-            "/locations/",
-            headers={"x-user-id": str(fresh_user_id)}
+            "/locations/", headers={"x-user-id": str(fresh_user_id)}
         )
-        
+
         assert response.status_code == 200
         locations = response.json()
-        
+
         # All should be virtual defaults
         assert len(locations) == 4
-        
+
         # Check each has a valid UUID
         for loc in locations:
             assert loc["is_from_defaults"]
