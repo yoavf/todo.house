@@ -41,6 +41,12 @@ export function categorizeSnoozedTasks(tasks: Task[]): CategorizedTasks {
 
 		const snoozedDate = new Date(task.snoozed_until);
 
+		// Handle invalid dates - treat as "later"
+		if (isNaN(snoozedDate.getTime())) {
+			categorized.later.push(task);
+			continue;
+		}
+
 		// Check if task is snoozed until this week
 		if (
 			isWithinInterval(snoozedDate, {
