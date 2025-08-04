@@ -1,8 +1,8 @@
 # Technology Stack
 
 ## Build System & Package Management
-- **Monorepo**: npm workspace with frontend, backend, and shared packages
-- **Package Manager**: npm (with pnpm as alternative)
+- **Monorepo**: pnpm workspace with frontend, backend, and shared packages
+- **Package Manager**: pnpm
 - **Python**: uv for dependency management and virtual environments
 
 ## Frontend Stack
@@ -56,29 +56,29 @@
 ### Development
 ```bash
 # Start both frontend and backend
-npm run dev
+pnpm run dev
 
 # Start individual services
-npm run dev:frontend
-npm run dev:backend
+pnpm run dev:frontend
+pnpm run dev:backend
 
 # Install all dependencies
-npm run install:all
+pnpm run install:all
 ```
 
 ### Testing
 ```bash
 # Run all backend tests
-npm run test:backend
+pnpm run test:backend
 
 # Run unit tests only
-npm run test:backend:unit
+pnpm run test:backend:unit
 
 # Run integration tests only
-npm run test:backend:integration
+pnpm run test:backend:integration
 
 # Watch mode for tests
-npm run test:backend:watch
+pnpm run test:backend:watch
 ```
 
 ### Backend Development
@@ -99,9 +99,9 @@ uv run alembic current         # Check current version
 ### Frontend Development
 ```bash
 # From frontend directory
-npm run dev             # Start dev server with Turbopack
-npm run build           # Build for production
-npm run lint            # Run linting
+pnpm run dev             # Start dev server with Turbopack
+pnpm run build           # Build for production
+pnpm run lint            # Run linting
 ```
 
 ## Environment Configuration

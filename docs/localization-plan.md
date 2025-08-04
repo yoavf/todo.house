@@ -45,7 +45,7 @@ This document outlines the comprehensive plan for implementing Hebrew localizati
 
 **RTL Support Configuration:**
 ```bash
-npm install rtl-detect --save
+pnpm install rtl-detect --save
 ```
 
 **TypeScript Setup:**
@@ -76,7 +76,7 @@ export const routing = defineRouting({
 
 1. **Install dependencies:**
    ```bash
-   cd frontend && npm install next-intl rtl-detect
+   cd frontend && pnpm install next-intl rtl-detect
    ```
 
 2. **Create middleware:**

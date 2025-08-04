@@ -1,0 +1,47 @@
+{
+  "common": {
+    "delete": "מחק",
+    "cancel": "ביטול",
+    "confirm": "אישור",
+    "save": "שמור",
+    "edit": "ערוך",
+    "loading": "טוען..."
+  },
+  "dialogs": {
+    "deleteConfirm": "האם אתה בטוח שברצונך למחוק את \"{title}\"?",
+    "unsavedChanges": "יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לעזוב?"
+  },
+  "time": {
+    "tomorrow": "מחר",
+    "thisWeekend": "בסוף השבוע",
+    "nextWeek": "השבוע הבא",
+    "later": "מאוחר יותר"
+  },
+  "tasks": {
+    "priority": {
+      "low": "נמוכה",
+      "medium": "בינונית",
+      "high": "גבוהה"
+    },
+    "status": {
+      "active": "פעיל",
+      "snoozed": "נדחה",
+      "completed": "הושלם"
+    },
+    "types": {
+      "interior": "פנים",
+      "exterior": "חוץ",
+      "electricity": "חשמל",
+      "plumbing": "אינסטלציה",
+      "hvac": "מיזוג אוויר",
+      "appliances": "מכשירי חשמל",
+      "general": "כללי"
+    }
+  },
+  "errors": {
+    "generic": "משהו השתבש. אנא נסה שוב.",
+    "network": "שגיאת רשת. אנא בדוק את החיבור שלך.",
+    "validation": "אנא בדוק את הקלט שלך ונסה שוב.",
+    "notFound": "הפריט המבוקש לא נמצא."
+  }
+}
