@@ -11,6 +11,8 @@ import {
 	TreesIcon,
 	WrenchIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTaskContext } from "@/contexts/TaskContext";
 import { useTasks } from "@/hooks/useTasks";
@@ -69,8 +71,18 @@ function mapTaskToUI(task: Task) {
 }
 
 export function TaskList() {
+	const router = useRouter();
+	const pathname = usePathname();
+
+	// Determine active tab based on URL
+	const getActiveTab = (): "do-next" | "later" | "all" => {
+		if (pathname === "/snoozed") return "later";
+		if (pathname === "/tasks") return "all";
+		return "do-next"; // Default for "/" and other paths
+	};
+
 	const [activeTab, setActiveTab] = useState<"do-next" | "later" | "all">(
-		"do-next",
+		getActiveTab(),
 	);
 	const { tasks, loading, error, refetch } = useTasks();
 	const { setRefetchHandler } = useTaskContext();
@@ -86,25 +98,16 @@ export function TaskList() {
 		setLocalTasks(tasks);
 	}, [tasks]);
 
-	if (loading) {
-		return (
-			<div className="flex justify-center items-center py-12">
-				<div
-					className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"
-					data-testid="loading-spinner"
-				></div>
-			</div>
-		);
-	}
-
-	if (error) {
-		return (
-			<div className="text-center py-8">
-				<p className="text-red-500 mb-2">Failed to load tasks</p>
-				<p className="text-sm text-gray-500">{error}</p>
-			</div>
-		);
-	}
+	// Update active tab when URL changes
+	useEffect(() => {
+		const newTab =
+			pathname === "/snoozed"
+				? "later"
+				: pathname === "/tasks"
+					? "all"
+					: "do-next";
+		setActiveTab(newTab);
+	}, [pathname]);
 
 	// Map backend tasks to UI format
 	const uiTasks = localTasks.map(mapTaskToUI);
@@ -127,7 +130,7 @@ export function TaskList() {
 							? "text-orange-500 border-b-2 border-orange-500"
 							: "text-gray-500 hover:text-gray-700"
 					}`}
-					onClick={() => setActiveTab("do-next")}
+					onClick={() => router.push("/")}
 				>
 					Do next
 				</button>
@@ -138,7 +141,7 @@ export function TaskList() {
 							? "text-orange-500 border-b-2 border-orange-500"
 							: "text-gray-500 hover:text-gray-700"
 					}`}
-					onClick={() => setActiveTab("later")}
+					onClick={() => router.push("/snoozed")}
 				>
 					Later
 				</button>
@@ -149,38 +152,54 @@ export function TaskList() {
 							? "text-orange-500 border-b-2 border-orange-500"
 							: "text-gray-500 hover:text-gray-700"
 					}`}
-					onClick={() => setActiveTab("all")}
+					onClick={() => router.push("/tasks")}
 				>
 					All
 				</button>
 			</div>
 
 			<div className="space-y-4">
-				<AnimatePresence mode="popLayout">
-					{filteredTasks.map((task) => (
-						<TaskItem
-							key={task.id}
-							task={task}
-							onTaskUpdate={() => handleTaskRemoval(task.id)}
-							activeTab={activeTab}
-						/>
-					))}
-				</AnimatePresence>
-
-				{filteredTasks.length === 0 && (
-					<div className="text-center py-8">
-						<p className="text-gray-500">No tasks in this category</p>
+				{loading ? (
+					<div className="flex justify-center items-center py-12">
+						<div
+							className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"
+							data-testid="loading-spinner"
+						></div>
 					</div>
+				) : error ? (
+					<div className="text-center py-8">
+						<p className="text-red-500 mb-2">Failed to load tasks</p>
+						<p className="text-sm text-gray-500">{error}</p>
+					</div>
+				) : (
+					<>
+						<AnimatePresence mode="popLayout">
+							{filteredTasks.map((task) => (
+								<TaskItem
+									key={task.id}
+									task={task}
+									onTaskUpdate={() => handleTaskRemoval(task.id)}
+									activeTab={activeTab}
+								/>
+							))}
+						</AnimatePresence>
+
+						{filteredTasks.length === 0 && (
+							<div className="text-center py-8">
+								<p className="text-gray-500">No tasks in this category</p>
+							</div>
+						)}
+					</>
 				)}
 
 				<hr className="my-4 border-gray-200" />
 				<div className="text-left">
-					<a
+					<Link
 						href="/tasks"
 						className="text-sm text-gray-500 hover:text-orange-500"
 					>
 						All tasks &gt;
-					</a>
+					</Link>
 				</div>
 			</div>
 		</div>
