@@ -155,7 +155,7 @@ export function TaskList() {
 	};
 
 	return (
-		<div className="task-list space-y-4 pb-20" data-testid="task-list">
+		<div className="task-list space-y-4 pb-20 scroll-smooth" data-testid="task-list">
 			{loading ? (
 				<div className="flex justify-center items-center py-12">
 					<div

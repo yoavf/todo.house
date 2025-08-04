@@ -46,6 +46,18 @@
 body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	/* Mobile optimizations for native feel */
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
+	/* Safe area support for modern devices */
+	padding-top: env(safe-area-inset-top);
+	padding-bottom: env(safe-area-inset-bottom);
+	padding-left: env(safe-area-inset-left);
+	padding-right: env(safe-area-inset-right);
+	/* Prevent pull-to-refresh where not wanted */
+	overscroll-behavior-y: none;
 }
 
 /* Custom animations */
@@ -206,6 +218,85 @@ body {
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Mobile touch feedback and native feel */
+.touch-feedback {
+	-webkit-tap-highlight-color: transparent;
+	tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+/* Active/pressed states for buttons */
+.btn-touch:active {
+	transform: scale(0.95);
+	transition: transform 0.1s ease-out;
+}
+
+/* Enhanced touch states for interactive elements */
+button:active,
+[role="button"]:active,
+.touchable:active {
+	transform: scale(0.97);
+	transition: transform 0.1s ease-out;
+}
+
+/* Scroll momentum and overscroll behavior */
+.scroll-smooth {
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	scroll-behavior: smooth;
+}
+
+/* Prevent zoom on input focus */
+input,
+textarea,
+select {
+	font-size: 16px; /* Prevents iOS zoom */
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+/* Native-style animations */
+.spring-animation {
+	transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.material-motion {
+	transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* iOS-style haptic feedback preparation */
+.haptic-light:active {
+	animation: haptic-pulse-light 0.1s ease-out;
+}
+
+.haptic-medium:active {
+	animation: haptic-pulse-medium 0.15s ease-out;
+}
+
+.haptic-heavy:active {
+	animation: haptic-pulse-heavy 0.2s ease-out;
+}
+
+@keyframes haptic-pulse-light {
+	0% { transform: scale(1); }
+	50% { transform: scale(0.98); }
+	100% { transform: scale(1); }
+}
+
+@keyframes haptic-pulse-medium {
+	0% { transform: scale(1); }
+	50% { transform: scale(0.96); }
+	100% { transform: scale(1); }
+}
+
+@keyframes haptic-pulse-heavy {
+	0% { transform: scale(1); }
+	50% { transform: scale(0.94); }
+	100% { transform: scale(1); }
 }
 
 @layer base {

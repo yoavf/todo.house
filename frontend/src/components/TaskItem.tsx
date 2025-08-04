@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { hapticFeedback } from "@/lib/haptics";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -143,6 +144,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	};
 
 	const handleSnoozeClick = () => {
+		hapticFeedback.buttonPress();
 		setShowSnoozeModal(true);
 		controls.start({ x: 0 });
 	};
@@ -165,6 +167,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 	};
 
 	const handleDelete = async () => {
+		hapticFeedback.error();
 		setShowDeleteDialog(false);
 
 		// Delay animation to allow dialog to fade out
@@ -176,6 +179,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 
 	const handleViewTask = async () => {
 		// Trigger fun animation first
+		hapticFeedback.success();
 		setIsDoItAnimating(true);
 		await doItButtonControls.start({
 			scale: [1, 1.1, 0.95, 1],
@@ -213,7 +217,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 					<button
 						type="button"
 						onClick={handleSnoozeClick}
-						className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+						className="p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors touch-feedback haptic-light"
 					>
 						<ClockIcon size={24} className="text-white" />
 					</button>
@@ -223,7 +227,12 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 				<motion.div
 					drag="x"
 					dragConstraints={{ left: SWIPE_FULL_THRESHOLD, right: 0 }}
-					dragElastic={0.2}
+					dragElastic={{ left: 0.1, right: 0.3 }}
+					dragTransition={{ 
+						bounceDamping: 20,
+						bounceStiffness: 300,
+						power: 0.3
+					}}
 					onDragEnd={handleDragEnd}
 					animate={controls}
 					style={{ x }}
@@ -291,7 +300,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 								onClick={handleViewTask}
 								animate={doItButtonControls}
 								disabled={isDoItAnimating}
-								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0 hover:bg-orange-600 transition-colors disabled:opacity-80"
+								className="px-4 py-1.5 bg-orange-500 text-white rounded-full text-sm font-medium flex items-center flex-shrink-0 hover:bg-orange-600 transition-colors disabled:opacity-80 touch-feedback haptic-medium"
 							>
 								<ArrowRightIcon size={16} className="mr-1" />
 								Do it{" "}
