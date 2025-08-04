@@ -1,8 +1,8 @@
 # Technology Stack
 
 ## Build System & Package Management
-- **Monorepo**: pnpm workspace with frontend, backend, and shared packages
-- **Package Manager**: pnpm (version 10.13.1+)
+- **Monorepo**: npm workspace with frontend, backend, and shared packages
+- **Package Manager**: npm (with pnpm as alternative)
 - **Python**: uv for dependency management and virtual environments
 
 ## Frontend Stack
@@ -31,40 +31,54 @@
 
 ## MVP Development Guidelines
 - **Testing Strategy**: 
-  - Backend: Basic happy-path tests only (edge cases → `/docs/todos.md`)
-  - Frontend: Optional during MVP, track as [P1] items for later
-- **Feature Scope**: Core functionality only, nice-to-haves → `/docs/todos.md`
-- **Code Quality**: Working code first, refactoring tracked as technical debt
-- **Error Handling**: Basic validation only, comprehensive handling → post-MVP
+  - Backend: Complete unit tests for all functionality - tests are mandatory
+  - Frontend: Complete tests for all components and functionality - tests are mandatory
+- **Feature Scope**: Core functionality only, nice-to-haves tracked with `todo-tracker-pm` agent
+- **Code Quality**: Working code first, but maintain test coverage and pre-commit standards
+- **Error Handling**: Proper validation and error responses required
+- **Pre-commit Hooks**: NEVER bypass pre-commit hooks - they run ruff, mypy, and unit tests
+
+## Testing Stack
+- **pytest**: Modern Python testing framework with powerful fixtures
+- **pytest-asyncio**: Support for testing async FastAPI endpoints
+- **pytest-cov**: Code coverage reporting
+- **httpx**: Async HTTP client for testing FastAPI endpoints
+- **faker**: Generate realistic test data
+
+## Virtual Environment
+- **Location**: `/todohouse/.venv` (single virtual environment at root level)
+- **Python version**: 3.13+
+- **Package manager**: `uv` (ultrafast Python package manager)
+- **Important**: Always use the root-level venv when working with backend code
 
 ## Common Commands
 
 ### Development
 ```bash
 # Start both frontend and backend
-pnpm run dev
+npm run dev
 
 # Start individual services
-pnpm run dev:frontend
-pnpm run dev:backend
+npm run dev:frontend
+npm run dev:backend
 
 # Install all dependencies
-pnpm run install:all
+npm run install:all
 ```
 
 ### Testing
 ```bash
 # Run all backend tests
-pnpm run test:backend
+npm run test:backend
 
 # Run unit tests only
-pnpm run test:backend:unit
+npm run test:backend:unit
 
 # Run integration tests only
-pnpm run test:backend:integration
+npm run test:backend:integration
 
 # Watch mode for tests
-pnpm run test:backend:watch
+npm run test:backend:watch
 ```
 
 ### Backend Development
@@ -85,9 +99,9 @@ uv run alembic current         # Check current version
 ### Frontend Development
 ```bash
 # From frontend directory
-pnpm dev                 # Start dev server with Turbopack
-pnpm build              # Build for production
-pnpm lint               # Run linting
+npm run dev             # Start dev server with Turbopack
+npm run build           # Build for production
+npm run lint            # Run linting
 ```
 
 ## Environment Configuration
