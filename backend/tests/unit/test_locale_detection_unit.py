@@ -7,6 +7,7 @@ from app.locale_detection import (
     is_supported_locale,
     detect_locale_from_header,
     detect_locale_with_metadata,
+    get_locale_string,
     SUPPORTED_LOCALES,
     DEFAULT_LOCALE,
 )
@@ -195,6 +196,45 @@ class TestDetectLocaleWithMetadata:
         assert result == expected
 
 
+class TestGetLocaleString:
+    """Test locale string conversion helper function."""
+
+    def test_supported_locales_mapping(self):
+        """Test that supported locales are mapped correctly."""
+        assert get_locale_string("en") == "en_US"
+        assert get_locale_string("he") == "he_IL"
+
+    def test_unsupported_locale_fallback(self):
+        """Test that unsupported locales fallback to default."""
+        assert get_locale_string("fr") == "en_US"
+        assert get_locale_string("es") == "en_US"
+        assert get_locale_string("de") == "en_US"
+        assert get_locale_string("ja") == "en_US"
+
+    def test_empty_and_none_input(self):
+        """Test edge cases with empty or invalid input."""
+        assert get_locale_string("") == "en_US"
+        assert get_locale_string("unknown") == "en_US"
+
+    def test_case_sensitivity(self):
+        """Test that function handles different cases correctly."""
+        # The function should handle lowercase input (which is what detect_locale_from_header returns)
+        assert get_locale_string("en") == "en_US"
+        assert get_locale_string("he") == "he_IL"
+        
+        # Test uppercase (though not expected in normal usage)
+        assert get_locale_string("EN") == "en_US"  # Should fallback since mapping uses lowercase
+        assert get_locale_string("HE") == "en_US"  # Should fallback since mapping uses lowercase
+
+    def test_consistency_with_supported_locales(self):
+        """Test that all supported locales have mappings."""
+        for locale in SUPPORTED_LOCALES:
+            result = get_locale_string(locale)
+            assert result is not None
+            assert "_" in result  # Should be in format like "en_US"
+            assert len(result) >= 5  # Should be at least "xx_YY"
+
+
 @pytest.mark.unit
 class TestLocaleDetectionIntegration:
     """Integration tests for locale detection functionality."""
@@ -237,3 +277,17 @@ class TestLocaleDetectionIntegration:
         for header, expected in test_cases:
             result = detect_locale_from_header(header)
             assert result == expected, f"Failed for header: {header}"
+
+    def test_locale_detection_to_string_integration(self):
+        """Test integration between locale detection and string conversion."""
+        test_cases = [
+            ("en-US,en;q=0.9", "en_US"),
+            ("he-IL,he;q=0.9,en;q=0.8", "he_IL"),
+            ("fr-FR,fr;q=0.9,en;q=0.8", "en_US"),  # Fallback to English
+            ("", "en_US"),  # Default case
+        ]
+
+        for header, expected_locale_string in test_cases:
+            detected_locale = detect_locale_from_header(header)
+            locale_string = get_locale_string(detected_locale)
+            assert locale_string == expected_locale_string, f"Failed for header: {header}"

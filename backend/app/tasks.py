@@ -19,7 +19,7 @@ from .database.models import Location as LocationModel
 from .services.task_service import TaskService
 from .services.snooze_service import SnoozeService, SnoozeOption
 from .logging_config import StructuredLogger
-from .locale_detection import detect_locale_from_header
+from .locale_detection import detect_locale_from_header, get_locale_string
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 logger = StructuredLogger(__name__)
@@ -187,7 +187,7 @@ async def get_tasks(
 
     # Populate image URLs, location data, and snooze options
     # Convert locale to locale_str format expected by snooze service
-    locale_str = f"{detected_locale}_US" if detected_locale == "en" else f"{detected_locale}_IL"
+    locale_str = get_locale_string(detected_locale)
     return await populate_task_related_data(tasks, session, locale_str)
 
 
@@ -213,7 +213,7 @@ async def get_active_tasks(
     )
     
     # Convert locale to locale_str format expected by snooze service
-    locale_str = f"{detected_locale}_US" if detected_locale == "en" else f"{detected_locale}_IL"
+    locale_str = get_locale_string(detected_locale)
     return await populate_task_related_data(tasks, session, locale_str)
 
 
@@ -239,7 +239,7 @@ async def get_snoozed_tasks(
     )
     
     # Convert locale to locale_str format expected by snooze service
-    locale_str = f"{detected_locale}_US" if detected_locale == "en" else f"{detected_locale}_IL"
+    locale_str = get_locale_string(detected_locale)
     return await populate_task_related_data(tasks, session, locale_str)
 
 
@@ -313,7 +313,7 @@ async def get_task(
 
     # Populate image URLs, location data, and snooze options for single task
     # Convert locale to locale_str format expected by snooze service
-    locale_str = f"{detected_locale}_US" if detected_locale == "en" else f"{detected_locale}_IL"
+    locale_str = get_locale_string(detected_locale)
     tasks_with_data = await populate_task_related_data([task], session, locale_str)
     return tasks_with_data[0]
 
@@ -392,7 +392,7 @@ async def snooze_task(
 ):
     # Detect locale from Accept-Language header
     detected_locale = detect_locale_from_header(accept_language)
-    locale_str = f"{detected_locale}_US" if detected_locale == "en" else f"{detected_locale}_IL"
+    locale_str = get_locale_string(detected_locale)
     
     # Get existing task
     query = select(TaskModel).where(

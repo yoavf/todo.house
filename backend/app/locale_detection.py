@@ -170,3 +170,26 @@ def detect_locale_with_metadata(accept_language_header: Optional[str]) -> dict:
         "source": "default",
         "original_header": accept_language_header
     }
+
+
+def get_locale_string(locale_code: str) -> str:
+    """
+    Convert a locale code to a full locale string with region.
+    
+    This function maps locale codes to their full locale strings with regions
+    as expected by services like the snooze service that use babel.Locale.
+    
+    Args:
+        locale_code: Short locale code (e.g., 'en', 'he')
+        
+    Returns:
+        Full locale string with region (e.g., 'en_US', 'he_IL')
+        Defaults to 'en_US' if locale is not found.
+    """
+    # Mapping of locale codes to full locale strings with regions
+    LOCALE_MAPPING = {
+        "en": "en_US",
+        "he": "he_IL",
+    }
+    
+    return LOCALE_MAPPING.get(locale_code, "en_US")
