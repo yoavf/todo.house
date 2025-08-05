@@ -23,7 +23,7 @@
   - Create translation loading utilities with proper error handling
   - _Requirements: 5.1, 5.5_
 
-- [ ] 4. Implement Hebrew translations and RTL support
+- [x] 4. Implement Hebrew translations and RTL support
   - Create complete Hebrew translation file with all UI strings
   - Configure Tailwind CSS for RTL support with logical properties
   - Implement RTL-aware component styling and layout adjustments
@@ -31,7 +31,7 @@
   - Test and fix directional UI elements (icons, buttons, navigation)
   - _Requirements: 1.1, 1.2, 1.4, 3.1, 3.2, 3.3, 3.6_
 
-- [ ] 5. Update all frontend components to use translations
+- [x] 5. Update all frontend components to use translations
   - Replace hardcoded strings in task components with translation hooks
   - Update dialog components to use localized confirmation messages
   - Implement localized time-related text (tomorrow, this weekend, etc.)
@@ -43,7 +43,6 @@
   - Extend existing PromptService class to accept locale parameter
   - Create locale-specific prompt directory structure in backend
   - Implement prompt loading logic with locale-specific file resolution
-  - Add LRU caching for locale-specific prompts
   - Create unit tests for locale-aware prompt loading
   - _Requirements: 4.1, 4.2_
 
@@ -72,7 +71,6 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
 - [ ] 10. Add monitoring and metrics tracking
-  - Implement locale usage tracking for user preferences
   - Add AI processing success rate monitoring by locale
   - Create performance monitoring for translation loading times
   - Set up error tracking for locale-specific issues

@@ -110,3 +110,4 @@ pnpm run lint            # Run linting
 - Required backend variables: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_KEY`
 - Required frontend variables: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_TEST_USER_ID`
 - Test environment automatically loads `.env.test` with override
+- NEVER BYPASS PRE-COMMIT HOOKS!!!!!

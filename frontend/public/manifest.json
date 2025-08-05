@@ -1,0 +1,54 @@
+{
+	"name": "TodoHouse",
+	"short_name": "TodoHouse",
+	"description": "Your home's best friend",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#f9fafb",
+	"theme_color": "#f97316",
+	"orientation": "portrait-primary",
+	"categories": ["productivity", "lifestyle", "utilities"],
+	"lang": "en",
+	"dir": "auto",
+	"icons": [
+		{
+			"src": "/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable any"
+		},
+		{
+			"src": "/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable any"
+		}
+	],
+	"screenshots": [
+		{
+			"src": "/screenshot-mobile.png",
+			"sizes": "390x844",
+			"type": "image/png",
+			"form_factor": "narrow"
+		}
+	],
+	"shortcuts": [
+		{
+			"name": "Add Task",
+			"short_name": "Add",
+			"description": "Quickly add a new task",
+			"url": "/?action=add",
+			"icons": [
+				{
+					"src": "/icon-192.png",
+					"sizes": "192x192",
+					"type": "image/png"
+				}
+			]
+		}
+	],
+	"prefer_related_applications": false,
+	"edge_side_panel": {
+		"preferred_width": 400
+	}
+}

@@ -53,28 +53,39 @@
 			"maintenance": "Maintenance"
 		},
 		"fields": {
-			"title": "Task Title",
+			"title": "What needs to be done",
 			"description": "Description",
 			"descriptionOptional": "Description (optional)",
 			"priority": "Priority",
-			"category": "Category"
+			"category": "Category",
+			"location": "Location"
 		},
 		"placeholders": {
-			"descriptionPlaceholder": "Add any additional details..."
+			"descriptionPlaceholder": "Add any additional details...",
+			"taskTitlePlaceholder": "Enter your task here"
 		},
 		"actions": {
 			"reviewTask": "Review Your Task",
-			"createTask": "Create Task",
+			"createTask": "New Task",
 			"viewTask": "View Task",
 			"editTask": "Edit Task",
 			"deleteTask": "Delete Task",
 			"snoozeTask": "Snooze Task",
-			"completeTask": "Complete Task"
+			"completeTask": "Complete Task",
+			"completeWithAI": "Complete with AI",
+			"continueManually": "Continue manually",
+			"generateGuide": "Generate Guide with AI",
+			"markAsDone": "Mark as Done"
 		},
 		"tabs": {
 			"guide": "Guide",
 			"shoppingList": "Shopping List",
 			"steps": "Steps"
+		},
+		"details": {
+			"taskDetails": "Task Details",
+			"estimatedTime": "Estimated time",
+			"completed": "✓ Completed"
 		}
 	},
 	"speech": {
@@ -94,5 +105,20 @@
 		"failedToSnoozeTask": "Failed to snooze task",
 		"failedToUnsnoozeTask": "Failed to unsnooze task",
 		"actionFailed": "Failed to {action} task. Please check your connection and try again."
+	},
+	"locations": {
+		"kitchen": "Kitchen",
+		"livingRoom": "Living Room",
+		"bedroom": "Bedroom",
+		"bathroom": "Bathroom",
+		"garage": "Garage",
+		"garden": "Back garden",
+		"office": "Office",
+		"attic": "Attic",
+		"basement": "Basement",
+		"outdoor": "Outdoor",
+		"placeholder": "Type or select a location",
+		"addLocation": "Add \"{location}\"",
+		"noLocationsFound": "No locations found"
 	}
 }

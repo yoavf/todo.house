@@ -2,6 +2,7 @@
 
 import { addDays, format, nextMonday, nextSaturday } from "date-fns";
 import { CalendarIcon, ClockIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -24,31 +25,32 @@ export function SnoozeModal({
 	error,
 }: SnoozeModalProps) {
 	const now = new Date();
+	const t = useTranslations();
 
 	const snoozeOptions = [
 		{
-			label: "Tomorrow",
+			label: t("time.tomorrow"),
 			date: addDays(now, 1),
 			icon: CalendarIcon,
 			description: format(addDays(now, 1), "EEE HH:mm"),
 		},
 		{
-			label: "This weekend",
+			label: t("time.thisWeekend"),
 			date: nextSaturday(now),
 			icon: CalendarIcon,
 			description: format(nextSaturday(now), "EEE HH:mm"),
 		},
 		{
-			label: "Next week",
+			label: t("time.nextWeek"),
 			date: nextMonday(now),
 			icon: ClockIcon,
 			description: format(nextMonday(now), "EEE HH:mm"),
 		},
 		{
-			label: "Select date",
+			label: t("common.selectDate"),
 			date: null,
 			icon: CalendarIcon,
-			description: "and time",
+			description: t("time.andTime"),
 		},
 	];
 
@@ -67,13 +69,13 @@ export function SnoozeModal({
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle className="text-xl font-normal">
-						Snooze until
+					<DialogTitle className="text-xl font-normal text-start">
+						{t("tasks.actions.snoozeTask")}
 					</DialogTitle>
 				</DialogHeader>
 				{error && (
 					<div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-						<p className="text-sm text-red-600">{error}</p>
+						<p className="text-sm text-red-600 text-start">{error}</p>
 					</div>
 				)}
 				<div className="grid grid-cols-2 gap-4 mt-6">
@@ -87,8 +89,10 @@ export function SnoozeModal({
 								className="flex flex-col items-center justify-center p-6 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-colors"
 							>
 								<Icon className="h-8 w-8 text-orange-500 mb-2" />
-								<span className="font-medium text-base">{option.label}</span>
-								<span className="text-sm text-gray-500">
+								<span className="font-medium text-base text-center">
+									{option.label}
+								</span>
+								<span className="text-sm text-gray-500 text-center">
 									{option.description}
 								</span>
 							</button>
@@ -97,7 +101,7 @@ export function SnoozeModal({
 				</div>
 				<div className="mt-6">
 					<Button variant="ghost" className="w-full" onClick={onClose}>
-						Cancel
+						{t("common.cancel")}
 					</Button>
 				</div>
 			</DialogContent>

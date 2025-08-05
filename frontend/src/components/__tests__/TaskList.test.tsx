@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { addDays, addWeeks, startOfWeek } from "date-fns";
+import { addDays, addWeeks } from "date-fns";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { useTasks } from "@/hooks/useTasks";
 import type { Task } from "@/lib/api";
