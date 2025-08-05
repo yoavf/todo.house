@@ -73,13 +73,7 @@ function HomePageContent() {
 					<TabNavigation />
 				</div>
 				<div
-					className={`transition-transform duration-300 ease-out ${
-						bounceState.isBouncingTop
-							? "bounce-top"
-							: bounceState.isBouncingBottom
-								? "bounce-bottom"
-								: ""
-					}`}
+					className="transition-transform duration-300 ease-out"
 					style={{
 						transform: bounceState.transform,
 					}}

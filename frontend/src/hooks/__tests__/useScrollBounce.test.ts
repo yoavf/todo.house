@@ -91,6 +91,34 @@ describe("useScrollBounce", () => {
 		expect(result.current.transform).toBe("translateY(-15px)");
 	});
 
+	it("should handle scroll bounce when at top edge", () => {
+		const { result } = renderHook(() => useScrollBounce());
+
+		// Simulate scroll event handler
+		const scrollHandler = mockAddEventListener.mock.calls[0][1];
+
+		// Start with scroll position slightly above 0
+		(window as any).scrollY = 10;
+
+		act(() => {
+			scrollHandler(); // Initial scroll to establish lastScrollTop
+		});
+
+		// Clear any debounce state
+		jest.runAllTimers();
+
+		// Now scroll to top (negative delta)
+		(window as any).scrollY = 0;
+
+		act(() => {
+			scrollHandler();
+		});
+
+		// Should trigger top bounce when scrolling up to top edge
+		expect(result.current.isBouncingTop).toBe(true);
+		expect(result.current.transform).toBe("translateY(15px)");
+	});
+
 	it("should accept custom configuration", () => {
 		const customOptions = {
 			threshold: 20,

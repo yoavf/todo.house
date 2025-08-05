@@ -47,17 +47,19 @@ export function useScrollBounce({
 		transform: "",
 	});
 
-	const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+	const bounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+	const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 	const lastScrollTop = useRef(0);
+	const scrollDelta = useRef(0);
 	const isScrolling = useRef(false);
 
 	const triggerBounce = useCallback(
 		(direction: "top" | "bottom") => {
 			const bounceAmount = direction === "top" ? 15 : -15;
 
-			// Clear any existing timeout
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
+			// Clear any existing bounce timeout
+			if (bounceTimeoutRef.current) {
+				clearTimeout(bounceTimeoutRef.current);
 			}
 
 			// Set bounce state
@@ -68,7 +70,7 @@ export function useScrollBounce({
 			});
 
 			// Reset after animation
-			timeoutRef.current = setTimeout(() => {
+			bounceTimeoutRef.current = setTimeout(() => {
 				setBounceState({
 					isBouncingTop: false,
 					isBouncingBottom: false,
@@ -92,8 +94,15 @@ export function useScrollBounce({
 				? window.innerHeight
 				: (target as HTMLElement).clientHeight;
 
+		// Calculate scroll delta
+		scrollDelta.current = scrollTop - lastScrollTop.current;
+
 		// Check if at top edge and trying to scroll up
-		if (scrollTop <= 0 && lastScrollTop.current > scrollTop) {
+		// Trigger bounce when: at top (scrollTop <= 0) AND (scrolling up OR already at 0 with upward momentum)
+		if (
+			scrollTop <= 0 &&
+			(scrollDelta.current < 0 || (scrollTop === 0 && scrollDelta.current <= 0))
+		) {
 			if (!bounceState.isBouncingTop && !isScrolling.current) {
 				triggerBounce("top");
 			}
@@ -111,10 +120,10 @@ export function useScrollBounce({
 
 		// Debounce scrolling state
 		isScrolling.current = true;
-		if (timeoutRef.current) {
-			clearTimeout(timeoutRef.current);
+		if (scrollTimeoutRef.current) {
+			clearTimeout(scrollTimeoutRef.current);
 		}
-		timeoutRef.current = setTimeout(() => {
+		scrollTimeoutRef.current = setTimeout(() => {
 			isScrolling.current = false;
 		}, 150);
 	}, [
@@ -132,8 +141,11 @@ export function useScrollBounce({
 
 		return () => {
 			target.removeEventListener("scroll", handleScroll);
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
+			if (bounceTimeoutRef.current) {
+				clearTimeout(bounceTimeoutRef.current);
+			}
+			if (scrollTimeoutRef.current) {
+				clearTimeout(scrollTimeoutRef.current);
 			}
 		};
 	}, [target, handleScroll]);
