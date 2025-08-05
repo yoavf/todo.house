@@ -26,6 +26,20 @@ const notoSansHebrew = Noto_Sans_Hebrew({
 export const metadata: Metadata = {
 	title: "TodoHouse",
 	description: "Your home's best friend",
+	manifest: "/manifest.json",
+	themeColor: "#f97316",
+	appleWebApp: {
+		capable: true,
+		statusBarStyle: "default",
+		title: "TodoHouse",
+	},
+	viewport: {
+		width: "device-width",
+		initialScale: 1,
+		maximumScale: 1,
+		userScalable: false,
+		viewportFit: "cover",
+	},
 };
 
 export default async function RootLayout({

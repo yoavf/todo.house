@@ -190,7 +190,7 @@ export function getNestedTranslationKeyPath<
  * Type-safe translation key builder that automatically generates keys from TranslationMessages
  */
 type DeepKeyPaths<T, Prefix extends string = ""> = {
-	[K in keyof T]: T[K] extends Record<string, any>
+	[K in keyof T]: T[K] extends Record<string, unknown>
 		? DeepKeyPaths<T[K], `${Prefix}${K & string}.`>
 		: `${Prefix}${K & string}`;
 }[keyof T];
@@ -198,10 +198,14 @@ type DeepKeyPaths<T, Prefix extends string = ""> = {
 /**
  * Generate translation key paths automatically from the TranslationMessages type
  */
-function createTranslationKeys<T extends Record<string, any>>(
+function createTranslationKeys<T extends Record<string, unknown>>(
 	obj: T,
 	prefix = "",
-): { [K in keyof T]: T[K] extends Record<string, any> ? any : string } {
+): {
+	[K in keyof T]: T[K] extends Record<string, unknown>
+		? ReturnType<typeof createTranslationKeys>
+		: string;
+} {
 	const result = {} as any;
 
 	for (const key in obj) {
@@ -209,7 +213,10 @@ function createTranslationKeys<T extends Record<string, any>>(
 		const value = obj[key];
 
 		if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-			result[key] = createTranslationKeys(value, fullKey);
+			result[key] = createTranslationKeys(
+				value as Record<string, unknown>,
+				fullKey,
+			);
 		} else {
 			result[key] = fullKey;
 		}
