@@ -67,23 +67,25 @@ function HomePageContent() {
 
 	return (
 		<div className="w-full min-h-screen bg-gray-50">
-			<div
-				className={`max-w-md mx-auto px-4 transition-transform duration-300 ease-out ${
-					bounceState.isBouncingTop
-						? "bounce-top"
-						: bounceState.isBouncingBottom
-							? "bounce-bottom"
-							: ""
-				}`}
-				style={{
-					transform: bounceState.transform,
-				}}
-			>
+			<div className="max-w-md mx-auto px-4">
 				<div className="sticky top-0 bg-gray-50 z-20 pt-6 pb-4">
 					<Header />
 					<TabNavigation />
 				</div>
-				<TaskList />
+				<div
+					className={`transition-transform duration-300 ease-out ${
+						bounceState.isBouncingTop
+							? "bounce-top"
+							: bounceState.isBouncingBottom
+								? "bounce-bottom"
+								: ""
+					}`}
+					style={{
+						transform: bounceState.transform,
+					}}
+				>
+					<TaskList />
+				</div>
 			</div>
 
 			{!isFullScreenViewOpen && (
