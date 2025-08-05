@@ -11,6 +11,8 @@ const customJestConfig = {
 	moduleNameMapper: {
 		"^@/(.*)$": "<rootDir>/src/$1",
 		"^react-markdown$": "<rootDir>/__mocks__/react-markdown.js",
+		"^next-intl$": "<rootDir>/__mocks__/next-intl.js",
+		"^@/hooks/useLocale$": "<rootDir>/__mocks__/@/hooks/useLocale.js",
 	},
 	testMatch: ["**/__tests__/**/*.(ts|tsx|js)", "**/*.(test|spec).(ts|tsx|js)"],
 	collectCoverageFrom: [
@@ -19,6 +21,7 @@ const customJestConfig = {
 		"!src/**/*.stories.{js,jsx,ts,tsx}",
 		"!src/app/layout.tsx",
 	],
+	transformIgnorePatterns: ["node_modules/(?!(next-intl|use-intl)/)"],
 };
 
 module.exports = createJestConfig(customJestConfig);

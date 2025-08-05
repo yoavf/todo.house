@@ -42,7 +42,7 @@ export function categorizeSnoozedTasks(tasks: Task[]): CategorizedTasks {
 		const snoozedDate = new Date(task.snoozed_until);
 
 		// Handle invalid dates - treat as "later"
-		if (isNaN(snoozedDate.getTime())) {
+		if (Number.isNaN(snoozedDate.getTime())) {
 			categorized.later.push(task);
 			continue;
 		}
