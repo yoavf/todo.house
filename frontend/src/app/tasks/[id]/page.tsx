@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { SnoozeModal } from "@/components/SnoozeModal";
@@ -60,6 +61,7 @@ export default function TaskDetailPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [showSnoozeModal, setShowSnoozeModal] = useState(false);
 	const [snoozeError, setSnoozeError] = useState<string | null>(null);
+	const t = useTranslations();
 
 	// Use CSS mirroring for RTL instead of conditional icons
 
@@ -67,7 +69,7 @@ export default function TaskDetailPage() {
 		const loadTask = async () => {
 			// Check if taskId is valid before making API call
 			if (!isValidTaskId) {
-				setError("Invalid task ID");
+				setError(t("errors.invalidTaskId"));
 				setLoading(false);
 				return;
 			}
@@ -78,14 +80,14 @@ export default function TaskDetailPage() {
 				const data = await tasksAPI.getTask(taskId);
 				setTask(data);
 			} catch (err) {
-				setError("Failed to load task");
+				setError(t("errors.failedToLoadTask"));
 				console.error("Error fetching task:", err);
 			} finally {
 				setLoading(false);
 			}
 		};
 		loadTask();
-	}, [taskId, isValidTaskId]);
+	}, [taskId, isValidTaskId, t]);
 
 	const handleSnooze = async (date: Date) => {
 		if (!task) return;
@@ -100,9 +102,7 @@ export default function TaskDetailPage() {
 			router.back();
 		} catch (error) {
 			console.error("Error snoozing task:", error);
-			setSnoozeError(
-				"Failed to snooze task. Please check your connection and try again.",
-			);
+			setSnoozeError(t("errors.failedToSnoozeTask"));
 		}
 	};
 
@@ -142,7 +142,7 @@ export default function TaskDetailPage() {
 					<p className="text-red-500 mb-4">{error}</p>
 					<Button onClick={() => router.back()} variant="outline">
 						<ArrowLeft className="w-4 h-4 me-2 rtl:scale-x-[-1]" />
-						Go Back
+						{t("common.goBack")}
 					</Button>
 				</div>
 			</div>
@@ -189,7 +189,9 @@ export default function TaskDetailPage() {
 					>
 						<ArrowLeft className="w-5 h-5 rtl:scale-x-[-1]" />
 					</button>
-					<h1 className="text-lg font-semibold">Task Details</h1>
+					<h1 className="text-lg font-semibold">
+						{t("tasks.details.taskDetails")}
+					</h1>
 				</div>
 			</div>
 
@@ -225,9 +227,11 @@ export default function TaskDetailPage() {
 								<Package className="w-6 h-6 text-orange-600" />
 							</div>
 							<div>
-								<p className="text-sm text-gray-500">Category</p>
+								<p className="text-sm text-gray-500">
+									{t("tasks.fields.category")}
+								</p>
 								<p className="font-medium text-gray-900">
-									{categoryDisplayName}
+									{t(`tasks.types.${taskCategory}`) || categoryDisplayName}
 								</p>
 							</div>
 						</div>
@@ -238,7 +242,9 @@ export default function TaskDetailPage() {
 									<MapPin className="w-6 h-6 text-orange-600" />
 								</div>
 								<div>
-									<p className="text-sm text-gray-500">Location</p>
+									<p className="text-sm text-gray-500">
+										{t("tasks.fields.location")}
+									</p>
 									<p className="font-medium text-gray-900">
 										{task.location.name || categoryDisplayName}
 									</p>
@@ -251,7 +257,9 @@ export default function TaskDetailPage() {
 								<Clock className="w-6 h-6 text-orange-600" />
 							</div>
 							<div>
-								<p className="text-sm text-gray-500">Estimated time</p>
+								<p className="text-sm text-gray-500">
+									{t("tasks.details.estimatedTime")}
+								</p>
 								<p className="font-medium text-gray-900">30m</p>
 							</div>
 						</div>
@@ -271,7 +279,7 @@ export default function TaskDetailPage() {
 											className="data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm rounded-md"
 										>
 											<span className="text-orange-600 mr-2">📖</span>
-											Guide
+											{t("tasks.tabs.guide")}
 										</TabsTrigger>
 									)}
 									{(hasShoppingList || hasExtractedShoppingList) && (
@@ -280,7 +288,7 @@ export default function TaskDetailPage() {
 											className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm rounded-md"
 										>
 											<span className="mr-2">🛒</span>
-											Shopping List
+											{t("tasks.tabs.shoppingList")}
 										</TabsTrigger>
 									)}
 								</TabsList>
@@ -288,7 +296,9 @@ export default function TaskDetailPage() {
 								{/* Guide Content */}
 								{hasGuide && task.content?.type === "how_to_guide" && (
 									<TabsContent value="guide" className="mt-6">
-										<h3 className="font-semibold text-lg mb-4">Steps</h3>
+										<h3 className="font-semibold text-lg mb-4">
+											{t("tasks.tabs.steps")}
+										</h3>
 										<div className="prose prose-sm max-w-none">
 											<ReactMarkdown>{task.content.markdown}</ReactMarkdown>
 										</div>
@@ -371,7 +381,7 @@ export default function TaskDetailPage() {
 							className="w-full mb-8 py-4 bg-orange-500 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors"
 						>
 							<Sparkles className="w-5 h-5" />
-							Generate Guide with AI
+							{t("tasks.actions.generateGuide")}
 						</button>
 					)}
 				</div>
@@ -381,7 +391,7 @@ export default function TaskDetailPage() {
 			<div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3 flex gap-3">
 				{task.status === "completed" ? (
 					<div className="w-full text-center py-3 px-4 bg-green-100 text-green-700 rounded-lg font-medium">
-						✓ Completed
+						{t("tasks.details.completed")}
 					</div>
 				) : (
 					<>
@@ -400,7 +410,7 @@ export default function TaskDetailPage() {
 							className="flex-1 bg-green-500 hover:bg-green-600 text-white rounded-lg h-12"
 						>
 							<Check className="w-5 h-5 mr-2" />
-							Mark as Done
+							{t("tasks.actions.markAsDone")}
 						</Button>
 					</>
 				)}

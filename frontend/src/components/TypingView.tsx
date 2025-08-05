@@ -1,4 +1,5 @@
 import { ArrowRightIcon, WandIcon, XIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import React, { useState } from "react";
 import type { TaskCreate } from "@/lib/api";
 import { LocationSelector } from "./LocationSelector";
@@ -19,6 +20,7 @@ export function TypingView({
 	const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 	const [isAIGenerating, setIsAIGenerating] = useState(false);
 	const [showFullForm, setShowFullForm] = useState(false);
+	const t = useTranslations();
 
 	// RTL support - we'll use CSS mirroring instead of conditional icons
 
@@ -105,7 +107,7 @@ export function TypingView({
 	return (
 		<div className="fixed inset-0 bg-white z-50 flex flex-col">
 			<div className="flex items-center justify-between p-4 border-b">
-				<h2 className="text-lg font-medium">New Task</h2>
+				<h2 className="text-lg font-medium">{t("tasks.actions.createTask")}</h2>
 				<button
 					type="button"
 					className="p-2 rounded-full hover:bg-gray-100"
@@ -118,11 +120,13 @@ export function TypingView({
 				<div className="max-w-md mx-auto">
 					{/* Title input - always visible at the top */}
 					<div className="mb-6">
-						<h3 className="text-xl font-medium mb-4">What needs to be done?</h3>
+						<h3 className="text-xl font-medium mb-4">
+							{t("tasks.fields.title")}?
+						</h3>
 						<input
 							type="text"
 							className="w-full p-3 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-							placeholder="Enter your task here"
+							placeholder={t("tasks.placeholders.taskTitlePlaceholder")}
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 						/>
@@ -137,11 +141,11 @@ export function TypingView({
 								disabled={isAIGenerating}
 							>
 								{isAIGenerating ? (
-									"Generating..."
+									t("common.loading")
 								) : (
 									<>
 										<WandIcon size={18} className="mr-2" />
-										Complete with AI
+										{t("tasks.actions.completeWithAI")}
 									</>
 								)}
 							</button>
@@ -151,7 +155,7 @@ export function TypingView({
 								onClick={handleContinueManually}
 							>
 								<ArrowRightIcon size={18} className="me-2 rtl:scale-x-[-1]" />
-								Continue manually
+								{t("tasks.actions.continueManually")}
 							</button>
 						</div>
 					)}
@@ -163,7 +167,7 @@ export function TypingView({
 									htmlFor="location"
 									className="block text-sm font-medium text-gray-700 mb-1"
 								>
-									Location
+									{t("tasks.fields.location")}
 								</label>
 								<LocationSelector
 									selectedLocation={selectedLocation}
@@ -175,12 +179,12 @@ export function TypingView({
 									htmlFor="description"
 									className="block text-sm font-medium text-gray-700 mb-1"
 								>
-									Description
+									{t("tasks.fields.descriptionOptional")}
 								</label>
 								<textarea
 									id="description"
 									className="w-full p-2 border border-gray-300 rounded-lg h-32 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-									placeholder="Add any details or notes"
+									placeholder={t("tasks.placeholders.descriptionPlaceholder")}
 									value={description}
 									onChange={(e) => setDescription(e.target.value)}
 								/>
@@ -189,7 +193,7 @@ export function TypingView({
 								type="submit"
 								className="w-full py-3 bg-orange-500 text-white rounded-lg font-medium mt-4"
 							>
-								Add Task
+								{t("common.addTask")}
 							</button>
 						</div>
 					)}

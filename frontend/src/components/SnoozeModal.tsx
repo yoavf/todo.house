@@ -10,7 +10,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { useLocale } from "@/hooks/useLocale";
 
 interface SnoozeModalProps {
 	isOpen: boolean;

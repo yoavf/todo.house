@@ -31,7 +31,7 @@
   - Test and fix directional UI elements (icons, buttons, navigation)
   - _Requirements: 1.1, 1.2, 1.4, 3.1, 3.2, 3.3, 3.6_
 
-- [ ] 5. Update all frontend components to use translations
+- [x] 5. Update all frontend components to use translations
   - Replace hardcoded strings in task components with translation hooks
   - Update dialog components to use localized confirmation messages
   - Implement localized time-related text (tomorrow, this weekend, etc.)
@@ -43,7 +43,6 @@
   - Extend existing PromptService class to accept locale parameter
   - Create locale-specific prompt directory structure in backend
   - Implement prompt loading logic with locale-specific file resolution
-  - Add LRU caching for locale-specific prompts
   - Create unit tests for locale-aware prompt loading
   - _Requirements: 4.1, 4.2_
 

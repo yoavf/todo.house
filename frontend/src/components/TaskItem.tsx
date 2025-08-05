@@ -26,7 +26,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useLocale, useRTLClasses } from "@/hooks/useLocale";
+import { useLocale } from "@/hooks/useLocale";
 import { tasksAPI } from "@/lib/api";
 import { AnimatedTaskItem } from "./AnimatedTaskItem";
 import { SnoozeModal } from "./SnoozeModal";
@@ -86,7 +86,6 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 
 	// RTL support
 	const { isRTL } = useLocale();
-	const { mirrorIcon, getSwipeDirection } = useRTLClasses();
 	const t = useTranslations();
 
 	// Use CSS mirroring for RTL instead of conditional icons
@@ -123,9 +122,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 			// Use consistent error dialog for all actions
 			const actionName =
 				pendingAction.type === "unsnooze" ? "unsnooze" : pendingAction.type;
-			setErrorMessage(
-				`Failed to ${actionName} task. Please check your connection and try again.`,
-			);
+			setErrorMessage(t("errors.actionFailed", { action: actionName }));
 			setShowErrorDialog(true);
 		}
 	};
