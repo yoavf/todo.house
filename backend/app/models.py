@@ -357,3 +357,30 @@ class Location(LocationBase):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# User settings models
+class UserSettingsBase(BaseModel):
+    """Base model for user settings"""
+    
+    locale_preference: Optional[str] = Field(
+        None, 
+        description="User's preferred locale (e.g., 'en', 'he')",
+        pattern="^[a-z]{2}$"
+    )
+
+
+class UserSettingsUpdate(UserSettingsBase):
+    """Model for updating user settings"""
+    
+    pass
+
+
+class UserSettings(UserSettingsBase):
+    """Model for user settings response"""
+    
+    user_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)

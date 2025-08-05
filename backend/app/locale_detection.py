@@ -2,6 +2,10 @@
 
 from typing import List, Tuple, Optional
 import logging
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from .database.models import User
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +174,138 @@ def detect_locale_with_metadata(accept_language_header: Optional[str]) -> dict:
         "source": "default",
         "original_header": accept_language_header
     }
+
+
+async def get_user_locale_preference(db: AsyncSession, user_id: uuid.UUID) -> Optional[str]:
+    """
+    Get user's locale preference from database.
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        
+    Returns:
+        User's locale preference or None if not set
+    """
+    try:
+        result = await db.execute(
+            select(User.locale_preference).where(User.id == user_id)
+        )
+        preference = result.scalar_one_or_none()
+        
+        if preference and is_supported_locale(preference):
+            logger.debug(f"Found user locale preference: {preference}")
+            return preference
+        elif preference:
+            logger.warning(f"User has unsupported locale preference: {preference}")
+            
+    except Exception as e:
+        logger.error(f"Failed to get user locale preference: {e}")
+    
+    return None
+
+
+async def detect_locale_with_user_preference(
+    db: AsyncSession, 
+    user_id: uuid.UUID, 
+    accept_language_header: Optional[str]
+) -> str:
+    """
+    Detect locale with user preference override.
+    
+    Priority order:
+    1. User's saved locale preference
+    2. Accept-Language header
+    3. Default locale
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        accept_language_header: Accept-Language header value
+        
+    Returns:
+        Best supported locale
+    """
+    # First check user preference
+    user_preference = await get_user_locale_preference(db, user_id)
+    if user_preference:
+        logger.debug(f"Using user locale preference: {user_preference}")
+        return user_preference
+    
+    # Fall back to header detection
+    return detect_locale_from_header(accept_language_header)
+
+
+async def detect_locale_with_metadata_and_user_preference(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    accept_language_header: Optional[str]
+) -> dict:
+    """
+    Enhanced locale detection with user preference and detailed result information.
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        accept_language_header: Accept-Language header value
+        
+    Returns:
+        Dictionary with locale, source, and metadata
+    """
+    # First check user preference
+    user_preference = await get_user_locale_preference(db, user_id)
+    if user_preference:
+        return {
+            "locale": user_preference,
+            "source": "user_preference",
+            "user_id": str(user_id)
+        }
+    
+    # Fall back to header detection with metadata
+    header_result = detect_locale_with_metadata(accept_language_header)
+    header_result["user_id"] = str(user_id)
+    return header_result
+
+
+async def set_user_locale_preference(
+    db: AsyncSession, 
+    user_id: uuid.UUID, 
+    locale: str
+) -> bool:
+    """
+    Set user's locale preference.
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        locale: Locale to set
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    if not is_supported_locale(locale):
+        logger.warning(f"Attempted to set unsupported locale: {locale}")
+        return False
+    
+    try:
+        # Get user and update locale preference
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            logger.error(f"User not found: {user_id}")
+            return False
+        
+        user.locale_preference = locale
+        await db.commit()
+        
+        logger.info(f"Set locale preference for user {user_id}: {locale}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to set user locale preference: {e}")
+        await db.rollback()
+        return False
 
 
 def get_locale_string(locale_code: str) -> str:

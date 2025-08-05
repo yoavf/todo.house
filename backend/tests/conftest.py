@@ -123,3 +123,37 @@ def sample_todo():
         "description": "This is a test todo item",
         "completed": False,
     }
+
+
+@pytest.fixture
+def sample_image_bytes():
+    """
+    Provide sample image bytes for testing image upload endpoints.
+    
+    This creates a minimal valid JPEG image for testing purposes.
+    """
+    # Create a simple 1x1 pixel JPEG image using PIL if available, otherwise use a mock
+    try:
+        from PIL import Image
+        import io
+        
+        # Create a 1x1 pixel RGB image
+        img = Image.new('RGB', (1, 1), color='red')
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='JPEG')
+        return img_bytes.getvalue()
+    except ImportError:
+        # Fallback to a more complete JPEG structure if PIL is not available
+        # This is a minimal but valid JPEG file
+        return (
+            b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00'
+            b'\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t'
+            b'\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a'
+            b'\x1f\x1e\x1d\x1a\x1c\x1c $.\' ",#\x1c\x1c(7),01444\x1f\'9=82<.342'
+            b'\xff\xc0\x00\x11\x08\x00\x01\x00\x01\x01\x01\x11\x00\x02\x11\x01'
+            b'\x03\x11\x01\xff\xc4\x00\x14\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x08\xff\xc4\x00\x14\x10\x01\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            b'\xff\xda\x00\x0c\x03\x01\x00\x02\x11\x03\x11\x00\x3f\x00\xaa'
+            b'\xff\xd9'
+        )
