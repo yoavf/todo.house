@@ -3,6 +3,7 @@
 import { motion, useAnimation, useMotionValue } from "framer-motion";
 import {
 	ArrowRightIcon,
+	CameraIcon,
 	ClockIcon,
 	type LucideIcon,
 	MoreHorizontalIcon,
@@ -29,6 +30,7 @@ import {
 import { useLocale } from "@/hooks/useLocale";
 import { tasksAPI } from "@/lib/api";
 import { AnimatedTaskItem } from "./AnimatedTaskItem";
+import { ImageLightbox } from "./ImageLightbox";
 import { SnoozeModal } from "./SnoozeModal";
 
 interface TaskItemProps {
@@ -78,6 +80,7 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 		null,
 	);
 	const [isDoItAnimating, setIsDoItAnimating] = useState(false);
+	const [showLightbox, setShowLightbox] = useState(false);
 	const Icon = task.icon;
 	const controls = useAnimation();
 	const doItButtonControls = useAnimation();
@@ -255,29 +258,40 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 							!target.closest('[role="button"]') &&
 							!target.closest('[role="menu"]') &&
 							!target.closest('[role="menuitem"]') &&
+							!target.closest(".task-image") &&
 							Math.abs(x.get()) < 5
 						) {
 							handleViewTask();
 						}
 					}}
-					className="relative bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow cursor-pointer"
+					className="relative bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-sm transition-shadow cursor-pointer"
 				>
-					{/* Background circular image - RTL aware positioning */}
+					{/* Top image section */}
 					{fullImageUrl && (
-						<div className="absolute top-0 transform -translate-y-1/4 w-24 h-24 overflow-hidden pointer-events-none end-0 translate-x-1/4 rtl:end-auto rtl:start-0 rtl:-translate-x-1/4">
+						<div className="relative task-image">
 							<div
-								className="w-full h-full rounded-full opacity-60"
+								className="w-full h-40 bg-gray-100"
 								style={{
 									backgroundImage: `url(${fullImageUrl})`,
 									backgroundSize: "cover",
 									backgroundPosition: "center",
-									filter: "saturate(0.7)",
 								}}
 							/>
+							{/* Camera icon overlay */}
+							<button
+								type="button"
+								onClick={(e) => {
+									e.stopPropagation();
+									setShowLightbox(true);
+								}}
+								className="absolute top-2 right-2 p-2 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+							>
+								<CameraIcon size={16} className="text-white" />
+							</button>
 						</div>
 					)}
 
-					<div className="flex-1 relative z-10">
+					<div className="flex-1 relative z-10 p-4">
 						<div className="flex items-center mb-2">
 							<Icon size={16} className="text-orange-400 me-1.5" />
 							<span className="text-sm font-medium text-gray-500">
@@ -402,6 +416,15 @@ export function TaskItem({ task, onTaskUpdate, activeTab }: TaskItemProps) {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{fullImageUrl && (
+				<ImageLightbox
+					isOpen={showLightbox}
+					onClose={() => setShowLightbox(false)}
+					imageUrl={fullImageUrl}
+					title={task.title}
+				/>
+			)}
 		</AnimatedTaskItem>
 	);
 }

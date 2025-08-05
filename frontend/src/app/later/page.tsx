@@ -2,6 +2,6 @@
 
 import HomePage from "../page";
 
-export default function SnoozedPage() {
+export default function LaterPage() {
 	return <HomePage />;
 }

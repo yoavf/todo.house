@@ -6,6 +6,7 @@ import { FAB } from "@/components/FAB";
 import { GeneratedTasksModal } from "@/components/GeneratedTasksModal";
 import { Header } from "@/components/Header";
 import { MicrophoneView } from "@/components/MicrophoneView";
+import { TabNavigation } from "@/components/TabNavigation";
 import { TaskList } from "@/components/TaskList";
 import { TypingView } from "@/components/TypingView";
 import { TaskProvider, useTaskContext } from "@/contexts/TaskContext";
@@ -59,8 +60,11 @@ function HomePageContent() {
 
 	return (
 		<div className="w-full min-h-screen bg-gray-50">
-			<div className="max-w-md mx-auto px-4 py-6">
-				<Header />
+			<div className="max-w-md mx-auto px-4">
+				<div className="sticky top-0 bg-gray-50 z-20 pt-6 pb-4">
+					<Header />
+					<TabNavigation />
+				</div>
 				<TaskList />
 			</div>
 
