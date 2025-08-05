@@ -46,15 +46,13 @@
   - Create unit tests for locale-aware prompt loading
   - _Requirements: 4.1, 4.2_
 
-- [ ] 7. Create Hebrew AI prompts for image analysis
+- [x] 7. Create Hebrew AI prompts for image analysis
   - Translate existing home maintenance analysis prompts to Hebrew
-  - Implement hybrid prompt strategy with English technical instructions and Hebrew examples
   - Create Hebrew task examples for different categories (interior, exterior, etc.)
-  - Test prompt effectiveness with sample images
   - Document Hebrew prompt structure and guidelines
   - _Requirements: 4.1, 4.2_
 
-- [ ] 8. Update API endpoints to handle locale detection
+- [x] 8. Update API endpoints to handle locale detection
   - Modify image analysis endpoint to extract locale from Accept-Language header
   - Pass locale parameter to enhanced PromptService
   - Update task-related endpoints to respect user locale
@@ -62,7 +60,15 @@
   - Create integration tests for locale-aware API endpoints
   - _Requirements: 4.1, 4.5_
 
-- [ ] 9. Implement performance optimizations
+  [ ] 9. Implement user settings to override accept-language
+    - Add user settings page with locale preference
+    - Implement locale preference persistence
+    - Update API endpoints to respect user locale preference
+    - Add locale preference to API response logging
+    - Create integration tests for locale-aware API endpoints
+    - _Requirements: 4.1, 4.5, 4.6_
+
+- [ ] 10. Implement performance optimizations
   - Set up dynamic loading for locale-specific translation bundles
   - Implement translation caching strategy for improved loading times
   - Optimize bundle size by code-splitting translation files
@@ -70,14 +76,14 @@
   - Measure and validate performance impact stays within requirements
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 10. Add monitoring and metrics tracking
+- [ ] 11. Add monitoring and metrics tracking
   - Add AI processing success rate monitoring by locale
   - Create performance monitoring for translation loading times
   - Set up error tracking for locale-specific issues
   - Add logging for locale detection and fallback scenarios
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 11. Create comprehensive test suite
+- [ ] 12. Create comprehensive test suite
   - Write unit tests for locale detection and translation loading
   - Create integration tests for RTL layout rendering
   - Test Hebrew AI prompt functionality with real image analysis
@@ -85,7 +91,7 @@
   - Create visual regression tests for RTL component layouts
   - _Requirements: 4.4, 5.5, 7.2, 7.3_
 
-- [ ] 12. Final integration and deployment preparation
+- [ ] 13. Final integration and deployment preparation
   - Test complete Hebrew localization workflow end-to-end
   - Validate all UI strings are properly translated and displayed
   - Verify RTL layout works correctly across all components
