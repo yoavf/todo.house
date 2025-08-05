@@ -41,8 +41,8 @@ export function requiresRTL(locale: Locale): boolean {
 export function getRTLIconClasses(locale: Locale, shouldMirror = true) {
 	const isRTL = isRTLLocale(locale);
 	return {
-		mirror: isRTL && shouldMirror ? "rtl-mirror" : "",
-		conditionalMirror: shouldMirror ? "rtl:mirror" : "",
+		mirror: isRTL && shouldMirror ? "scale-x-[-1]" : "",
+		conditionalMirror: shouldMirror ? "rtl:scale-x-[-1]" : "",
 	};
 }
 

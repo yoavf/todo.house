@@ -22,8 +22,8 @@ export function useRTLClasses() {
 
 		// Icon mirroring utilities
 		mirrorIcon: (shouldMirror = true) =>
-			shouldMirror && isRTL ? "rtl-mirror" : "",
-		conditionalMirror: "rtl:mirror",
+			shouldMirror && isRTL ? "scale-x-[-1]" : "",
+		conditionalMirror: "rtl:scale-x-[-1]",
 
 		// Flex direction utilities
 		flexRowReverseRTL: "flex-row-reverse-rtl",
@@ -49,6 +49,6 @@ export function useRTLClasses() {
 
 		// Helper to apply RTL mirroring class to any directional icon
 		getMirrorClass: (shouldMirror = true) =>
-			shouldMirror && isRTL ? "rtl:mirror" : "",
+			shouldMirror && isRTL ? "rtl:scale-x-[-1]" : "",
 	};
 }

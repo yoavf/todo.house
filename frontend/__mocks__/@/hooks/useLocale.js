@@ -7,7 +7,7 @@ const useLocale = jest.fn(() => ({
 
 const useRTLClasses = jest.fn(() => ({
 	mirrorIcon: jest.fn(() => ""),
-	conditionalMirror: "rtl:mirror",
+	conditionalMirror: "rtl:scale-x-[-1]",
 	flexRowReverseRTL: "flex-row-reverse-rtl",
 	combine: jest.fn((baseClasses, rtlClasses) => baseClasses),
 	getArrowIcon: jest.fn(() => "ArrowRightIcon"),

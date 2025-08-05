@@ -20,6 +20,13 @@ export function SpeechResults({
 	const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
 	const t = useTranslations();
 
+	// Static priority translations map for type safety and static extraction
+	const priorityLabels = {
+		low: t("tasks.priority.low"),
+		medium: t("tasks.priority.medium"),
+		high: t("tasks.priority.high"),
+	} as const;
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		onAddTask({
@@ -97,7 +104,7 @@ export function SpeechResults({
 									}`}
 									onClick={() => setPriority(p)}
 								>
-									{t(`tasks.priority.${p}`)}
+									{priorityLabels[p]}
 								</button>
 							))}
 						</div>

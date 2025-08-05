@@ -28,23 +28,13 @@ const config: Config = {
 	},
 	plugins: [
 		// RTL support plugin
-		({ addUtilities, addVariant }: any) => {
+		({ addUtilities, addVariant }: { addUtilities: (utilities: Record<string, any>) => void; addVariant: (name: string, selector: string) => void }) => {
 			// Add RTL/LTR variants
 			addVariant("rtl", '[dir="rtl"] &');
 			addVariant("ltr", '[dir="ltr"] &');
 
 			// Add custom utilities that complement Tailwind's logical properties
 			addUtilities({
-				// Transform utilities for RTL icon mirroring
-				".rtl-mirror": {
-					transform: "scaleX(-1)",
-				},
-				".rtl\\:mirror": {
-					'[dir="rtl"] &': {
-						transform: "scaleX(-1)",
-					},
-				},
-
 				// Flex direction utilities for RTL
 				".flex-row-reverse-rtl": {
 					'[dir="rtl"] &': {

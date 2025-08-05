@@ -71,7 +71,6 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
 - [ ] 10. Add monitoring and metrics tracking
-  - Implement locale usage tracking for user preferences
   - Add AI processing success rate monitoring by locale
   - Create performance monitoring for translation loading times
   - Set up error tracking for locale-specific issues
