@@ -53,28 +53,39 @@
 			"maintenance": "תחזוקה"
 		},
 		"fields": {
-			"title": "כותרת המשימה",
+			"title": "מה צריך לעשות",
 			"description": "תיאור",
 			"descriptionOptional": "תיאור (אופציונלי)",
 			"priority": "עדיפות",
-			"category": "קטגוריה"
+			"category": "קטגוריה",
+			"location": "מיקום"
 		},
 		"placeholders": {
-			"descriptionPlaceholder": "הוסף פרטים נוספים..."
+			"descriptionPlaceholder": "הוסף פרטים נוספים...",
+			"taskTitlePlaceholder": "הכנס את המשימה כאן"
 		},
 		"actions": {
 			"reviewTask": "סקור את המשימה",
-			"createTask": "צור משימה",
+			"createTask": "משימה חדשה",
 			"viewTask": "הצג משימה",
 			"editTask": "ערוך משימה",
 			"deleteTask": "מחק משימה",
 			"snoozeTask": "דחה משימה",
-			"completeTask": "השלם משימה"
+			"completeTask": "השלם משימה",
+			"completeWithAI": "השלם עם בינה מלאכותית",
+			"continueManually": "המשך ידנית",
+			"generateGuide": "צור מדריך עם בינה מלאכותית",
+			"markAsDone": "סמן כהושלם"
 		},
 		"tabs": {
 			"guide": "מדריך",
 			"shoppingList": "רשימת קניות",
 			"steps": "שלבים"
+		},
+		"details": {
+			"taskDetails": "פרטי המשימה",
+			"estimatedTime": "זמן משוער",
+			"completed": "✓ הושלם"
 		}
 	},
 	"speech": {
@@ -94,5 +105,20 @@
 		"failedToSnoozeTask": "נכשל בדחיית המשימה",
 		"failedToUnsnoozeTask": "נכשל בביטול דחיית המשימה",
 		"actionFailed": "נכשל ב{action} המשימה. אנא בדוק את החיבור שלך ונסה שוב."
+	},
+	"locations": {
+		"kitchen": "מטבח",
+		"livingRoom": "סלון",
+		"bedroom": "חדר שינה",
+		"bathroom": "חדר רחצה",
+		"garage": "מוסך",
+		"garden": "גינה אחורית",
+		"office": "משרד",
+		"attic": "עליית גג",
+		"basement": "מרתף",
+		"outdoor": "חוץ",
+		"placeholder": "הקלד או בחר מיקום",
+		"addLocation": "הוסף \"{location}\"",
+		"noLocationsFound": "לא נמצאו מיקומים"
 	}
 }

@@ -1,3 +1,4 @@
+import type { Locale } from "@/i18n/config";
 import {
 	clearTranslationCache,
 	getCachedTranslationCount,

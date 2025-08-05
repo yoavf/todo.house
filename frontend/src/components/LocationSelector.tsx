@@ -1,6 +1,7 @@
 import { ChevronDownIcon, PlusIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface LocationSelectorProps {
 	selectedLocation: string | null;
@@ -17,19 +18,23 @@ export function LocationSelector({
 		[],
 	);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const t = useTranslations();
 
-	const locations = [
-		{ id: "kitchen", name: "Kitchen", icon: "🍳" },
-		{ id: "living-room", name: "Living Room", icon: "🛋️" },
-		{ id: "bedroom", name: "Bedroom", icon: "🛏️" },
-		{ id: "bathroom", name: "Bathroom", icon: "🚿" },
-		{ id: "garage", name: "Garage", icon: "🚗" },
-		{ id: "garden", name: "Back garden", icon: "🌳" },
-		{ id: "office", name: "Office", icon: "💼" },
-		{ id: "attic", name: "Attic", icon: "🏠" },
-		{ id: "basement", name: "Basement", icon: "🏚️" },
-		{ id: "outdoor", name: "Outdoor", icon: "🌞" },
-	];
+	const locations = useMemo(
+		() => [
+			{ id: "kitchen", name: t("locations.kitchen"), icon: "🍳" },
+			{ id: "living-room", name: t("locations.livingRoom"), icon: "🛋️" },
+			{ id: "bedroom", name: t("locations.bedroom"), icon: "🛏️" },
+			{ id: "bathroom", name: t("locations.bathroom"), icon: "🚿" },
+			{ id: "garage", name: t("locations.garage"), icon: "🚗" },
+			{ id: "garden", name: t("locations.garden"), icon: "🌳" },
+			{ id: "office", name: t("locations.office"), icon: "💼" },
+			{ id: "attic", name: t("locations.attic"), icon: "🏠" },
+			{ id: "basement", name: t("locations.basement"), icon: "🏚️" },
+			{ id: "outdoor", name: t("locations.outdoor"), icon: "🌞" },
+		],
+		[t],
+	);
 
 	useEffect(() => {
 		// Initialize input value with selected location
@@ -48,7 +53,7 @@ export function LocationSelector({
 		} else {
 			setFilteredLocations(locations);
 		}
-	}, [inputValue]);
+	}, [inputValue, locations]);
 
 	const handleInputClick = () => {
 		setIsOpen(true);
@@ -113,7 +118,7 @@ export function LocationSelector({
 					ref={inputRef}
 					type="text"
 					className="w-full p-3 pr-10 border border-gray-300 rounded-lg bg-white hover:border-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-					placeholder="Type or select a location"
+					placeholder={t("locations.placeholder")}
 					value={inputValue}
 					onChange={handleInputChange}
 					onClick={handleInputClick}
@@ -143,7 +148,9 @@ export function LocationSelector({
 							onClick={handleAddCustomLocation}
 						>
 							<PlusIcon size={20} />
-							<span className="font-medium">Add "{inputValue}"</span>
+							<span className="font-medium">
+								{t("locations.addLocation", { location: inputValue })}
+							</span>
 						</button>
 					)}
 					{filteredLocations.map((location) => (
@@ -160,7 +167,7 @@ export function LocationSelector({
 					))}
 					{filteredLocations.length === 0 && !showAddOption && (
 						<div className="px-4 py-3 text-gray-500 text-center">
-							No locations found
+							{t("locations.noLocationsFound")}
 						</div>
 					)}
 				</div>

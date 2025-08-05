@@ -206,18 +206,17 @@ function createTranslationKeys<T extends Record<string, unknown>>(
 		? ReturnType<typeof createTranslationKeys>
 		: string;
 } {
-	const result = {} as {
-		[K in keyof T]: T[K] extends Record<string, unknown>
-			? ReturnType<typeof createTranslationKeys>
-			: string;
-	};
+	const result = {} as any;
 
 	for (const key in obj) {
 		const fullKey = prefix ? `${prefix}.${key}` : key;
 		const value = obj[key];
 
 		if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-			result[key] = createTranslationKeys(value, fullKey);
+			result[key] = createTranslationKeys(
+				value as Record<string, unknown>,
+				fullKey,
+			);
 		} else {
 			result[key] = fullKey;
 		}
