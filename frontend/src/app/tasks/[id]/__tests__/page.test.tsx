@@ -17,6 +17,30 @@ jest.mock("@/lib/api", () => ({
 	},
 }));
 
+// Mock next-intl translations
+jest.mock("next-intl", () => ({
+	useTranslations: () => (key: string) => {
+		const translations: Record<string, string> = {
+			"errors.failedToLoadTask": "Failed to load task",
+			"errors.invalidTaskId": "Invalid task ID",
+			"errors.failedToSnoozeTask": "Failed to snooze task",
+			"common.goBack": "Go Back",
+			"tasks.details.taskDetails": "Task Details",
+			"tasks.fields.category": "Category",
+			"tasks.fields.location": "Location",
+			"tasks.details.estimatedTime": "Estimated time",
+			"tasks.types.maintenance": "Maintenance",
+			"tasks.tabs.guide": "Guide",
+			"tasks.tabs.shoppingList": "Shopping List",
+			"tasks.tabs.steps": "Steps",
+			"tasks.actions.generateGuide": "Generate Guide with AI",
+			"tasks.actions.markAsDone": "Mark as Done",
+			"tasks.details.completed": "✓ Completed",
+		};
+		return translations[key] || key;
+	},
+}));
+
 jest.mock("@/components/SnoozeModal", () => ({
 	SnoozeModal: ({
 		isOpen,
