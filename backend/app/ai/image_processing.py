@@ -172,6 +172,7 @@ class ImageProcessingService:
         user_id: str,
         generate_tasks: bool = True,
         prompt_override: Optional[str] = None,
+        locale: str = "en",
     ) -> Dict[str, Any]:
         """
         Main orchestration method for complete image analysis.
@@ -181,6 +182,7 @@ class ImageProcessingService:
             user_id: User identifier
             generate_tasks: Whether to generate tasks from analysis
             prompt_override: Optional custom prompt for testing
+            locale: Locale code for prompt localization (e.g., 'en', 'he')
 
         Returns:
             Dictionary containing analysis results with structure:
@@ -237,7 +239,7 @@ class ImageProcessingService:
             analysis_result = None
             if self.ai_provider and generate_tasks:
                 # Log AI request start
-                prompt = prompt_override or self.generate_prompt()
+                prompt = prompt_override or self.generate_prompt(locale=locale)
                 self.processing_logger.log_ai_request_start(
                     user_id=user_id,
                     provider=self.ai_provider.get_provider_name(),
@@ -477,20 +479,21 @@ class ImageProcessingService:
             logger.warning(f"Failed to calculate confidence score: {e}")
             return None
 
-    def generate_prompt(self, context: Optional[Dict[str, Any]] = None) -> str:
+    def generate_prompt(self, context: Optional[Dict[str, Any]] = None, locale: str = "en") -> str:
         """
         Generate AI prompt based on context and requirements.
 
         Args:
             context: Optional context for prompt customization
+            locale: Locale code for prompt localization (e.g., 'en', 'he')
 
         Returns:
             Generated prompt string
         """
         try:
-            base_prompt = self.prompt_service.get_prompt("home_maintenance_analysis")
+            base_prompt = self.prompt_service.get_prompt("home_maintenance_analysis", locale)
         except PromptNotFoundError as e:
-            logger.error(f"Failed to load prompt: {e}")
+            logger.error(f"Failed to load prompt for locale '{locale}': {e}")
             raise ImageProcessingError(f"AI prompt configuration missing: {str(e)}")
 
         # Add context-specific modifications if provided

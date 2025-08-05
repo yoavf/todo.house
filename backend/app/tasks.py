@@ -19,6 +19,7 @@ from .database.models import Location as LocationModel
 from .services.task_service import TaskService
 from .services.snooze_service import SnoozeService, SnoozeOption
 from .logging_config import StructuredLogger
+from .locale_detection import detect_locale_from_header, get_locale_string
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 logger = StructuredLogger(__name__)
@@ -158,9 +159,12 @@ async def get_tasks(
     source: Optional[TaskSource] = Query(
         None, description="Filter by source (manual or ai_generated)"
     ),
-    locale: str = Header("en_US", alias="accept-language"),
+    accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
+    # Detect locale from Accept-Language header
+    detected_locale = detect_locale_from_header(accept_language)
+    
     # Build query conditions
     conditions = [TaskModel.user_id == user_uuid]
 
@@ -175,36 +179,68 @@ async def get_tasks(
     result = await session.execute(query)
     tasks = result.scalars().all()
 
+    # Log locale information for monitoring
+    logger.info(
+        f"Tasks request - User: {user_uuid}, Locale: {detected_locale}, "
+        f"Accept-Language: {accept_language}, Tasks count: {len(tasks)}"
+    )
+
     # Populate image URLs, location data, and snooze options
-    return await populate_task_related_data(tasks, session, locale)
+    # Convert locale to locale_str format expected by snooze service
+    locale_str = get_locale_string(detected_locale)
+    return await populate_task_related_data(tasks, session, locale_str)
 
 
 @router.get("/active", response_model=List[Task])
 async def get_active_tasks(
     user_uuid: uuid.UUID = Depends(get_user_uuid),
-    locale: str = Header("en_US", alias="accept-language"),
+    accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
+    # Detect locale from Accept-Language header
+    detected_locale = detect_locale_from_header(accept_language)
+    
     query = select(TaskModel).where(
         and_(TaskModel.user_id == user_uuid, TaskModel.status == TaskStatus.ACTIVE)
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    return await populate_task_related_data(tasks, session, locale)
+    
+    # Log locale information for monitoring
+    logger.info(
+        f"Active tasks request - User: {user_uuid}, Locale: {detected_locale}, "
+        f"Accept-Language: {accept_language}, Tasks count: {len(tasks)}"
+    )
+    
+    # Convert locale to locale_str format expected by snooze service
+    locale_str = get_locale_string(detected_locale)
+    return await populate_task_related_data(tasks, session, locale_str)
 
 
 @router.get("/snoozed", response_model=List[Task])
 async def get_snoozed_tasks(
     user_uuid: uuid.UUID = Depends(get_user_uuid),
-    locale: str = Header("en_US", alias="accept-language"),
+    accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
+    # Detect locale from Accept-Language header
+    detected_locale = detect_locale_from_header(accept_language)
+    
     query = select(TaskModel).where(
         and_(TaskModel.user_id == user_uuid, TaskModel.status == TaskStatus.SNOOZED)
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    return await populate_task_related_data(tasks, session, locale)
+    
+    # Log locale information for monitoring
+    logger.info(
+        f"Snoozed tasks request - User: {user_uuid}, Locale: {detected_locale}, "
+        f"Accept-Language: {accept_language}, Tasks count: {len(tasks)}"
+    )
+    
+    # Convert locale to locale_str format expected by snooze service
+    locale_str = get_locale_string(detected_locale)
+    return await populate_task_related_data(tasks, session, locale_str)
 
 
 @router.post("/", response_model=Task)
@@ -254,9 +290,12 @@ async def create_task(
 async def get_task(
     task_id: int,
     user_uuid: uuid.UUID = Depends(get_user_uuid),
-    locale: str = Header("en_US", alias="accept-language"),
+    accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
+    # Detect locale from Accept-Language header
+    detected_locale = detect_locale_from_header(accept_language)
+    
     query = select(TaskModel).where(
         and_(TaskModel.id == task_id, TaskModel.user_id == user_uuid)
     )
@@ -266,8 +305,16 @@ async def get_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
+    # Log locale information for monitoring
+    logger.info(
+        f"Single task request - User: {user_uuid}, Task: {task_id}, "
+        f"Locale: {detected_locale}, Accept-Language: {accept_language}"
+    )
+
     # Populate image URLs, location data, and snooze options for single task
-    tasks_with_data = await populate_task_related_data([task], session, locale)
+    # Convert locale to locale_str format expected by snooze service
+    locale_str = get_locale_string(detected_locale)
+    tasks_with_data = await populate_task_related_data([task], session, locale_str)
     return tasks_with_data[0]
 
 
@@ -340,9 +387,13 @@ async def snooze_task(
     task_id: int,
     snooze_request: SnoozeRequest,
     user_uuid: uuid.UUID = Depends(get_user_uuid),
-    locale: str = Header("en_US", alias="accept-language"),
+    accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
+    # Detect locale from Accept-Language header
+    detected_locale = detect_locale_from_header(accept_language)
+    locale_str = get_locale_string(detected_locale)
+    
     # Get existing task
     query = select(TaskModel).where(
         and_(TaskModel.id == task_id, TaskModel.user_id == user_uuid)
@@ -359,7 +410,7 @@ async def snooze_task(
         try:
             option = SnoozeOption(snooze_request.snooze_option)
             snooze_until = SnoozeService.get_snooze_date_by_option(
-                option, locale_str=locale
+                option, locale_str=locale_str
             )
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid snooze option")
@@ -369,8 +420,15 @@ async def snooze_task(
     else:
         # If no date provided, snooze indefinitely
         snooze_until = SnoozeService.get_snooze_date_by_option(
-            SnoozeOption.LATER, locale_str=locale
+            SnoozeOption.LATER, locale_str=locale_str
         )
+
+    # Log locale information for monitoring
+    logger.info(
+        f"Snooze task request - User: {user_uuid}, Task: {task_id}, "
+        f"Locale: {detected_locale}, Accept-Language: {accept_language}, "
+        f"Snooze until: {snooze_until}"
+    )
 
     db_task.status = TaskStatus.SNOOZED
     db_task.snoozed_until = snooze_until
@@ -379,7 +437,7 @@ async def snooze_task(
     await session.refresh(db_task)
 
     # Populate related data before returning
-    tasks_with_data = await populate_task_related_data([db_task], session, locale)
+    tasks_with_data = await populate_task_related_data([db_task], session, locale_str)
     return tasks_with_data[0]
 
 

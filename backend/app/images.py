@@ -34,6 +34,7 @@ from .logging_config import (
     generate_correlation_id,
     set_correlation_id,
 )
+from .locale_detection import detect_locale_from_header
 
 logger = logging.getLogger(__name__)
 processing_logger = ImageProcessingLogger()
@@ -48,6 +49,7 @@ async def _process_image_analysis(
     content_type: str,
     generate_tasks: bool,
     prompt_override: Optional[str],
+    locale: str,
     session: AsyncSession,
 ) -> ImageAnalysisResponse:
     """
@@ -60,6 +62,7 @@ async def _process_image_analysis(
         content_type: MIME type
         generate_tasks: Whether to generate tasks
         prompt_override: Optional custom prompt
+        locale: User locale for AI prompt selection
 
     Returns:
         ImageAnalysisResponse with analysis results
@@ -76,6 +79,7 @@ async def _process_image_analysis(
             user_id=user_id,
             generate_tasks=generate_tasks,
             prompt_override=prompt_override,
+            locale=locale,
         )
     except ImageValidationError as e:
         # Return proper validation error for invalid images
@@ -268,6 +272,7 @@ def create_image_processing_service() -> ImageProcessingService:
 @router.post("/analyze", response_model=ImageAnalysisResponse)
 async def analyze_image(
     user_id: str = Header(..., alias="x-user-id"),
+    accept_language: Optional[str] = Header(None, alias="accept-language"),
     image: UploadFile = File(..., description="Image file to analyze"),
     generate_tasks: bool = Form(
         True,
@@ -308,6 +313,10 @@ async def analyze_image(
     # Generate correlation ID for request tracking
     correlation_id = generate_correlation_id()
     set_correlation_id(correlation_id)
+    
+    # Detect locale from Accept-Language header
+    detected_locale = detect_locale_from_header(accept_language)
+    logger.info(f"Detected locale: {detected_locale} from header: {accept_language}")
 
     # Validate file upload
     if not image.filename:
@@ -334,13 +343,19 @@ async def analyze_image(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file uploaded"
         )
 
-    # Log image upload
+    # Log image upload with locale information
     processing_logger.log_image_upload(
         user_id=user_id,
         filename=image.filename,
         file_size=len(image_data),
         content_type=image.content_type or "application/octet-stream",
         correlation_id=correlation_id,
+    )
+    
+    # Log locale detection for monitoring
+    logger.info(
+        f"Image analysis request - User: {user_id}, Locale: {detected_locale}, "
+        f"Accept-Language: {accept_language}, File: {image.filename}"
     )
 
     try:
@@ -351,6 +366,7 @@ async def analyze_image(
             content_type=image.content_type or "application/octet-stream",
             generate_tasks=generate_tasks,
             prompt_override=prompt_override,
+            locale=detected_locale,
             session=session,
         )
 
