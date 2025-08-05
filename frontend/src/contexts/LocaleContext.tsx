@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "next-intl";
-import React, { createContext, type ReactNode, useContext } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 import { createLocaleContext } from "@/lib/locale-utils";
 import type {
 	Locale,

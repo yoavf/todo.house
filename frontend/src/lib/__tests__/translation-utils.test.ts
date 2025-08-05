@@ -5,7 +5,6 @@ import {
 	getTranslationKeyPath,
 	loadTranslations,
 	preloadTranslations,
-	TranslationLoadError,
 	translationKeys,
 } from "../translation-utils";
 

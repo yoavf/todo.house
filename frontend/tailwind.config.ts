@@ -28,7 +28,13 @@ const config: Config = {
 	},
 	plugins: [
 		// RTL support plugin
-		({ addUtilities, addVariant }: { addUtilities: (utilities: Record<string, any>) => void; addVariant: (name: string, selector: string) => void }) => {
+		({
+			addUtilities,
+			addVariant,
+		}: {
+			addUtilities: (utilities: Record<string, any>) => void;
+			addVariant: (name: string, selector: string) => void;
+		}) => {
 			// Add RTL/LTR variants
 			addVariant("rtl", '[dir="rtl"] &');
 			addVariant("ltr", '[dir="ltr"] &');

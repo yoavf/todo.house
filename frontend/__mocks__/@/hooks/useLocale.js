@@ -9,7 +9,7 @@ const useRTLClasses = jest.fn(() => ({
 	mirrorIcon: jest.fn(() => ""),
 	conditionalMirror: "rtl:scale-x-[-1]",
 	flexRowReverseRTL: "flex-row-reverse-rtl",
-	combine: jest.fn((baseClasses, rtlClasses) => baseClasses),
+	combine: jest.fn((baseClasses, _rtlClasses) => baseClasses),
 	getArrowIcon: jest.fn(() => "ArrowRightIcon"),
 	getSwipeDirection: jest.fn(() => ({
 		positive: "right",
