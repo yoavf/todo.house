@@ -39,7 +39,7 @@
   - Update form components with proper RTL input alignment
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.6_
 
-- [ ] 6. Enhance backend PromptService for locale support
+- [x] 6. Enhance backend PromptService for locale support
   - Extend existing PromptService class to accept locale parameter
   - Create locale-specific prompt directory structure in backend
   - Implement prompt loading logic with locale-specific file resolution
