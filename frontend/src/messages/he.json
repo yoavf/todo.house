@@ -120,5 +120,41 @@
 		"placeholder": "הקלד או בחר מיקום",
 		"addLocation": "הוסף \"{location}\"",
 		"noLocationsFound": "לא נמצאו מיקומים"
+	},
+	"settings": {
+		"title": "הגדרות",
+		"language": {
+			"title": "שפה",
+			"english": "English",
+			"hebrew": "עברית"
+		},
+		"rooms": {
+			"title": "חדרים",
+			"addRoom": "הוסף חדר",
+			"editRoom": "ערוך חדר",
+			"deleteRoom": "מחק חדר",
+			"roomName": "שם החדר",
+			"defaultRooms": {
+				"livingRoom": "סלון",
+				"kitchen": "מטבח",
+				"bathroom": "חדר רחצה",
+				"bedroom": "חדר שינה",
+				"office": "משרד",
+				"garage": "מוסך",
+				"backyard": "חצר אחורית"
+			}
+		},
+		"appliances": {
+			"title": "המכשירים שלי",
+			"description": "בחר את המכשירים שיש לך בבית",
+			"refrigerator": "מקרר",
+			"washingMachine": "מכונת כביסה",
+			"microwave": "מיקרוגל",
+			"oven": "תנור",
+			"dishwasher": "מדיח כלים",
+			"dryer": "מייבש",
+			"airConditioner": "מזגן",
+			"waterHeater": "דוד מים"
+		}
 	}
 }
