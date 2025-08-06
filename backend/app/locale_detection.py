@@ -325,3 +325,36 @@ def get_locale_string(locale_code: str) -> str:
     }
     
     return LOCALE_MAPPING.get(locale_code, "en_US")
+
+
+async def detect_locale_and_metadata(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    accept_language_header: Optional[str]
+) -> tuple[str, dict]:
+    """
+    Detect locale and return both the locale string and full metadata.
+    
+    This avoids duplicate calls to locale detection in endpoints.
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        accept_language_header: Accept-Language header value
+        
+    Returns:
+        Tuple of (locale, metadata_dict)
+    """
+    metadata = await detect_locale_with_metadata_and_user_preference(
+        db, user_id, accept_language_header
+    )
+    return metadata["locale"], metadata
+
+
+class LocaleData:
+    """Container for locale detection results."""
+    def __init__(self, locale: str, locale_str: str, metadata: dict):
+        self.locale = locale  # e.g., "en", "he"
+        self.locale_str = locale_str  # e.g., "en_US", "he_IL"
+        self.metadata = metadata
+        self.source = metadata.get("source", "unknown")

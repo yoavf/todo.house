@@ -13,7 +13,7 @@ from .database.models import User
 from .models import UserSettings, UserSettingsUpdate
 from .locale_detection import (
     set_user_locale_preference,
-    detect_locale_with_metadata_and_user_preference
+    detect_locale_and_metadata
 )
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ async def get_user_settings(
             raise HTTPException(status_code=404, detail="User not found")
         
         # Get locale detection metadata for logging
-        locale_metadata = await detect_locale_with_metadata_and_user_preference(
+        _, locale_metadata = await detect_locale_and_metadata(
             db, user_id, accept_language
         )
         
@@ -121,7 +121,7 @@ async def update_user_settings(
         await db.refresh(user)
         
         # Get locale detection metadata for logging
-        locale_metadata = await detect_locale_with_metadata_and_user_preference(
+        _, locale_metadata = await detect_locale_and_metadata(
             db, user_id, accept_language
         )
         

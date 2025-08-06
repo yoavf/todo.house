@@ -35,8 +35,7 @@ from .logging_config import (
     set_correlation_id,
 )
 from .locale_detection import (
-    detect_locale_with_user_preference,
-    detect_locale_with_metadata_and_user_preference
+    detect_locale_and_metadata
 )
 
 logger = logging.getLogger(__name__)
@@ -326,13 +325,8 @@ async def analyze_image(
             detail="Invalid user ID format"
         )
     
-    # Detect locale with user preference override
-    detected_locale = await detect_locale_with_user_preference(
-        session, user_uuid, accept_language
-    )
-    
-    # Get detailed locale metadata for logging
-    locale_metadata = await detect_locale_with_metadata_and_user_preference(
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, user_uuid, accept_language
     )
     

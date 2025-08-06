@@ -21,8 +21,8 @@ from .services.snooze_service import SnoozeService, SnoozeOption
 from .logging_config import StructuredLogger
 from .locale_detection import (
     get_locale_string,
-    detect_locale_with_user_preference,
-    detect_locale_with_metadata_and_user_preference
+    detect_locale_and_metadata,
+    LocaleData
 )
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -35,6 +35,25 @@ def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
         return uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+
+async def get_locale_data_dependency(
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
+    accept_language: Optional[str] = Header(None, alias="accept-language"),
+    session: AsyncSession = Depends(get_session_dependency),
+) -> LocaleData:
+    """
+    FastAPI dependency for locale detection.
+    
+    Returns a LocaleData object containing:
+    - locale: The detected locale code (e.g., "en", "he")
+    - locale_str: The full locale string for services (e.g., "en_US", "he_IL")
+    - metadata: Full metadata about locale detection
+    - source: Where the locale was detected from
+    """
+    locale, metadata = await detect_locale_and_metadata(session, user_uuid, accept_language)
+    locale_str = get_locale_string(locale)
+    return LocaleData(locale, locale_str, metadata)
 
 
 async def populate_task_related_data(
@@ -166,13 +185,8 @@ async def get_tasks(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale with user preference override
-    detected_locale = await detect_locale_with_user_preference(
-        session, user_uuid, accept_language
-    )
-    
-    # Get detailed locale metadata for logging
-    locale_metadata = await detect_locale_with_metadata_and_user_preference(
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, user_uuid, accept_language
     )
     
@@ -209,13 +223,8 @@ async def get_active_tasks(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale with user preference override
-    detected_locale = await detect_locale_with_user_preference(
-        session, user_uuid, accept_language
-    )
-    
-    # Get detailed locale metadata for logging
-    locale_metadata = await detect_locale_with_metadata_and_user_preference(
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, user_uuid, accept_language
     )
     
@@ -243,13 +252,8 @@ async def get_snoozed_tasks(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale with user preference override
-    detected_locale = await detect_locale_with_user_preference(
-        session, user_uuid, accept_language
-    )
-    
-    # Get detailed locale metadata for logging
-    locale_metadata = await detect_locale_with_metadata_and_user_preference(
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, user_uuid, accept_language
     )
     
@@ -321,13 +325,8 @@ async def get_task(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale with user preference override
-    detected_locale = await detect_locale_with_user_preference(
-        session, user_uuid, accept_language
-    )
-    
-    # Get detailed locale metadata for logging
-    locale_metadata = await detect_locale_with_metadata_and_user_preference(
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, user_uuid, accept_language
     )
     
@@ -426,16 +425,11 @@ async def snooze_task(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale with user preference override
-    detected_locale = await detect_locale_with_user_preference(
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, user_uuid, accept_language
     )
     locale_str = get_locale_string(detected_locale)
-    
-    # Get detailed locale metadata for logging
-    locale_metadata = await detect_locale_with_metadata_and_user_preference(
-        session, user_uuid, accept_language
-    )
     
     # Get existing task
     query = select(TaskModel).where(

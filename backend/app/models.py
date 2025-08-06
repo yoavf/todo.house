@@ -360,8 +360,8 @@ class Location(LocationBase):
 
 
 # User settings models
-class UserSettingsBase(BaseModel):
-    """Base model for user settings"""
+class UserSettingsUpdate(BaseModel):
+    """Model for updating user settings"""
     
     locale_preference: Optional[str] = Field(
         None, 
@@ -370,16 +370,15 @@ class UserSettingsBase(BaseModel):
     )
 
 
-class UserSettingsUpdate(UserSettingsBase):
-    """Model for updating user settings"""
-    
-    pass
-
-
-class UserSettings(UserSettingsBase):
+class UserSettings(BaseModel):
     """Model for user settings response"""
     
     user_id: uuid.UUID
+    locale_preference: Optional[str] = Field(
+        None, 
+        description="User's preferred locale (e.g., 'en', 'he')",
+        pattern="^[a-z]{2}$"
+    )
     created_at: datetime
     updated_at: datetime
     

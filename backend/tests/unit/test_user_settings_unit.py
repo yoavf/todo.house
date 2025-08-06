@@ -31,8 +31,8 @@ class TestGetUserSettings:
         mock_result.scalar_one_or_none.return_value = mock_user
         mock_db.execute.return_value = mock_result
         
-        with patch('app.user_settings.detect_locale_with_metadata_and_user_preference') as mock_detect:
-            mock_detect.return_value = {"locale": "he", "source": "user_preference"}
+        with patch('app.user_settings.detect_locale_and_metadata') as mock_detect:
+            mock_detect.return_value = ("he", {"locale": "he", "source": "user_preference"})
             
             # Call the function
             result = await get_user_settings(
@@ -108,8 +108,8 @@ class TestUpdateUserSettings:
         with patch('app.user_settings.set_user_locale_preference') as mock_set_locale:
             mock_set_locale.return_value = True
             
-            with patch('app.user_settings.detect_locale_with_metadata_and_user_preference') as mock_detect:
-                mock_detect.return_value = {"locale": "he", "source": "user_preference"}
+            with patch('app.user_settings.detect_locale_and_metadata') as mock_detect:
+                mock_detect.return_value = ("he", {"locale": "he", "source": "user_preference"})
                 
                 # Call the function
                 result = await update_user_settings(
@@ -195,8 +195,8 @@ class TestUpdateUserSettings:
         with patch('app.user_settings.set_user_locale_preference') as mock_set_locale:
             mock_set_locale.return_value = True
             
-            with patch('app.user_settings.detect_locale_with_metadata_and_user_preference') as mock_detect:
-                mock_detect.return_value = {"locale": "en", "source": "default"}
+            with patch('app.user_settings.detect_locale_and_metadata') as mock_detect:
+                mock_detect.return_value = ("en", {"locale": "en", "source": "default"})
                 
                 # Call the function
                 await update_user_settings(
