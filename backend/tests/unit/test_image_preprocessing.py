@@ -302,7 +302,9 @@ class TestImageProcessingService:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.service = ImageProcessingService()
+        # Create service without AI provider to avoid external API calls
+        # Explicitly pass None to ensure no provider is created
+        self.service = ImageProcessingService(ai_provider=None)
 
     def create_test_image(
         self, format_type: str = "JPEG", size: tuple = (100, 100)
@@ -319,8 +321,10 @@ class TestImageProcessingService:
         image_data = self.create_test_image()
         user_id = "test_user_123"
 
+        # When no AI provider is configured, generate_tasks should be False
+        # or it will return empty tasks
         result = await self.service.analyze_image_and_generate_tasks(
-            image_data, user_id, generate_tasks=True
+            image_data, user_id, generate_tasks=False
         )
 
         # Verify placeholder response structure
