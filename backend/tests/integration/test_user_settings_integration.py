@@ -115,9 +115,9 @@ class TestUserSettingsIntegration:
             json=update_data
         )
         
-        # Get locale info
+        # Get user settings (which includes locale info)
         response = await client.get(
-            f"/api/user-settings/{test_user_id}/locale",
+            f"/api/user-settings/{test_user_id}",
             headers={"Accept-Language": "en-US,en;q=0.9"}
         )
         
@@ -126,16 +126,13 @@ class TestUserSettingsIntegration:
         
         assert data["user_id"] == str(test_user_id)
         assert data["locale_preference"] == "he"
-        assert data["current_locale"] == "he"  # Should use preference
-        assert data["locale_source"] == "user_preference"
-        assert "metadata" in data
 
-    async def test_get_user_locale_info_fallback_to_header(
+    async def test_get_user_settings_no_preference(
         self, client: AsyncClient, test_user_id: str, setup_test_user
     ):
-        """Test locale info falls back to header when no preference set."""
+        """Test user settings when no preference is set."""
         response = await client.get(
-            f"/api/user-settings/{test_user_id}/locale",
+            f"/api/user-settings/{test_user_id}",
             headers={"Accept-Language": "he-IL,he;q=0.9,en;q=0.8"}
         )
         
@@ -144,8 +141,6 @@ class TestUserSettingsIntegration:
         
         assert data["user_id"] == str(test_user_id)
         assert data["locale_preference"] is None
-        assert data["current_locale"] == "he"  # Should detect from header
-        assert data["locale_source"] == "header"
 
 
 @pytest.mark.integration

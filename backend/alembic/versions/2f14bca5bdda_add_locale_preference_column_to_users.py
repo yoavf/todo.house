@@ -1,7 +1,7 @@
 """Add locale preference column to users
 
 Revision ID: 2f14bca5bdda
-Revises: a8a641084c80
+Revises: b234fa5b123c
 Create Date: 2025-08-05 18:33:43.759682
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '2f14bca5bdda'
-down_revision = 'a8a641084c80'
+down_revision = 'b234fa5b123c'
 branch_labels = None
 depends_on = None
 

@@ -123,57 +123,7 @@ def detect_locale_from_header(accept_language_header: Optional[str]) -> str:
     return DEFAULT_LOCALE
 
 
-def detect_locale_with_metadata(accept_language_header: Optional[str]) -> dict:
-    """
-    Enhanced locale detection with detailed result information.
-    
-    Args:
-        accept_language_header: Accept-Language header value
-        
-    Returns:
-        Dictionary with locale, source, and original header information
-    """
-    if not accept_language_header:
-        return {
-            "locale": DEFAULT_LOCALE,
-            "source": "default"
-        }
-    
-    try:
-        parsed_locales = parse_accept_language_header(accept_language_header)
-        
-        # First, try to find exact matches
-        for locale, quality in parsed_locales:
-            normalized_locale = locale.lower()
-            if is_supported_locale(normalized_locale):
-                return {
-                    "locale": normalized_locale,
-                    "source": "header",
-                    "original_header": accept_language_header,
-                    "quality": quality,
-                    "match_type": "exact"
-                }
-        
-        # Then, try to match by language code only
-        for locale, quality in parsed_locales:
-            language_code = extract_language_code(locale)
-            if is_supported_locale(language_code):
-                return {
-                    "locale": language_code,
-                    "source": "header",
-                    "original_header": accept_language_header,
-                    "quality": quality,
-                    "match_type": "language_code"
-                }
-                
-    except Exception as e:
-        logger.warning(f"Failed to parse Accept-Language header: {e}")
-    
-    return {
-        "locale": DEFAULT_LOCALE,
-        "source": "default",
-        "original_header": accept_language_header
-    }
+
 
 
 async def get_user_locale_preference(db: AsyncSession, user_id: uuid.UUID) -> Optional[str]:
@@ -205,35 +155,7 @@ async def get_user_locale_preference(db: AsyncSession, user_id: uuid.UUID) -> Op
     return None
 
 
-async def detect_locale_with_user_preference(
-    db: AsyncSession, 
-    user_id: uuid.UUID, 
-    accept_language_header: Optional[str]
-) -> str:
-    """
-    Detect locale with user preference override.
-    
-    Priority order:
-    1. User's saved locale preference
-    2. Accept-Language header
-    3. Default locale
-    
-    Args:
-        db: Database session
-        user_id: User ID
-        accept_language_header: Accept-Language header value
-        
-    Returns:
-        Best supported locale
-    """
-    # First check user preference
-    user_preference = await get_user_locale_preference(db, user_id)
-    if user_preference:
-        logger.debug(f"Using user locale preference: {user_preference}")
-        return user_preference
-    
-    # Fall back to header detection
-    return detect_locale_from_header(accept_language_header)
+
 
 
 async def detect_locale_with_metadata_and_user_preference(
@@ -262,9 +184,79 @@ async def detect_locale_with_metadata_and_user_preference(
         }
     
     # Fall back to header detection with metadata
-    header_result = detect_locale_with_metadata(accept_language_header)
-    header_result["user_id"] = str(user_id)
-    return header_result
+    if not accept_language_header:
+        return {
+            "locale": DEFAULT_LOCALE,
+            "source": "default",
+            "user_id": str(user_id)
+        }
+    
+    try:
+        parsed_locales = parse_accept_language_header(accept_language_header)
+        
+        # First, try to find exact matches
+        for locale, quality in parsed_locales:
+            normalized_locale = locale.lower()
+            if is_supported_locale(normalized_locale):
+                return {
+                    "locale": normalized_locale,
+                    "source": "header",
+                    "original_header": accept_language_header,
+                    "quality": quality,
+                    "match_type": "exact",
+                    "user_id": str(user_id)
+                }
+        
+        # Then, try to match by language code only
+        for locale, quality in parsed_locales:
+            language_code = extract_language_code(locale)
+            if is_supported_locale(language_code):
+                return {
+                    "locale": language_code,
+                    "source": "header",
+                    "original_header": accept_language_header,
+                    "quality": quality,
+                    "match_type": "language_code",
+                    "user_id": str(user_id)
+                }
+                
+    except Exception as e:
+        logger.warning(f"Failed to parse Accept-Language header: {e}")
+    
+    return {
+        "locale": DEFAULT_LOCALE,
+        "source": "default",
+        "original_header": accept_language_header,
+        "user_id": str(user_id)
+    }
+
+
+async def detect_locale_with_user_preference(
+    db: AsyncSession, 
+    user_id: uuid.UUID, 
+    accept_language_header: Optional[str]
+) -> str:
+    """
+    Detect locale with user preference override.
+    
+    Priority order:
+    1. User's saved locale preference
+    2. Accept-Language header
+    3. Default locale
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        accept_language_header: Accept-Language header value
+        
+    Returns:
+        Best supported locale
+    """
+    # Get the full metadata and extract just the locale
+    metadata = await detect_locale_with_metadata_and_user_preference(
+        db, user_id, accept_language_header
+    )
+    return metadata["locale"]
 
 
 async def set_user_locale_preference(
