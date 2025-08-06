@@ -13,7 +13,6 @@ from .database.models import User
 from .models import UserSettings, UserSettingsUpdate
 from .locale_detection import (
     set_user_locale_preference,
-    is_supported_locale,
     detect_locale_with_metadata_and_user_preference
 )
 
@@ -106,16 +105,8 @@ async def update_user_settings(
         # Store old locale preference for logging
         old_locale_preference = user.locale_preference
         
-        # Handle locale preference update
-        if settings_update.locale_preference is not None:
-            # Validate non-null locale preference
-            if not is_supported_locale(settings_update.locale_preference):
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Unsupported locale: {settings_update.locale_preference}"
-                )
-        
         # Update locale preference (handles both setting and clearing)
+        # set_user_locale_preference validates the locale internally
         success = await set_user_locale_preference(
             db, user_id, settings_update.locale_preference
         )
