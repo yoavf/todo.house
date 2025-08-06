@@ -117,6 +117,9 @@ async def update_user_settings(
                 detail="Failed to update locale preference"
             )
         
+        # Commit the transaction
+        await db.commit()
+        
         # Refresh user data
         await db.refresh(user)
         
@@ -144,8 +147,10 @@ async def update_user_settings(
         )
         
     except HTTPException:
+        await db.rollback()
         raise
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to update user settings: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 

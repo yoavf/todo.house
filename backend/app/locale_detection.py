@@ -4,6 +4,7 @@ from typing import List, Tuple, Optional
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from .database.models import User
 import uuid
 
@@ -267,6 +268,8 @@ async def set_user_locale_preference(
     """
     Set or clear user's locale preference.
     
+    Note: The caller is responsible for committing the transaction.
+    
     Args:
         db: Database session
         user_id: User ID
@@ -281,8 +284,12 @@ async def set_user_locale_preference(
         return False
     
     try:
-        # Get user and update locale preference
-        result = await db.execute(select(User).where(User.id == user_id))
+        # Get user with row lock to prevent concurrent updates
+        result = await db.execute(
+            select(User)
+            .where(User.id == user_id)
+            .with_for_update()
+        )
         user = result.scalar_one_or_none()
         
         if not user:
@@ -290,7 +297,7 @@ async def set_user_locale_preference(
             return False
         
         user.locale_preference = locale
-        await db.commit()
+        # Let the caller handle the commit
         
         if locale is None:
             logger.info(f"Cleared locale preference for user {user_id}")
@@ -298,9 +305,8 @@ async def set_user_locale_preference(
             logger.info(f"Set locale preference for user {user_id}: {locale}")
         return True
         
-    except Exception as e:
-        logger.error(f"Failed to set user locale preference: {e}")
-        await db.rollback()
+    except SQLAlchemyError as e:
+        logger.error(f"Database error setting user locale preference: {e}")
         return False
 
 

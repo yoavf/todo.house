@@ -13,6 +13,7 @@ from app.locale_detection import (
     is_supported_locale
 )
 from app.database.models import User
+from sqlalchemy.exc import SQLAlchemyError
 
 
 @pytest.mark.unit
@@ -170,7 +171,8 @@ class TestUserLocalePreference:
         
         assert result is True
         assert mock_user.locale_preference == "he"
-        mock_session.commit.assert_called_once()
+        # Commit should not be called - caller handles transaction
+        mock_session.commit.assert_not_called()
 
     async def test_set_user_locale_preference_invalid_locale(self):
         """Test setting invalid locale preference."""
@@ -203,7 +205,7 @@ class TestUserLocalePreference:
         """Test handling database errors when setting locale preference."""
         # Mock database session to raise exception
         mock_session = AsyncMock(spec=AsyncSession)
-        mock_session.execute.side_effect = Exception("Database error")
+        mock_session.execute.side_effect = SQLAlchemyError("Database error")
         
         user_id = uuid.uuid4()
         locale = "he"
@@ -211,7 +213,8 @@ class TestUserLocalePreference:
         result = await set_user_locale_preference(mock_session, user_id, locale)
         
         assert result is False
-        mock_session.rollback.assert_called_once()
+        # Rollback should not be called - caller handles transaction
+        mock_session.rollback.assert_not_called()
 
     def test_is_supported_locale_valid(self):
         """Test is_supported_locale with valid locales."""
