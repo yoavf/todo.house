@@ -1,19 +1,16 @@
 "use client";
 
-import { HomeIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { useState } from "react";
-import { Button } from "./ui/button";
-import { Card } from "./ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "./ui/dialog";
+	CheckIcon,
+	HomeIcon,
+	PencilIcon,
+	PlusIcon,
+	TrashIcon,
+	XIcon,
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
 
 interface Room {
 	id: string;
@@ -46,10 +43,17 @@ export function RoomManager() {
 	const tCommon = useTranslations("common");
 
 	const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
-	const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+	const [editValue, setEditValue] = useState("");
+	const [isAddingNew, setIsAddingNew] = useState(false);
 	const [newRoomName, setNewRoomName] = useState("");
-	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		if ((editingRoomId || isAddingNew) && inputRef.current) {
+			inputRef.current.focus();
+		}
+	}, [editingRoomId, isAddingNew]);
 
 	const handleAddRoom = () => {
 		if (newRoomName.trim()) {
@@ -58,25 +62,32 @@ export function RoomManager() {
 				name: newRoomName.trim(),
 				isDefault: false,
 			};
-			setRooms([...rooms, newRoom]);
+			setRooms([newRoom, ...rooms]);
 			setNewRoomName("");
-			setIsAddDialogOpen(false);
+			setIsAddingNew(false);
 		}
 	};
 
-	const handleEditRoom = () => {
-		if (editingRoom && newRoomName.trim()) {
+	const handleSaveEdit = (roomId: string) => {
+		if (editValue.trim()) {
 			setRooms(
 				rooms.map((room) =>
-					room.id === editingRoom.id
-						? { ...room, name: newRoomName.trim() }
-						: room,
+					room.id === roomId ? { ...room, name: editValue.trim() } : room,
 				),
 			);
-			setEditingRoom(null);
-			setNewRoomName("");
-			setIsEditDialogOpen(false);
 		}
+		setEditingRoomId(null);
+		setEditValue("");
+	};
+
+	const handleCancelAdd = () => {
+		setIsAddingNew(false);
+		setNewRoomName("");
+	};
+
+	const handleCancelEdit = () => {
+		setEditingRoomId(null);
+		setEditValue("");
 	};
 
 	const handleDeleteRoom = (roomId: string) => {
@@ -84,11 +95,15 @@ export function RoomManager() {
 	};
 
 	const startEdit = (room: Room) => {
-		setEditingRoom(room);
-		setNewRoomName(
+		setEditingRoomId(room.id);
+		setEditValue(
 			room.isDefault ? tDefault(room.name as DefaultRoomKey) : room.name,
 		);
-		setIsEditDialogOpen(true);
+	};
+
+	const handleStartAdd = () => {
+		setIsAddingNew(true);
+		setNewRoomName("");
 	};
 
 	const getRoomDisplayName = (room: Room) => {
@@ -98,111 +113,121 @@ export function RoomManager() {
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-					<HomeIcon className="text-orange-500" size={20} />
-					<h2 className="text-lg font-semibold">{t("title")}</h2>
+				<div className="flex items-center gap-2">
+					<div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+						<HomeIcon className="text-orange-500" size={16} />
+					</div>
+					<h2 className="text-lg font-semibold text-gray-900">{t("title")}</h2>
 				</div>
 
-				<Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-					<DialogTrigger asChild>
-						<Button
-							variant="ghost"
-							className="text-orange-500 hover:text-orange-600"
-						>
-							<PlusIcon size={16} />
-							{t("addRoom")}
-						</Button>
-					</DialogTrigger>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>{t("addRoom")}</DialogTitle>
-						</DialogHeader>
-						<div className="space-y-4">
-							<div className="space-y-2">
-								<Label htmlFor="roomName">{t("roomName")}</Label>
-								<Input
-									id="roomName"
-									value={newRoomName}
-									onChange={(e) => setNewRoomName(e.target.value)}
-									placeholder={t("roomName")}
-								/>
-							</div>
-							<div className="flex justify-end gap-2">
-								<Button
-									variant="outline"
-									onClick={() => {
-										setIsAddDialogOpen(false);
-										setNewRoomName("");
-									}}
-								>
-									{tCommon("cancel")}
-								</Button>
-								<Button onClick={handleAddRoom}>{tCommon("save")}</Button>
-							</div>
-						</div>
-					</DialogContent>
-				</Dialog>
+				{!isAddingNew && (
+					<button
+						type="button"
+						className="flex items-center gap-1 text-orange-500 hover:text-orange-600 text-sm font-medium"
+						onClick={handleStartAdd}
+					>
+						<PlusIcon size={16} />
+						{t("addRoom")}
+					</button>
+				)}
 			</div>
 
-			<Card className="divide-y divide-gray-100">
-				{rooms.map((room) => (
-					<div key={room.id} className="flex items-center justify-between p-4">
-						<span className="font-medium text-gray-800">
-							{getRoomDisplayName(room)}
-						</span>
-						<div className="flex items-center gap-2">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => startEdit(room)}
-								className="text-gray-500 hover:text-gray-700"
-							>
-								<PencilIcon size={16} />
-							</Button>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => handleDeleteRoom(room.id)}
-								className="text-gray-500 hover:text-red-600"
-							>
-								<TrashIcon size={16} />
-							</Button>
-						</div>
+			<div className="space-y-3">
+				{isAddingNew && (
+					<div className="flex items-center gap-2">
+						<Input
+							ref={inputRef}
+							value={newRoomName}
+							onChange={(e) => setNewRoomName(e.target.value)}
+							placeholder={t("enterRoomName")}
+							className="flex-1 border-2 border-orange-500 focus-visible:border-orange-500 focus-visible:ring-0 focus:border-orange-500 focus:ring-0 focus:outline-none"
+							onKeyDown={(e) => {
+								if (e.key === "Enter") handleAddRoom();
+								if (e.key === "Escape") handleCancelAdd();
+							}}
+						/>
+						<button
+							type="button"
+							onClick={handleAddRoom}
+							className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 font-medium"
+						>
+							{t("add")}
+						</button>
+						<button
+							type="button"
+							onClick={handleCancelAdd}
+							className="text-gray-500 px-4 py-2 rounded-md hover:bg-gray-100 font-medium"
+						>
+							{tCommon("cancel")}
+						</button>
 					</div>
-				))}
-			</Card>
+				)}
 
-			<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t("editRoom")}</DialogTitle>
-					</DialogHeader>
-					<div className="space-y-4">
-						<div className="space-y-2">
-							<Label htmlFor="editRoomName">{t("roomName")}</Label>
-							<Input
-								id="editRoomName"
-								value={newRoomName}
-								onChange={(e) => setNewRoomName(e.target.value)}
-								placeholder={t("roomName")}
-							/>
-						</div>
-						<div className="flex justify-end gap-2">
-							<Button
-								variant="outline"
-								onClick={() => {
-									setIsEditDialogOpen(false);
-									setEditingRoom(null);
-									setNewRoomName("");
-								}}
+				<div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+					{rooms.map((room, index) => {
+						const isEditing = editingRoomId === room.id;
+						return (
+							<div
+								key={room.id}
+								className={`${
+									index < rooms.length - 1 ? "border-b border-gray-200" : ""
+								}`}
 							>
-								{tCommon("cancel")}
-							</Button>
-							<Button onClick={handleEditRoom}>{tCommon("save")}</Button>
-						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
+								{isEditing ? (
+									<div className="flex items-center p-2">
+										<Input
+											ref={inputRef}
+											value={editValue}
+											onChange={(e) => setEditValue(e.target.value)}
+											className="flex-1 border-2 border-orange-500 focus-visible:border-orange-500 focus-visible:ring-0 focus:border-orange-500 focus:ring-0 focus:outline-none"
+											onKeyDown={(e) => {
+												if (e.key === "Enter") handleSaveEdit(room.id);
+												if (e.key === "Escape") handleCancelEdit();
+											}}
+										/>
+										<button
+											type="button"
+											onClick={() => handleSaveEdit(room.id)}
+											className="ml-2 p-1.5 text-green-600 hover:bg-green-50 rounded"
+										>
+											<CheckIcon size={20} />
+										</button>
+										<button
+											type="button"
+											onClick={handleCancelEdit}
+											className="ml-1 p-1.5 text-gray-400 hover:bg-gray-100 rounded"
+										>
+											<XIcon size={20} />
+										</button>
+									</div>
+								) : (
+									<div className="flex items-center justify-between px-4 py-3">
+										<span className="font-medium text-gray-700">
+											{getRoomDisplayName(room)}
+										</span>
+										<div className="flex items-center gap-2">
+											<button
+												type="button"
+												onClick={() => startEdit(room)}
+												className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+											>
+												<PencilIcon size={16} />
+											</button>
+											<button
+												type="button"
+												onClick={() => handleDeleteRoom(room.id)}
+												className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+											>
+												<TrashIcon size={16} />
+											</button>
+										</div>
+									</div>
+								)}
+							</div>
+						);
+					})}
+				</div>
+			</div>
 		</div>
 	);
 }

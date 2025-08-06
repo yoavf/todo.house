@@ -134,6 +134,8 @@
 			"editRoom": "Edit Room",
 			"deleteRoom": "Delete Room",
 			"roomName": "Room name",
+			"enterRoomName": "Enter room name",
+			"add": "Add",
 			"defaultRooms": {
 				"livingRoom": "Living Room",
 				"kitchen": "Kitchen",

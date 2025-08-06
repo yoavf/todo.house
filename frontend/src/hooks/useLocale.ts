@@ -14,7 +14,7 @@ export function useLocale() {
  * Hook to get RTL-aware CSS classes using Tailwind's logical properties
  */
 export function useRTLClasses() {
-	const { locale, isRTL } = useLocale();
+	const { isRTL } = useLocale();
 
 	return {
 		// Tailwind's logical properties work automatically with dir="rtl"

@@ -80,7 +80,11 @@ describe("LanguageSelector", () => {
 		render(<LanguageSelector />);
 
 		const englishButton = screen.getByRole("button", { name: /English/i });
-		expect(englishButton).toHaveClass("bg-orange-50", "text-orange-600");
+		expect(englishButton).toHaveClass("bg-orange-50");
+
+		// Check that the text has the orange color
+		const englishText = screen.getByText("English");
+		expect(englishText).toHaveClass("text-orange-600");
 	});
 
 	it("handles language change on click", () => {

@@ -31,6 +31,8 @@ describe("RoomManager", () => {
 				editRoom: "Edit Room",
 				deleteRoom: "Delete Room",
 				roomName: "Room name",
+				enterRoomName: "Enter room name",
+				add: "Add",
 			};
 			return translations[key] || key;
 		});
@@ -97,7 +99,7 @@ describe("RoomManager", () => {
 		expect(deleteButtons).toHaveLength(7);
 	});
 
-	it("opens add room dialog when Add Room is clicked", async () => {
+	it("shows inline add form when Add Room is clicked", async () => {
 		const user = userEvent.setup();
 		render(<RoomManager />);
 
@@ -105,7 +107,9 @@ describe("RoomManager", () => {
 		await user.click(addButton);
 
 		await waitFor(() => {
-			expect(screen.getByLabelText("Room name")).toBeInTheDocument();
+			expect(
+				screen.getByPlaceholderText("Enter room name"),
+			).toBeInTheDocument();
 		});
 	});
 
@@ -113,44 +117,56 @@ describe("RoomManager", () => {
 		const user = userEvent.setup();
 		render(<RoomManager />);
 
-		// Open add room dialog
+		// Open add room form
 		const addButton = screen.getByRole("button", { name: /Add Room/i });
 		await user.click(addButton);
 
-		// Wait for dialog to be open and enter room name
-		await waitFor(async () => {
-			const input = screen.getByLabelText("Room name");
-			await user.type(input, "Basement");
+		// Wait for input to appear and enter room name
+		await waitFor(() => {
+			expect(
+				screen.getByPlaceholderText("Enter room name"),
+			).toBeInTheDocument();
 		});
 
+		const input = screen.getByPlaceholderText("Enter room name");
+		await user.type(input, "Basement");
+
 		// Submit form
-		const saveButton = screen.getByRole("button", { name: /Save/i });
+		const saveButton = screen.getByRole("button", { name: /Add/i });
 		await user.click(saveButton);
 
-		// Check that room was added and dialog closed
+		// Check that room was added and form closed
 		await waitFor(() => {
 			expect(screen.getByText("Basement")).toBeInTheDocument();
-			expect(screen.queryByLabelText("Room name")).not.toBeInTheDocument();
+			expect(
+				screen.queryByPlaceholderText("Enter room name"),
+			).not.toBeInTheDocument();
 		});
 	});
 
-	it("cancels add room dialog", async () => {
+	it("cancels add room form", async () => {
 		const user = userEvent.setup();
 		render(<RoomManager />);
 
-		// Open dialog
+		// Open form
 		const addButton = screen.getByRole("button", { name: /Add Room/i });
 		await user.click(addButton);
 
-		// Wait for dialog and cancel
-		await waitFor(async () => {
-			const cancelButton = screen.getByRole("button", { name: /Cancel/i });
-			await user.click(cancelButton);
+		// Wait for form and cancel
+		await waitFor(() => {
+			expect(
+				screen.getByPlaceholderText("Enter room name"),
+			).toBeInTheDocument();
 		});
 
-		// Check dialog is closed
+		const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+		await user.click(cancelButton);
+
+		// Check form is closed
 		await waitFor(() => {
-			expect(screen.queryByLabelText("Room name")).not.toBeInTheDocument();
+			expect(
+				screen.queryByPlaceholderText("Enter room name"),
+			).not.toBeInTheDocument();
 		});
 	});
 
@@ -158,19 +174,25 @@ describe("RoomManager", () => {
 		const user = userEvent.setup();
 		render(<RoomManager />);
 
-		// Open dialog
+		// Open form
 		const addButton = screen.getByRole("button", { name: /Add Room/i });
 		await user.click(addButton);
 
 		// Try to save without entering a name
-		await waitFor(async () => {
-			const saveButton = screen.getByRole("button", { name: /Save/i });
-			await user.click(saveButton);
+		await waitFor(() => {
+			expect(
+				screen.getByPlaceholderText("Enter room name"),
+			).toBeInTheDocument();
 		});
 
-		// Dialog should still be open
+		const saveButton = screen.getByRole("button", { name: /Add/i });
+		await user.click(saveButton);
+
+		// Form should still be open
 		await waitFor(() => {
-			expect(screen.getByLabelText("Room name")).toBeInTheDocument();
+			expect(
+				screen.getByPlaceholderText("Enter room name"),
+			).toBeInTheDocument();
 		});
 	});
 
@@ -182,12 +204,16 @@ describe("RoomManager", () => {
 		const addButton = screen.getByRole("button", { name: /Add Room/i });
 		await user.click(addButton);
 
-		await waitFor(async () => {
-			const input = screen.getByLabelText("Room name");
-			await user.type(input, "Test Room");
+		await waitFor(() => {
+			expect(
+				screen.getByPlaceholderText("Enter room name"),
+			).toBeInTheDocument();
 		});
 
-		const saveButton = screen.getByRole("button", { name: /Save/i });
+		const input = screen.getByPlaceholderText("Enter room name");
+		await user.type(input, "Test Room");
+
+		const saveButton = screen.getByRole("button", { name: /Add/i });
 		await user.click(saveButton);
 
 		await waitFor(() => {
@@ -196,9 +222,11 @@ describe("RoomManager", () => {
 
 		// Now delete the test room
 		const testRoomRow = screen.getByText("Test Room").closest("div");
-		const deleteButton = testRoomRow
-			?.querySelector("svg[class*='hover:text-red-600']")
-			?.closest("button");
+		const deleteButtons =
+			testRoomRow?.parentElement?.querySelectorAll("button");
+		const deleteButton = deleteButtons
+			? deleteButtons[deleteButtons.length - 1]
+			: null;
 
 		if (deleteButton) {
 			await user.click(deleteButton);

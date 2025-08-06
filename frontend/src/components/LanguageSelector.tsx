@@ -4,8 +4,6 @@ import { GlobeIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useLocaleContext } from "@/contexts/LocaleContext";
-import { Button } from "./ui/button";
-import { Card } from "./ui/card";
 
 type LanguageKey = "english" | "hebrew";
 
@@ -27,38 +25,43 @@ export function LanguageSelector() {
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center gap-3">
-				<GlobeIcon className="text-orange-500" size={20} />
-				<h2 className="text-lg font-semibold">{t("title")}</h2>
+			<div className="flex items-center gap-2">
+				<div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+					<GlobeIcon className="text-orange-500" size={16} />
+				</div>
+				<h2 className="text-lg font-semibold text-gray-900">{t("title")}</h2>
 			</div>
 
-			<Card className="divide-y divide-gray-100">
-				{languages.map((language) => (
-					<div key={language.code} className="p-0">
-						<Button
-							variant="ghost"
-							className={`w-full justify-start h-12 px-4 rounded-none first:rounded-t-md last:rounded-b-md ${
-								locale === language.code
-									? "bg-orange-50 text-orange-600 hover:bg-orange-50"
-									: "text-gray-700 hover:bg-gray-50"
+			<div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+				{languages.map((language, index) => (
+					<button
+						type="button"
+						key={language.code}
+						className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
+							index < languages.length - 1 ? "border-b border-gray-200" : ""
+						} ${
+							locale === language.code ? "bg-orange-50" : "hover:bg-gray-100"
+						}`}
+						onClick={() => handleLanguageChange(language.code)}
+					>
+						<span
+							className={`font-medium ${
+								locale === language.code ? "text-orange-600" : "text-gray-700"
 							}`}
-							onClick={() => handleLanguageChange(language.code)}
 						>
-							<span className="font-medium">{t(language.key)}</span>
-							{locale === language.code && (
-								<span className="mr-auto">
-									<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-										<path
-											d="M13.207 5.207a1 1 0 0 0-1.414-1.414L6.5 9.086 4.207 6.793a1 1 0 0 0-1.414 1.414l3 3a1 1 0 0 0 1.414 0l6-6z"
-											fill="currentColor"
-										/>
-									</svg>
-								</span>
-							)}
-						</Button>
-					</div>
+							{t(language.key)}
+						</span>
+						{locale === language.code && (
+							<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+								<path
+									d="M16.707 5.293a1 1 0 0 1 0 1.414l-8 8a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 1.414-1.414L8 12.586l7.293-7.293a1 1 0 0 1 1.414 0z"
+									fill="#ea580c"
+								/>
+							</svg>
+						)}
+					</button>
 				))}
-			</Card>
+			</div>
 		</div>
 	);
 }

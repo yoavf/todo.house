@@ -134,6 +134,8 @@
 			"editRoom": "ערוך חדר",
 			"deleteRoom": "מחק חדר",
 			"roomName": "שם החדר",
+			"enterRoomName": "הכנס שם חדר",
+			"add": "הוסף",
 			"defaultRooms": {
 				"livingRoom": "סלון",
 				"kitchen": "מטבח",
