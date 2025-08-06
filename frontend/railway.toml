@@ -1,0 +1,6 @@
+[build]
+builder = "NIXPACKS"
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["nodejs", "pnpm"] # Ensure pnpm is included in nixPkgs
+[build.nixpacksPlan.phases.install]
+cmds=["pnpm install"] # Use pnpm install for dependency installation
