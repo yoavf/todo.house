@@ -5,8 +5,10 @@ import uuid
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from unittest.mock import patch, MagicMock
 
 from app.database.models import User
+from app.ai.image_processing import ImageProcessingService
 
 
 @pytest.mark.integration
@@ -275,23 +277,41 @@ class TestLocaleAwareImageAnalysisIntegration:
             json=update_data
         )
         
-        # Analyze image
-        files = {"image": ("test.jpg", sample_image_bytes, "image/jpeg")}
-        data = {"generate_tasks": "true"}
-        
-        response = await client.post(
-            "/api/images/analyze",
-            files=files,
-            data=data,
-            headers={
-                "x-user-id": str(test_user_id),
-                "Accept-Language": "en-US,en;q=0.9"  # Different from preference
+        # Mock the image processing service to avoid real API calls
+        with patch('app.images.create_image_processing_service') as mock_service_factory:
+            mock_service = MagicMock(spec=ImageProcessingService)
+            mock_service.analyze_image_and_generate_tasks.return_value = {
+                "image_metadata": {"original_size": 633, "processed_size": 288},
+                "analysis_summary": "Test analysis with Hebrew locale",
+                "tasks": [],
+                "processing_time": 0.001,
+                "provider_used": "none",
+                "ai_confidence": None,
+                "retry_count": 0
             }
-        )
-        
-        # Should succeed (actual AI analysis might fail in test env, but locale detection should work)
-        # The important thing is that the endpoint processes the request without errors
-        assert response.status_code in [200, 400, 503]  # 400 for invalid image, 503 if AI service unavailable
+            mock_service_factory.return_value = mock_service
+            
+            # Analyze image
+            files = {"image": ("test.jpg", sample_image_bytes, "image/jpeg")}
+            data = {"generate_tasks": "true"}
+            
+            response = await client.post(
+                "/api/images/analyze",
+                files=files,
+                data=data,
+                headers={
+                    "x-user-id": str(test_user_id),
+                    "Accept-Language": "en-US,en;q=0.9"  # Different from preference
+                }
+            )
+            
+            # Should succeed with mocked response
+            assert response.status_code == 200
+            
+            # Verify the service was called with Hebrew locale
+            mock_service.analyze_image_and_generate_tasks.assert_called_once()
+            call_args = mock_service.analyze_image_and_generate_tasks.call_args
+            assert call_args.kwargs.get('locale') == 'he'
 
     async def test_image_analysis_fallback_to_header(
         self, client: AsyncClient, test_user_id: str, setup_test_user, sample_image_bytes: bytes
@@ -299,19 +319,38 @@ class TestLocaleAwareImageAnalysisIntegration:
         """Test that image analysis falls back to Accept-Language header."""
         # Ensure no locale preference is set
         
-        # Analyze image with Hebrew Accept-Language header
-        files = {"image": ("test.jpg", sample_image_bytes, "image/jpeg")}
-        data = {"generate_tasks": "true"}
-        
-        response = await client.post(
-            "/api/images/analyze",
-            files=files,
-            data=data,
-            headers={
-                "x-user-id": str(test_user_id),
-                "Accept-Language": "he-IL,he;q=0.9,en;q=0.8"
+        # Mock the image processing service to avoid real API calls
+        with patch('app.images.create_image_processing_service') as mock_service_factory:
+            mock_service = MagicMock(spec=ImageProcessingService)
+            mock_service.analyze_image_and_generate_tasks.return_value = {
+                "image_metadata": {"original_size": 633, "processed_size": 288},
+                "analysis_summary": "Test analysis with Hebrew from header",
+                "tasks": [],
+                "processing_time": 0.001,
+                "provider_used": "none",
+                "ai_confidence": None,
+                "retry_count": 0
             }
-        )
-        
-        # Should succeed (actual AI analysis might fail in test env, but locale detection should work)
-        assert response.status_code in [200, 400, 503]  # 400 for invalid image, 503 if AI service unavailable
+            mock_service_factory.return_value = mock_service
+            
+            # Analyze image with Hebrew Accept-Language header
+            files = {"image": ("test.jpg", sample_image_bytes, "image/jpeg")}
+            data = {"generate_tasks": "true"}
+            
+            response = await client.post(
+                "/api/images/analyze",
+                files=files,
+                data=data,
+                headers={
+                    "x-user-id": str(test_user_id),
+                    "Accept-Language": "he-IL,he;q=0.9,en;q=0.8"
+                }
+            )
+            
+            # Should succeed with mocked response
+            assert response.status_code == 200
+            
+            # Verify the service was called with Hebrew locale from header
+            mock_service.analyze_image_and_generate_tasks.assert_called_once()
+            call_args = mock_service.analyze_image_and_generate_tasks.call_args
+            assert call_args.kwargs.get('locale') == 'he'
