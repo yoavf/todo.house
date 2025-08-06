@@ -1,6 +1,6 @@
 "use client";
 
-import { GlobeIcon } from "lucide-react";
+import { CheckIcon, GlobeIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useLocaleContext } from "@/contexts/LocaleContext";
@@ -52,12 +52,7 @@ export function LanguageSelector() {
 							{t(language.key)}
 						</span>
 						{locale === language.code && (
-							<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-								<path
-									d="M16.707 5.293a1 1 0 0 1 0 1.414l-8 8a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 1.414-1.414L8 12.586l7.293-7.293a1 1 0 0 1 1.414 0z"
-									fill="#ea580c"
-								/>
-							</svg>
+							<CheckIcon size={20} className="text-orange-600" />
 						)}
 					</button>
 				))}
