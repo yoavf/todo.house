@@ -262,20 +262,21 @@ async def detect_locale_with_user_preference(
 async def set_user_locale_preference(
     db: AsyncSession, 
     user_id: uuid.UUID, 
-    locale: str
+    locale: Optional[str]
 ) -> bool:
     """
-    Set user's locale preference.
+    Set or clear user's locale preference.
     
     Args:
         db: Database session
         user_id: User ID
-        locale: Locale to set
+        locale: Locale to set, or None to clear preference
         
     Returns:
         True if successful, False otherwise
     """
-    if not is_supported_locale(locale):
+    # Only validate non-None locales
+    if locale is not None and not is_supported_locale(locale):
         logger.warning(f"Attempted to set unsupported locale: {locale}")
         return False
     
@@ -291,7 +292,10 @@ async def set_user_locale_preference(
         user.locale_preference = locale
         await db.commit()
         
-        logger.info(f"Set locale preference for user {user_id}: {locale}")
+        if locale is None:
+            logger.info(f"Cleared locale preference for user {user_id}")
+        else:
+            logger.info(f"Set locale preference for user {user_id}: {locale}")
         return True
         
     except Exception as e:

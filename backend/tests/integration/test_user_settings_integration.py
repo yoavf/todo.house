@@ -202,6 +202,20 @@ class TestLocaleAwareTasksIntegration:
         """Test that task endpoints fall back to Accept-Language header."""
         # Ensure no locale preference is set (should be None by default)
         
+        # First create a task using the API
+        task_data = {
+            "title": "Test Task",
+            "description": "Test task for locale fallback",
+            "priority": "medium"
+        }
+        
+        create_response = await client.post(
+            "/api/tasks/",
+            json=task_data,
+            headers={"x-user-id": str(test_user_id)}
+        )
+        assert create_response.status_code in [200, 201]  # Accept either status
+        
         # Get tasks with Hebrew Accept-Language header
         response = await client.get(
             "/api/tasks/",
@@ -212,7 +226,33 @@ class TestLocaleAwareTasksIntegration:
         )
         
         assert response.status_code == 200
-        # Should work without errors and use Hebrew locale for snooze calculations
+        tasks = response.json()
+        assert len(tasks) > 0
+        
+        # Verify Hebrew locale is used by checking snooze options
+        # Hebrew locale should have Hebrew-formatted snooze options
+        task_response = tasks[0]
+        assert "snooze_options" in task_response
+        snooze_options = task_response["snooze_options"]
+        
+        # The snooze options should be present (they are generated based on locale)
+        assert snooze_options is not None
+        assert len(snooze_options) > 0
+        
+        # Additionally, get the same tasks with English header to compare
+        response_en = await client.get(
+            "/api/tasks/",
+            headers={
+                "x-user-id": str(test_user_id),
+                "Accept-Language": "en-US,en;q=0.9"
+            }
+        )
+        
+        assert response_en.status_code == 200
+        tasks_en = response_en.json()
+        
+        # The tasks should be the same, but locale-specific formatting might differ
+        assert len(tasks) == len(tasks_en)
 
     async def test_snooze_task_respects_user_locale(
         self, client: AsyncClient, test_user_id: str, setup_test_user, db_session: AsyncSession

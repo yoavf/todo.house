@@ -103,30 +103,28 @@ async def update_user_settings(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
+        # Store old locale preference for logging
+        old_locale_preference = user.locale_preference
+        
         # Handle locale preference update
-        if hasattr(settings_update, 'locale_preference'):
-            if settings_update.locale_preference is not None:
-                # Validate non-null locale preference
-                if not is_supported_locale(settings_update.locale_preference):
-                    raise HTTPException(
-                        status_code=400, 
-                        detail=f"Unsupported locale: {settings_update.locale_preference}"
-                    )
-                
-                # Update locale preference
-                success = await set_user_locale_preference(
-                    db, user_id, settings_update.locale_preference
+        if settings_update.locale_preference is not None:
+            # Validate non-null locale preference
+            if not is_supported_locale(settings_update.locale_preference):
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Unsupported locale: {settings_update.locale_preference}"
                 )
-                
-                if not success:
-                    raise HTTPException(
-                        status_code=500, 
-                        detail="Failed to update locale preference"
-                    )
-            else:
-                # Clear locale preference (set to None)
-                user.locale_preference = None
-                await db.commit()
+        
+        # Update locale preference (handles both setting and clearing)
+        success = await set_user_locale_preference(
+            db, user_id, settings_update.locale_preference
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=500, 
+                detail="Failed to update locale preference"
+            )
         
         # Refresh user data
         await db.refresh(user)
@@ -140,7 +138,7 @@ async def update_user_settings(
             f"Updated user settings for {user_id}",
             extra={
                 "user_id": str(user_id),
-                "old_locale_preference": user.locale_preference,
+                "old_locale_preference": old_locale_preference,
                 "new_locale_preference": settings_update.locale_preference,
                 "detected_locale": locale_metadata.get("locale"),
                 "locale_source": locale_metadata.get("source")
