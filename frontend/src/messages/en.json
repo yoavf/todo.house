@@ -120,5 +120,43 @@
 		"placeholder": "Type or select a location",
 		"addLocation": "Add \"{location}\"",
 		"noLocationsFound": "No locations found"
+	},
+	"settings": {
+		"title": "Settings",
+		"language": {
+			"title": "Language",
+			"english": "English",
+			"hebrew": "עברית"
+		},
+		"rooms": {
+			"title": "Rooms",
+			"addRoom": "Add Room",
+			"editRoom": "Edit Room",
+			"deleteRoom": "Delete Room",
+			"roomName": "Room name",
+			"enterRoomName": "Enter room name",
+			"add": "Add",
+			"defaultRooms": {
+				"livingRoom": "Living Room",
+				"kitchen": "Kitchen",
+				"bathroom": "Bathroom",
+				"bedroom": "Bedroom",
+				"office": "Office",
+				"garage": "Garage",
+				"backyard": "Backyard"
+			}
+		},
+		"appliances": {
+			"title": "My Appliances",
+			"description": "Select the appliances you have in your home",
+			"refrigerator": "Refrigerator",
+			"washingMachine": "Washing Machine",
+			"microwave": "Microwave",
+			"oven": "Oven",
+			"dishwasher": "Dishwasher",
+			"dryer": "Dryer",
+			"airConditioner": "Air Conditioner",
+			"waterHeater": "Water Heater"
+		}
 	}
 }

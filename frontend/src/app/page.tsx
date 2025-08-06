@@ -59,13 +59,24 @@ function HomePageContent() {
 	const isFullScreenViewOpen = showMicrophone || showTyping || showCamera;
 
 	return (
-		<div className="w-full min-h-screen bg-gray-50">
-			<div className="max-w-md mx-auto px-4">
-				<div className="sticky top-0 bg-gray-50 z-20 pt-6 pb-4">
-					<Header />
-					<TabNavigation />
+		<div
+			className="w-full min-h-screen"
+			style={{ backgroundColor: "rgb(240, 240, 243)" }}
+		>
+			<div
+				className="max-w-md mx-auto min-h-screen shadow-sm"
+				style={{ backgroundColor: "rgb(249, 250, 251)" }}
+			>
+				<div className="px-4">
+					<div
+						className="sticky top-0 z-20 pt-6 pb-4"
+						style={{ backgroundColor: "rgb(249, 250, 251)" }}
+					>
+						<Header />
+						<TabNavigation />
+					</div>
+					<TaskList />
 				</div>
-				<TaskList />
 			</div>
 
 			{!isFullScreenViewOpen && (
