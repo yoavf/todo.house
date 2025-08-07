@@ -19,7 +19,11 @@ from .database.models import Location as LocationModel
 from .services.task_service import TaskService
 from .services.snooze_service import SnoozeService, SnoozeOption
 from .logging_config import StructuredLogger
-from .locale_detection import detect_locale_from_header, get_locale_string
+from .locale_detection import (
+    get_locale_string,
+    detect_locale_and_metadata,
+    LocaleData
+)
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 logger = StructuredLogger(__name__)
@@ -31,6 +35,25 @@ def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
         return uuid.UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid user ID format")
+
+
+async def get_locale_data_dependency(
+    user_uuid: uuid.UUID = Depends(get_user_uuid),
+    accept_language: Optional[str] = Header(None, alias="accept-language"),
+    session: AsyncSession = Depends(get_session_dependency),
+) -> LocaleData:
+    """
+    FastAPI dependency for locale detection.
+    
+    Returns a LocaleData object containing:
+    - locale: The detected locale code (e.g., "en", "he")
+    - locale_str: The full locale string for services (e.g., "en_US", "he_IL")
+    - metadata: Full metadata about locale detection
+    - source: Where the locale was detected from
+    """
+    locale, metadata = await detect_locale_and_metadata(session, user_uuid, accept_language)
+    locale_str = get_locale_string(locale)
+    return LocaleData(locale, locale_str, metadata)
 
 
 async def populate_task_related_data(
@@ -162,8 +185,10 @@ async def get_tasks(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale from Accept-Language header
-    detected_locale = detect_locale_from_header(accept_language)
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
+        session, user_uuid, accept_language
+    )
     
     # Build query conditions
     conditions = [TaskModel.user_id == user_uuid]
@@ -182,6 +207,7 @@ async def get_tasks(
     # Log locale information for monitoring
     logger.info(
         f"Tasks request - User: {user_uuid}, Locale: {detected_locale}, "
+        f"Locale source: {locale_metadata.get('source')}, "
         f"Accept-Language: {accept_language}, Tasks count: {len(tasks)}"
     )
 
@@ -197,8 +223,10 @@ async def get_active_tasks(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale from Accept-Language header
-    detected_locale = detect_locale_from_header(accept_language)
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
+        session, user_uuid, accept_language
+    )
     
     query = select(TaskModel).where(
         and_(TaskModel.user_id == user_uuid, TaskModel.status == TaskStatus.ACTIVE)
@@ -209,6 +237,7 @@ async def get_active_tasks(
     # Log locale information for monitoring
     logger.info(
         f"Active tasks request - User: {user_uuid}, Locale: {detected_locale}, "
+        f"Locale source: {locale_metadata.get('source')}, "
         f"Accept-Language: {accept_language}, Tasks count: {len(tasks)}"
     )
     
@@ -223,8 +252,10 @@ async def get_snoozed_tasks(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale from Accept-Language header
-    detected_locale = detect_locale_from_header(accept_language)
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
+        session, user_uuid, accept_language
+    )
     
     query = select(TaskModel).where(
         and_(TaskModel.user_id == user_uuid, TaskModel.status == TaskStatus.SNOOZED)
@@ -235,6 +266,7 @@ async def get_snoozed_tasks(
     # Log locale information for monitoring
     logger.info(
         f"Snoozed tasks request - User: {user_uuid}, Locale: {detected_locale}, "
+        f"Locale source: {locale_metadata.get('source')}, "
         f"Accept-Language: {accept_language}, Tasks count: {len(tasks)}"
     )
     
@@ -293,8 +325,10 @@ async def get_task(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale from Accept-Language header
-    detected_locale = detect_locale_from_header(accept_language)
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
+        session, user_uuid, accept_language
+    )
     
     query = select(TaskModel).where(
         and_(TaskModel.id == task_id, TaskModel.user_id == user_uuid)
@@ -308,7 +342,8 @@ async def get_task(
     # Log locale information for monitoring
     logger.info(
         f"Single task request - User: {user_uuid}, Task: {task_id}, "
-        f"Locale: {detected_locale}, Accept-Language: {accept_language}"
+        f"Locale: {detected_locale}, Locale source: {locale_metadata.get('source')}, "
+        f"Accept-Language: {accept_language}"
     )
 
     # Populate image URLs, location data, and snooze options for single task
@@ -390,8 +425,10 @@ async def snooze_task(
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     session: AsyncSession = Depends(get_session_dependency),
 ):
-    # Detect locale from Accept-Language header
-    detected_locale = detect_locale_from_header(accept_language)
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
+        session, user_uuid, accept_language
+    )
     locale_str = get_locale_string(detected_locale)
     
     # Get existing task
@@ -426,8 +463,8 @@ async def snooze_task(
     # Log locale information for monitoring
     logger.info(
         f"Snooze task request - User: {user_uuid}, Task: {task_id}, "
-        f"Locale: {detected_locale}, Accept-Language: {accept_language}, "
-        f"Snooze until: {snooze_until}"
+        f"Locale: {detected_locale}, Locale source: {locale_metadata.get('source')}, "
+        f"Accept-Language: {accept_language}, Snooze until: {snooze_until}"
     )
 
     db_task.status = TaskStatus.SNOOZED

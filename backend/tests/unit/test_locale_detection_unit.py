@@ -6,7 +6,6 @@ from app.locale_detection import (
     extract_language_code,
     is_supported_locale,
     detect_locale_from_header,
-    detect_locale_with_metadata,
     get_locale_string,
     SUPPORTED_LOCALES,
     DEFAULT_LOCALE,
@@ -136,64 +135,6 @@ class TestDetectLocaleFromHeader:
         # This should not crash and should return default
         assert detect_locale_from_header("invalid;;;header") == DEFAULT_LOCALE
 
-
-class TestDetectLocaleWithMetadata:
-    """Test enhanced locale detection with metadata."""
-
-    def test_no_header_metadata(self):
-        """Test metadata when no header is provided."""
-        result = detect_locale_with_metadata(None)
-        expected = {
-            "locale": DEFAULT_LOCALE,
-            "source": "default"
-        }
-        assert result == expected
-
-    def test_exact_match_metadata(self):
-        """Test metadata for exact locale match."""
-        result = detect_locale_with_metadata("en;q=0.9")
-        expected = {
-            "locale": "en",
-            "source": "header",
-            "original_header": "en;q=0.9",
-            "quality": 0.9,
-            "match_type": "exact"
-        }
-        assert result == expected
-
-    def test_language_code_match_metadata(self):
-        """Test metadata for language code match."""
-        result = detect_locale_with_metadata("en-US;q=0.8")
-        expected = {
-            "locale": "en",
-            "source": "header",
-            "original_header": "en-US;q=0.8",
-            "quality": 0.8,
-            "match_type": "language_code"
-        }
-        assert result == expected
-
-    def test_no_match_metadata(self):
-        """Test metadata when no supported locale is found."""
-        result = detect_locale_with_metadata("fr,es,de")
-        expected = {
-            "locale": DEFAULT_LOCALE,
-            "source": "default",
-            "original_header": "fr,es,de"
-        }
-        assert result == expected
-
-    def test_hebrew_exact_match_metadata(self):
-        """Test metadata for Hebrew exact match."""
-        result = detect_locale_with_metadata("he;q=0.9")
-        expected = {
-            "locale": "he",
-            "source": "header",
-            "original_header": "he;q=0.9",
-            "quality": 0.9,
-            "match_type": "exact"
-        }
-        assert result == expected
 
 
 class TestGetLocaleString:

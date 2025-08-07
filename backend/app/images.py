@@ -34,7 +34,9 @@ from .logging_config import (
     generate_correlation_id,
     set_correlation_id,
 )
-from .locale_detection import detect_locale_from_header
+from .locale_detection import (
+    detect_locale_and_metadata
+)
 
 logger = logging.getLogger(__name__)
 processing_logger = ImageProcessingLogger()
@@ -314,9 +316,21 @@ async def analyze_image(
     correlation_id = generate_correlation_id()
     set_correlation_id(correlation_id)
     
-    # Detect locale from Accept-Language header
-    detected_locale = detect_locale_from_header(accept_language)
-    logger.info(f"Detected locale: {detected_locale} from header: {accept_language}")
+    # Convert user_id to UUID for locale detection
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Invalid user ID format"
+        )
+    
+    # Detect locale and get metadata in one call
+    detected_locale, locale_metadata = await detect_locale_and_metadata(
+        session, user_uuid, accept_language
+    )
+    
+    logger.info(f"Detected locale: {detected_locale} from source: {locale_metadata.get('source')}")
 
     # Validate file upload
     if not image.filename:
@@ -355,6 +369,7 @@ async def analyze_image(
     # Log locale detection for monitoring
     logger.info(
         f"Image analysis request - User: {user_id}, Locale: {detected_locale}, "
+        f"Locale source: {locale_metadata.get('source')}, "
         f"Accept-Language: {accept_language}, File: {image.filename}"
     )
 

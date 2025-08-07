@@ -59,13 +59,14 @@
   - Add locale information to API response logging
   - Create integration tests for locale-aware API endpoints
   - _Requirements: 4.1, 4.5_
-
-- [ ] 9. Implement user settings to override accept-language
+g
+- [x] 9. Implement user settings to override accept-language
   - Add user settings page with locale preference
   - Implement locale preference persistence
   - Update API endpoints to respect user locale preference
   - Add locale preference to API response logging
   - Create integration tests for locale-aware API endpoints
+  - **CLEANUP COMPLETED**: Removed redundant /locale endpoint, consolidated locale detection functions, cleaned up duplicate migration
   - _Requirements: 4.1, 4.5, 4.6_
 
 - [ ] 10. Implement performance optimizations

@@ -2,6 +2,11 @@
 
 from typing import List, Tuple, Optional
 import logging
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
+from .database.models import User
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -119,20 +124,72 @@ def detect_locale_from_header(accept_language_header: Optional[str]) -> str:
     return DEFAULT_LOCALE
 
 
-def detect_locale_with_metadata(accept_language_header: Optional[str]) -> dict:
+
+
+
+async def get_user_locale_preference(db: AsyncSession, user_id: uuid.UUID) -> Optional[str]:
     """
-    Enhanced locale detection with detailed result information.
+    Get user's locale preference from database.
     
     Args:
+        db: Database session
+        user_id: User ID
+        
+    Returns:
+        User's locale preference or None if not set
+    """
+    try:
+        result = await db.execute(
+            select(User.locale_preference).where(User.id == user_id)
+        )
+        preference = result.scalar_one_or_none()
+        
+        if preference and is_supported_locale(preference):
+            logger.debug(f"Found user locale preference: {preference}")
+            return preference
+        elif preference:
+            logger.warning(f"User has unsupported locale preference: {preference}")
+            
+    except SQLAlchemyError as e:
+        logger.error(f"Failed to get user locale preference: {e}")
+    
+    return None
+
+
+
+
+
+async def detect_locale_with_metadata_and_user_preference(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    accept_language_header: Optional[str]
+) -> dict:
+    """
+    Enhanced locale detection with user preference and detailed result information.
+    
+    Args:
+        db: Database session
+        user_id: User ID
         accept_language_header: Accept-Language header value
         
     Returns:
-        Dictionary with locale, source, and original header information
+        Dictionary with locale, source, and metadata
     """
+    # First check user preference
+    user_preference = await get_user_locale_preference(db, user_id)
+    if user_preference:
+        return {
+            "locale": user_preference,
+            "source": "user_preference",
+            "user_id": str(user_id)
+        }
+    
+    # Fall back to header detection with metadata
     if not accept_language_header:
         return {
             "locale": DEFAULT_LOCALE,
-            "source": "default"
+            "source": "default",
+            "user_id": str(user_id)
         }
     
     try:
@@ -147,7 +204,8 @@ def detect_locale_with_metadata(accept_language_header: Optional[str]) -> dict:
                     "source": "header",
                     "original_header": accept_language_header,
                     "quality": quality,
-                    "match_type": "exact"
+                    "match_type": "exact",
+                    "user_id": str(user_id)
                 }
         
         # Then, try to match by language code only
@@ -159,7 +217,8 @@ def detect_locale_with_metadata(accept_language_header: Optional[str]) -> dict:
                     "source": "header",
                     "original_header": accept_language_header,
                     "quality": quality,
-                    "match_type": "language_code"
+                    "match_type": "language_code",
+                    "user_id": str(user_id)
                 }
                 
     except Exception as e:
@@ -168,8 +227,87 @@ def detect_locale_with_metadata(accept_language_header: Optional[str]) -> dict:
     return {
         "locale": DEFAULT_LOCALE,
         "source": "default",
-        "original_header": accept_language_header
+        "original_header": accept_language_header,
+        "user_id": str(user_id)
     }
+
+
+async def detect_locale_with_user_preference(
+    db: AsyncSession, 
+    user_id: uuid.UUID, 
+    accept_language_header: Optional[str]
+) -> str:
+    """
+    Detect locale with user preference override.
+    
+    Priority order:
+    1. User's saved locale preference
+    2. Accept-Language header
+    3. Default locale
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        accept_language_header: Accept-Language header value
+        
+    Returns:
+        Best supported locale
+    """
+    # Get the full metadata and extract just the locale
+    metadata = await detect_locale_with_metadata_and_user_preference(
+        db, user_id, accept_language_header
+    )
+    return metadata["locale"]
+
+
+async def set_user_locale_preference(
+    db: AsyncSession, 
+    user_id: uuid.UUID, 
+    locale: Optional[str]
+) -> bool:
+    """
+    Set or clear user's locale preference.
+    
+    Note: The caller is responsible for committing the transaction.
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        locale: Locale to set, or None to clear preference
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    # Only validate non-None locales
+    if locale is not None and not is_supported_locale(locale):
+        logger.warning(f"Attempted to set unsupported locale: {locale}")
+        return False
+    
+    try:
+        # Get user with row lock to prevent concurrent updates
+        result = await db.execute(
+            select(User)
+            .where(User.id == user_id)
+            .with_for_update()
+        )
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            logger.error(f"User not found: {user_id}")
+            return False
+        
+        user.locale_preference = locale
+        # Let the caller handle the commit
+        
+        if locale is None:
+            logger.info(f"Cleared locale preference for user {user_id}")
+        else:
+            logger.info(f"Set locale preference for user {user_id}: {locale}")
+        return True
+        
+    except SQLAlchemyError as e:
+        logger.error(f"Database error setting user locale preference: {e}")
+        return False
 
 
 def get_locale_string(locale_code: str) -> str:
@@ -193,3 +331,36 @@ def get_locale_string(locale_code: str) -> str:
     }
     
     return LOCALE_MAPPING.get(locale_code, "en_US")
+
+
+async def detect_locale_and_metadata(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    accept_language_header: Optional[str]
+) -> tuple[str, dict]:
+    """
+    Detect locale and return both the locale string and full metadata.
+    
+    This avoids duplicate calls to locale detection in endpoints.
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        accept_language_header: Accept-Language header value
+        
+    Returns:
+        Tuple of (locale, metadata_dict)
+    """
+    metadata = await detect_locale_with_metadata_and_user_preference(
+        db, user_id, accept_language_header
+    )
+    return metadata["locale"], metadata
+
+
+class LocaleData:
+    """Container for locale detection results."""
+    def __init__(self, locale: str, locale_str: str, metadata: dict):
+        self.locale = locale  # e.g., "en", "he"
+        self.locale_str = locale_str  # e.g., "en_US", "he_IL"
+        self.metadata = metadata
+        self.source = metadata.get("source", "unknown")
