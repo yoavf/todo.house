@@ -30,15 +30,6 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 logger = StructuredLogger(__name__)
 
 
-# Legacy function - kept for backward compatibility
-def get_user_uuid(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
-    """Convert user_id header to UUID"""
-    try:
-        return uuid.UUID(user_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid user ID format")
-
-
 async def get_locale_data_dependency(
     current_user: UserModel = Depends(get_current_user),
     accept_language: Optional[str] = Header(None, alias="accept-language"),

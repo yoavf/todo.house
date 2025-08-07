@@ -21,11 +21,8 @@ router = APIRouter(prefix="/locations", tags=["locations"])
 
 
 def get_user_id(current_user: UserModel = Depends(get_current_user)) -> uuid.UUID:
-    """Convert str(current_user.id) header to UUID."""
-    try:
-        return uuid.UUID(str(current_user.id))
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid user ID format")
+    """Get the user's UUID from the authenticated user."""
+    return current_user.id
 
 
 @router.post("/", response_model=Location, status_code=201)
