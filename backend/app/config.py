@@ -50,7 +50,10 @@ class DatabaseConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="")
 
-    database_url: str = Field(default="", description="Database connection URL")
+    # Try multiple possible database URL environment variables
+    # Railway might use DATABASE_URL or DATABASE_PRIVATE_URL
+    database_url: str = Field(default="", description="Database connection URL", alias="DATABASE_URL")
+    database_private_url: str = Field(default="", description="Private database URL", alias="DATABASE_PRIVATE_URL")
     pool_size: int = Field(default=10, description="Connection pool size")
     max_overflow: int = Field(default=20, description="Maximum pool overflow")
     pool_pre_ping: bool = Field(default=True, description="Enable pool pre-ping")
