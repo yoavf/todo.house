@@ -112,7 +112,9 @@ async def startup_event():
         logger.info(f"CORS regex pattern: {CORS_ORIGIN_REGEX}")
         
         # Skip database test on Railway to see if that's causing issues
-        if os.getenv("RAILWAY_ENVIRONMENT"):
+        railway_env = os.getenv("RAILWAY_ENVIRONMENT")
+        logger.info(f"RAILWAY_ENVIRONMENT value: {railway_env}")
+        if railway_env and railway_env != "local":
             logger.info("Running on Railway, skipping startup DB test")
         else:
             # Test database connection on startup
