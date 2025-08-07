@@ -55,6 +55,7 @@ async def get_current_user(
             payload = await decode_nextauth_jwt(credentials.credentials)
             
             # Extract user info from JWT
+            # Extract user info from JWT
             user_email = payload.get("email")
             user_id = payload.get("sub")  # NextAuth uses 'sub' for user ID
             user_name = payload.get("name")
@@ -63,9 +64,15 @@ async def get_current_user(
             if not user_email or not user_id:
                 raise HTTPException(status_code=401, detail="Invalid token payload")
             
+            # Validate user_id is a valid UUID
+            try:
+                user_uuid = uuid.UUID(user_id)
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=401, detail="Invalid user ID in token")
+            
             # Try to find user in database
             result = await session.execute(
-                select(UserModel).where(UserModel.id == uuid.UUID(user_id))
+                select(UserModel).where(UserModel.id == user_uuid)
             )
             user = result.scalar_one_or_none()
             
