@@ -9,7 +9,7 @@ if __name__ == "__main__":
     # Use IPv6 for Railway (::) instead of IPv4 (0.0.0.0)
     host = "::" if os.environ.get("RAILWAY_ENVIRONMENT") else "0.0.0.0"
     
-    print(f"Starting server on {host}:{port}...", flush=True)
+    print(f"Starting server on {host}:{port} (IPv6 for Railway)...", flush=True)
     
     # Run uvicorn directly without subprocesses
     uvicorn.run(
