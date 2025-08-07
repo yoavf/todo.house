@@ -8,12 +8,14 @@ interface TypingViewProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onTaskCreated?: (task: TaskCreate) => void;
+	source_image_id?: string;
 }
 
 export function TypingView({
 	isOpen,
 	onClose,
 	onTaskCreated,
+	source_image_id,
 }: TypingViewProps) {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
@@ -46,6 +48,7 @@ export function TypingView({
 			description: description || undefined,
 			priority: "medium",
 			source: "manual",
+			source_image_id: source_image_id,
 		};
 		onTaskCreated?.(task);
 		onClose();
