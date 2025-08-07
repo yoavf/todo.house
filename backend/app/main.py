@@ -11,6 +11,10 @@ from .logging_config import setup_logging
 import os
 import logging
 from pathlib import Path
+import signal
+import sys
+import traceback
+import atexit
 
 # Initialize structured logging
 setup_logging(
@@ -20,11 +24,45 @@ setup_logging(
 
 # Get logger for startup messages
 logger = logging.getLogger(__name__)
+
+# Add signal handlers to log when the process is being terminated
+def signal_handler(signum, frame):
+    logger.warning(f"Received signal {signum} ({signal.Signals(signum).name})")
+    logger.warning(f"Stack trace: {traceback.format_stack(frame)}")
+    sys.exit(0)
+
+# Register signal handlers
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
 logger.info("Starting todo.house API backend")
 logger.info(f"Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'local')}")
 logger.info(f"Database URL configured: {'Yes' if os.getenv('DATABASE_URL') else 'No'}")
+logger.info(f"Process ID: {os.getpid()}")
+logger.info(f"Python version: {sys.version}")
 
 app = FastAPI(title="todo.house API", version="1.0.0")
+
+# Add exception handler to catch all unhandled exceptions
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error(f"Unhandled exception: {exc}")
+    logger.error(f"Exception traceback: {traceback.format_exc()}")
+    logger.error(f"Request: {request.method} {request.url}")
+    return {"detail": "Internal server error", "error": str(exc)}
+
+# Add middleware to log all requests
+@app.middleware("http")
+async def log_requests(request, call_next):
+    logger.info(f"Incoming request: {request.method} {request.url.path}")
+    try:
+        response = await call_next(request)
+        logger.info(f"Request completed: {request.method} {request.url.path} - Status: {response.status_code}")
+        return response
+    except Exception as e:
+        logger.error(f"Request failed: {request.method} {request.url.path} - Error: {e}")
+        logger.error(f"Request error traceback: {traceback.format_exc()}")
+        raise
 
 # CORS configuration - use regex to handle all cases
 # This regex matches:
@@ -65,21 +103,34 @@ async def robots_txt():
 @app.on_event("startup")
 async def startup_event():
     """Log when the application starts."""
-    logger.info("FastAPI application startup complete")
-    logger.info(f"CORS regex pattern: {CORS_ORIGIN_REGEX}")
-    
-    # Test database connection on startup
     try:
-        async with get_session() as session:
-            await session.execute(text("SELECT 1"))
-        logger.info("Database connection verified")
+        logger.info("FastAPI startup event triggered")
+        logger.info(f"CORS regex pattern: {CORS_ORIGIN_REGEX}")
+        
+        # Test database connection on startup
+        logger.info("Testing database connection...")
+        try:
+            async with get_session() as session:
+                result = await session.execute(text("SELECT 1"))
+                logger.info(f"Database query result: {result.scalar()}")
+            logger.info("Database connection verified successfully")
+        except Exception as db_error:
+            logger.error(f"Database connection failed: {db_error}")
+            logger.error(f"Database error traceback: {traceback.format_exc()}")
+            # Don't exit here, let the app continue to start
+        
+        logger.info("FastAPI application startup complete")
     except Exception as e:
-        logger.error(f"Database connection failed: {e}")
+        logger.error(f"Startup event failed with error: {e}")
+        logger.error(f"Startup error traceback: {traceback.format_exc()}")
+        raise
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Log when the application shuts down."""
+    logger.warning("FastAPI shutdown event triggered!")
+    logger.warning(f"Shutdown traceback: {traceback.format_stack()}")
     logger.info("FastAPI application shutting down")
 
 
@@ -109,3 +160,14 @@ async def health_check():
         }
     except Exception as e:
         return {"status": "error", "database": f"error: {str(e)}"}
+
+
+# Log at module level to catch any module loading issues
+logger.info("Main module loaded successfully")
+
+# Add atexit handler to log when Python is exiting
+def on_exit():
+    logger.warning("Python process is exiting!")
+    logger.warning(f"Exit stack trace: {traceback.format_stack()}")
+
+atexit.register(on_exit)
