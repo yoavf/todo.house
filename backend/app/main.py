@@ -111,17 +111,22 @@ async def startup_event():
         logger.info("FastAPI startup event triggered")
         logger.info(f"CORS regex pattern: {CORS_ORIGIN_REGEX}")
         
-        # Test database connection on startup
-        logger.info("Testing database connection...")
-        try:
-            async with get_session() as session:
-                result = await session.execute(text("SELECT 1"))
-                logger.info(f"Database query result: {result.scalar()}")
-            logger.info("Database connection verified successfully")
-        except Exception as db_error:
-            logger.error(f"Database connection failed: {db_error}")
-            logger.error(f"Database error traceback: {traceback.format_exc()}")
-            # Don't exit here, let the app continue to start
+        # Skip database test on Railway to see if that's causing issues
+        if os.getenv("RAILWAY_ENVIRONMENT"):
+            logger.info("Running on Railway, skipping startup DB test")
+        else:
+            # Test database connection on startup
+            logger.info("Testing database connection...")
+            try:
+                async with get_session() as session:
+                    result = await session.execute(text("SELECT 1"))
+                    logger.info(f"Database query result: {result.scalar()}")
+                    await session.commit()  # Explicitly commit
+                logger.info("Database connection verified successfully")
+            except Exception as db_error:
+                logger.error(f"Database connection failed: {db_error}")
+                logger.error(f"Database error traceback: {traceback.format_exc()}")
+                # Don't exit here, let the app continue to start
         
         logger.info("FastAPI application startup complete")
     except Exception as e:

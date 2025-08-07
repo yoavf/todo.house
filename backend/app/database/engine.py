@@ -50,7 +50,7 @@ def create_engine() -> AsyncEngine:
         engine_kwargs["max_overflow"] = config.database.max_overflow
         engine_kwargs["pool_pre_ping"] = config.database.pool_pre_ping
         # Use NullPool for testing environments to avoid connection issues
-        if "test" in config.database.database_url:
+        if "test" in database_url:
             engine_kwargs["poolclass"] = NullPool
 
     engine = create_async_engine(database_url, **engine_kwargs)
