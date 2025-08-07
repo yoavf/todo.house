@@ -1,16 +1,16 @@
 """User settings API endpoints."""
 
 import logging
-import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from .database import get_session_dependency
+from .database import get_session_dependency, User as UserModel
 from .database.models import User
 from .models import UserSettings, UserSettingsUpdate
+from .auth import get_current_user
 from .locale_detection import (
     set_user_locale_preference,
     detect_locale_and_metadata
@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/user-settings", tags=["user-settings"])
 
 
-@router.get("/{user_id}", response_model=UserSettings)
+@router.get("/me", response_model=UserSettings)
 async def get_user_settings(
-    user_id: uuid.UUID,
+    current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session_dependency),
     accept_language: Optional[str] = Header(None, alias="Accept-Language")
 ):
@@ -40,7 +40,7 @@ async def get_user_settings(
     """
     try:
         # Get user from database
-        result = await db.execute(select(User).where(User.id == user_id))
+        result = await db.execute(select(User).where(User.id == current_user.id))
         user = result.scalar_one_or_none()
         
         if not user:
@@ -48,13 +48,13 @@ async def get_user_settings(
         
         # Get locale detection metadata for logging
         _, locale_metadata = await detect_locale_and_metadata(
-            db, user_id, accept_language
+            db, current_user.id, accept_language
         )
         
         logger.info(
-            f"Retrieved user settings for {user_id}",
+            f"Retrieved user settings for {current_user.id}",
             extra={
-                "user_id": str(user_id),
+                "user_id": str(current_user.id),
                 "locale_preference": user.locale_preference,
                 "detected_locale": locale_metadata.get("locale"),
                 "locale_source": locale_metadata.get("source")
@@ -75,10 +75,10 @@ async def get_user_settings(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.patch("/{user_id}", response_model=UserSettings)
+@router.patch("/me", response_model=UserSettings)
 async def update_user_settings(
-    user_id: uuid.UUID,
     settings_update: UserSettingsUpdate,
+    current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_session_dependency),
     accept_language: Optional[str] = Header(None, alias="Accept-Language")
 ):
@@ -96,7 +96,7 @@ async def update_user_settings(
     """
     try:
         # Get user from database
-        result = await db.execute(select(User).where(User.id == user_id))
+        result = await db.execute(select(User).where(User.id == current_user.id))
         user = result.scalar_one_or_none()
         
         if not user:
@@ -108,7 +108,7 @@ async def update_user_settings(
         # Update locale preference (handles both setting and clearing)
         # set_user_locale_preference validates the locale internally
         success = await set_user_locale_preference(
-            db, user_id, settings_update.locale_preference
+            db, current_user.id, settings_update.locale_preference
         )
         
         if not success:
@@ -125,13 +125,13 @@ async def update_user_settings(
         
         # Get locale detection metadata for logging
         _, locale_metadata = await detect_locale_and_metadata(
-            db, user_id, accept_language
+            db, current_user.id, accept_language
         )
         
         logger.info(
-            f"Updated user settings for {user_id}",
+            f"Updated user settings for {current_user.id}",
             extra={
-                "user_id": str(user_id),
+                "user_id": str(current_user.id),
                 "old_locale_preference": old_locale_preference,
                 "new_locale_preference": settings_update.locale_preference,
                 "detected_locale": locale_metadata.get("locale"),

@@ -27,13 +27,14 @@ from .ai.providers import AIProviderFactory, AIProviderError
 from .config import config
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from .database import get_session_dependency, Image as ImageModel
+from .database import get_session_dependency, Image as ImageModel, User as UserModel
 from .storage import storage
 from .logging_config import (
     ImageProcessingLogger,
     generate_correlation_id,
     set_correlation_id,
 )
+from .auth import get_current_user
 from .locale_detection import (
     detect_locale_and_metadata
 )
@@ -273,7 +274,7 @@ def create_image_processing_service() -> ImageProcessingService:
 
 @router.post("/analyze", response_model=ImageAnalysisResponse)
 async def analyze_image(
-    user_id: str = Header(..., alias="x-user-id"),
+    current_user: UserModel = Depends(get_current_user),
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     image: UploadFile = File(..., description="Image file to analyze"),
     generate_tasks: bool = Form(
@@ -316,9 +317,9 @@ async def analyze_image(
     correlation_id = generate_correlation_id()
     set_correlation_id(correlation_id)
     
-    # Convert user_id to UUID for locale detection
+    # Convert str(current_user.id) to UUID for locale detection
     try:
-        user_uuid = uuid.UUID(user_id)
+        user_uuid = current_user.id
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
@@ -359,7 +360,7 @@ async def analyze_image(
 
     # Log image upload with locale information
     processing_logger.log_image_upload(
-        user_id=user_id,
+        user_id=str(current_user.id),
         filename=image.filename,
         file_size=len(image_data),
         content_type=image.content_type or "application/octet-stream",
@@ -368,7 +369,7 @@ async def analyze_image(
     
     # Log locale detection for monitoring
     logger.info(
-        f"Image analysis request - User: {user_id}, Locale: {detected_locale}, "
+        f"Image analysis request - User: {current_user.id}, Locale: {detected_locale}, "
         f"Locale source: {locale_metadata.get('source')}, "
         f"Accept-Language: {accept_language}, File: {image.filename}"
     )
@@ -376,7 +377,7 @@ async def analyze_image(
     try:
         response = await _process_image_analysis(
             image_data=image_data,
-            user_id=user_id,
+            user_id=str(current_user.id),
             filename=image.filename,
             content_type=image.content_type or "application/octet-stream",
             generate_tasks=generate_tasks,
@@ -385,11 +386,11 @@ async def analyze_image(
             session=session,
         )
 
-        logger.info(f"Image analysis completed successfully for user {user_id}")
+        logger.info(f"Image analysis completed successfully for user {current_user.id}")
         return response
 
     except ImageValidationError as e:
-        logger.warning(f"Image validation failed for user {user_id}: {e}")
+        logger.warning(f"Image validation failed for user {current_user.id}: {e}")
         error_response = ImageAnalysisError(
             error_code="INVALID_IMAGE",
             message=str(e),
@@ -401,7 +402,7 @@ async def analyze_image(
         )
 
     except AIProviderError as e:
-        logger.error(f"AI provider error for user {user_id}: {e}")
+        logger.error(f"AI provider error for user {current_user.id}: {e}")
         return _create_error_response(
             error_code="AI_PROVIDER_ERROR",
             message="AI analysis service is temporarily unavailable",
@@ -411,7 +412,7 @@ async def analyze_image(
         )
 
     except ImageProcessingError as e:
-        logger.error(f"Image processing error for user {user_id}: {e}")
+        logger.error(f"Image processing error for user {current_user.id}: {e}")
         return _create_error_response(
             error_code="PROCESSING_ERROR",
             message="Failed to process image",
@@ -424,7 +425,7 @@ async def analyze_image(
         raise
 
     except Exception as e:
-        logger.error(f"Unexpected error during image analysis for user {user_id}: {e}")
+        logger.error(f"Unexpected error during image analysis for user {current_user.id}: {e}")
         return _create_error_response(
             error_code="INTERNAL_ERROR",
             message="An unexpected error occurred",
@@ -536,7 +537,7 @@ async def update_image_analysis_status(
 @router.get("/{image_id}")
 async def get_image(
     image_id: uuid.UUID,
-    user_id: str = Header(..., alias="x-user-id"),
+    current_user: UserModel = Depends(get_current_user),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     """
@@ -556,7 +557,7 @@ async def get_image(
     try:
         # Fetch image record from database
         query = select(ImageModel).where(
-            and_(ImageModel.id == image_id, ImageModel.user_id == user_id)
+            and_(ImageModel.id == image_id, ImageModel.user_id == str(current_user.id))
         )
         result = await session.execute(query)
         image_record = result.scalar_one_or_none()

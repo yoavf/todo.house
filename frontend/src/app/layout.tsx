@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Hebrew } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { AuthSessionProvider } from "@/components/auth/session-provider";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import type { Locale } from "@/i18n/config";
 import { getHTMLDirection } from "@/lib/locale-utils";
@@ -59,11 +60,13 @@ export default async function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} ${notoSansHebrew.variable} antialiased`}
 			>
-				<NextIntlClientProvider locale={locale} messages={messages}>
-					<LocaleProvider>
-						<main>{children}</main>
-					</LocaleProvider>
-				</NextIntlClientProvider>
+				<AuthSessionProvider>
+					<NextIntlClientProvider locale={locale} messages={messages}>
+						<LocaleProvider>
+							<main>{children}</main>
+						</LocaleProvider>
+					</NextIntlClientProvider>
+				</AuthSessionProvider>
 			</body>
 		</html>
 	);

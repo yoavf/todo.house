@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.user_settings import get_user_settings, update_user_settings
 from app.models import UserSettingsUpdate
 from app.database.models import User
+from app.database import User as UserModel
 from datetime import datetime, timezone
 
 
@@ -20,6 +21,9 @@ class TestGetUserSettings:
         """Test successful retrieval of user settings."""
         # Mock dependencies
         user_id = uuid.uuid4()
+        mock_current_user = MagicMock(spec=UserModel)
+        mock_current_user.id = user_id
+        
         mock_user = MagicMock(spec=User)
         mock_user.id = user_id
         mock_user.locale_preference = "he"
@@ -34,9 +38,9 @@ class TestGetUserSettings:
         with patch('app.user_settings.detect_locale_and_metadata') as mock_detect:
             mock_detect.return_value = ("he", {"locale": "he", "source": "user_preference"})
             
-            # Call the function
+            # Call the function with new signature
             result = await get_user_settings(
-                user_id=user_id,
+                current_user=mock_current_user,
                 db=mock_db,
                 accept_language="en-US"
             )
@@ -50,6 +54,9 @@ class TestGetUserSettings:
     async def test_get_user_settings_user_not_found(self):
         """Test when user is not found."""
         user_id = uuid.uuid4()
+        mock_current_user = MagicMock(spec=UserModel)
+        mock_current_user.id = user_id
+        
         mock_db = AsyncMock(spec=AsyncSession)
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -58,7 +65,7 @@ class TestGetUserSettings:
         # Should raise 404
         with pytest.raises(HTTPException) as exc_info:
             await get_user_settings(
-                user_id=user_id,
+                current_user=mock_current_user,
                 db=mock_db,
                 accept_language=None
             )
@@ -69,13 +76,16 @@ class TestGetUserSettings:
     async def test_get_user_settings_database_error(self):
         """Test handling of database errors."""
         user_id = uuid.uuid4()
+        mock_current_user = MagicMock(spec=UserModel)
+        mock_current_user.id = user_id
+        
         mock_db = AsyncMock(spec=AsyncSession)
         mock_db.execute.side_effect = Exception("Database connection failed")
         
         # Should raise 500
         with pytest.raises(HTTPException) as exc_info:
             await get_user_settings(
-                user_id=user_id,
+                current_user=mock_current_user,
                 db=mock_db,
                 accept_language=None
             )
@@ -91,6 +101,9 @@ class TestUpdateUserSettings:
     async def test_update_user_settings_success(self):
         """Test successful update of user settings."""
         user_id = uuid.uuid4()
+        mock_current_user = MagicMock(spec=UserModel)
+        mock_current_user.id = user_id
+        
         mock_user = MagicMock(spec=User)
         mock_user.id = user_id
         mock_user.locale_preference = "en"
@@ -102,6 +115,7 @@ class TestUpdateUserSettings:
         mock_result.scalar_one_or_none.return_value = mock_user
         mock_db.execute.return_value = mock_result
         mock_db.refresh = AsyncMock()
+        mock_db.commit = AsyncMock()
         
         settings_update = UserSettingsUpdate(locale_preference="he")
         
@@ -111,10 +125,10 @@ class TestUpdateUserSettings:
             with patch('app.user_settings.detect_locale_and_metadata') as mock_detect:
                 mock_detect.return_value = ("he", {"locale": "he", "source": "user_preference"})
                 
-                # Call the function
+                # Call the function with new signature
                 result = await update_user_settings(
-                    user_id=user_id,
                     settings_update=settings_update,
+                    current_user=mock_current_user,
                     db=mock_db,
                     accept_language="en-US"
                 )
@@ -127,18 +141,22 @@ class TestUpdateUserSettings:
     async def test_update_user_settings_user_not_found(self):
         """Test when user is not found during update."""
         user_id = uuid.uuid4()
+        mock_current_user = MagicMock(spec=UserModel)
+        mock_current_user.id = user_id
+        
         mock_db = AsyncMock(spec=AsyncSession)
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_db.execute.return_value = mock_result
+        mock_db.rollback = AsyncMock()
         
         settings_update = UserSettingsUpdate(locale_preference="he")
         
         # Should raise 404
         with pytest.raises(HTTPException) as exc_info:
             await update_user_settings(
-                user_id=user_id,
                 settings_update=settings_update,
+                current_user=mock_current_user,
                 db=mock_db,
                 accept_language=None
             )
@@ -149,6 +167,9 @@ class TestUpdateUserSettings:
     async def test_update_user_settings_update_failed(self):
         """Test when locale preference update fails."""
         user_id = uuid.uuid4()
+        mock_current_user = MagicMock(spec=UserModel)
+        mock_current_user.id = user_id
+        
         mock_user = MagicMock(spec=User)
         mock_user.id = user_id
         mock_user.locale_preference = "en"
@@ -157,6 +178,7 @@ class TestUpdateUserSettings:
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_user
         mock_db.execute.return_value = mock_result
+        mock_db.rollback = AsyncMock()
         
         settings_update = UserSettingsUpdate(locale_preference="he")
         
@@ -166,8 +188,8 @@ class TestUpdateUserSettings:
             # Should raise 500
             with pytest.raises(HTTPException) as exc_info:
                 await update_user_settings(
-                    user_id=user_id,
                     settings_update=settings_update,
+                    current_user=mock_current_user,
                     db=mock_db,
                     accept_language=None
                 )
@@ -178,6 +200,9 @@ class TestUpdateUserSettings:
     async def test_update_user_settings_clear_preference(self):
         """Test clearing locale preference."""
         user_id = uuid.uuid4()
+        mock_current_user = MagicMock(spec=UserModel)
+        mock_current_user.id = user_id
+        
         mock_user = MagicMock(spec=User)
         mock_user.id = user_id
         mock_user.locale_preference = "he"
@@ -189,6 +214,7 @@ class TestUpdateUserSettings:
         mock_result.scalar_one_or_none.return_value = mock_user
         mock_db.execute.return_value = mock_result
         mock_db.refresh = AsyncMock()
+        mock_db.commit = AsyncMock()
         
         settings_update = UserSettingsUpdate(locale_preference=None)
         
@@ -198,10 +224,10 @@ class TestUpdateUserSettings:
             with patch('app.user_settings.detect_locale_and_metadata') as mock_detect:
                 mock_detect.return_value = ("en", {"locale": "en", "source": "default"})
                 
-                # Call the function
+                # Call the function with new signature
                 await update_user_settings(
-                    user_id=user_id,
                     settings_update=settings_update,
+                    current_user=mock_current_user,
                     db=mock_db,
                     accept_language="en-US"
                 )
@@ -212,16 +238,20 @@ class TestUpdateUserSettings:
     async def test_update_user_settings_database_error(self):
         """Test handling of database errors during update."""
         user_id = uuid.uuid4()
+        mock_current_user = MagicMock(spec=UserModel)
+        mock_current_user.id = user_id
+        
         mock_db = AsyncMock(spec=AsyncSession)
         mock_db.execute.side_effect = Exception("Database connection failed")
+        mock_db.rollback = AsyncMock()
         
         settings_update = UserSettingsUpdate(locale_preference="he")
         
         # Should raise 500
         with pytest.raises(HTTPException) as exc_info:
             await update_user_settings(
-                user_id=user_id,
                 settings_update=settings_update,
+                current_user=mock_current_user,
                 db=mock_db,
                 accept_language=None
             )

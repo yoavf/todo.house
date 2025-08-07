@@ -13,6 +13,7 @@ import {
 	Info,
 	Lightbulb,
 	Loader2,
+	Mail,
 	Microwave,
 	Plus,
 	RefreshCcw,
@@ -25,6 +26,8 @@ import {
 	Wind,
 	X,
 } from "lucide-react";
+
+import { GoogleIcon } from "./icons/google";
 
 export const Icons = {
 	// Task management
@@ -55,6 +58,13 @@ export const Icons = {
 
 	// Loading
 	loader: Loader2,
+	spinner: Loader2,
+
+	// Communication
+	mail: Mail,
+
+	// OAuth providers
+	google: GoogleIcon,
 };
 
 // Appliance icons - exported separately for direct use in components

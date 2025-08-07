@@ -32,6 +32,7 @@
 		"framer-motion": "^12.23.12",
 		"lucide-react": "^0.532.0",
 		"next": "15.4.2",
+		"next-auth": "5.0.0-beta.29",
 		"next-intl": "^4.3.4",
 		"react": "19.1.0",
 		"react-dom": "19.1.0",

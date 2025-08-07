@@ -78,6 +78,8 @@ class User(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     locale_preference: Mapped[Optional[str]] = mapped_column(
         String(10), nullable=True, comment="User's preferred locale (e.g., 'en', 'he')"
     )
