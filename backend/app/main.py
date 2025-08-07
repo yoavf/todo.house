@@ -19,32 +19,20 @@ setup_logging(
 
 app = FastAPI(title="todo.house API", version="1.0.0")
 
-# CORS configuration
-CORS_ORIGINS = []
-
-# Check for environment variable
-env_origins = os.getenv("CORS_ORIGINS", "")
-if env_origins:
-    CORS_ORIGINS.extend(env_origins.split(","))
-else:
-    # Default origins for local development
-    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
-
-# Always add production domains
-CORS_ORIGINS.extend([
-    "https://dev.todo.house",
-    "https://todo.house", 
-    "https://www.todo.house",
-])
+# CORS configuration - use regex to handle all cases
+# This regex matches:
+# - localhost with any port
+# - todo.house and all subdomains
+# - Railway preview environments (*.up.railway.app)
+CORS_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https://(.*\.)?todo\.house$|^https://.*\.up\.railway\.app$"
 
 # CORS middleware for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_origin_regex=r"https://.*\.up\.railway\.app",  # Regex for Railway PR previews
 )
 
 # Include routers
