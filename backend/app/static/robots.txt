@@ -1,0 +1,22 @@
+# Robots.txt for api.todo.house
+# Block all crawlers from API endpoints
+
+User-agent: *
+Disallow: /
+Crawl-delay: 86400
+
+# Block specific bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
