@@ -173,8 +173,10 @@ async def test_task_not_found(client: AsyncClient, setup_test_user):
 
 @pytest.mark.asyncio
 async def test_missing_user_header(client: AsyncClient):
-    """Test that requests without user header fail."""
+    """Test that requests without authentication fail."""
     response = await client.get("/api/tasks/")
 
-    assert response.status_code == 422  # Unprocessable Entity
-    assert "x-user-id" in str(response.json())
+    assert response.status_code == 401  # Unauthorized
+    # The error message should indicate authentication is required
+    error_detail = response.json()["detail"]
+    assert "Authentication required" in error_detail or "JWT token" in error_detail

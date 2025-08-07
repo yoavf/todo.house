@@ -138,8 +138,8 @@ async def test_analyze_image_missing_user_id(client: AsyncClient):
         data={"generate_tasks": "true"},
     )
 
-    # Should return 422 for missing header
-    assert response.status_code == 422
+    # Should return 401 for missing authentication
+    assert response.status_code == 401
 
 
 @pytest.mark.asyncio
