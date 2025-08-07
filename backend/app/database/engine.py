@@ -21,9 +21,20 @@ def create_engine() -> AsyncEngine:
     """
     if not config.database.database_url:
         raise ValueError("DATABASE_URL environment variable is required")
+    
+    # Fix database URL for async PostgreSQL if needed
+    database_url = config.database.database_url
+    if database_url.startswith("postgresql://"):
+        # Convert to async PostgreSQL URL for asyncpg
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
+        logger.info("Converted PostgreSQL URL to use asyncpg driver")
+    elif database_url.startswith("postgres://"):
+        # Handle older Heroku-style postgres:// URLs
+        database_url = database_url.replace("postgres://", "postgresql+asyncpg://")
+        logger.info("Converted postgres:// URL to use asyncpg driver")
 
     # Check if using SQLite
-    is_sqlite = "sqlite" in config.database.database_url
+    is_sqlite = "sqlite" in database_url
 
     # Create engine with appropriate settings
     engine_kwargs = {
@@ -42,11 +53,11 @@ def create_engine() -> AsyncEngine:
         if "test" in config.database.database_url:
             engine_kwargs["poolclass"] = NullPool
 
-    engine = create_async_engine(config.database.database_url, **engine_kwargs)
+    engine = create_async_engine(database_url, **engine_kwargs)
 
     # Safely log database connection info without exposing credentials
     try:
-        url = make_url(config.database.database_url)
+        url = make_url(database_url)
         # Build a safe representation showing only database type, host, and database name
         safe_url = (
             f"{url.drivername}://***:***@{url.host or 'localhost'}/{url.database or ''}"
