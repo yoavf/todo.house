@@ -25,6 +25,10 @@ setup_logging(
 # Get logger for startup messages
 logger = logging.getLogger(__name__)
 
+# Force flush stdout/stderr to ensure logs are visible
+sys.stdout.flush()
+sys.stderr.flush()
+
 # Add signal handlers to log when the process is being terminated
 def signal_handler(signum, frame):
     logger.warning(f"Received signal {signum} ({signal.Signals(signum).name})")
@@ -136,7 +140,15 @@ async def shutdown_event():
 
 @app.get("/")
 async def root():
+    logger.info("Root endpoint called")
     return {"message": "todo.house API is running!"}
+
+
+@app.get("/health")
+async def health():
+    """Simple health check endpoint for Railway."""
+    logger.info("Health endpoint called")
+    return {"status": "healthy"}
 
 
 @app.get("/api/health")
@@ -169,5 +181,12 @@ logger.info("Main module loaded successfully")
 def on_exit():
     logger.warning("Python process is exiting!")
     logger.warning(f"Exit stack trace: {traceback.format_stack()}")
+    # Force flush to ensure logs are written
+    sys.stdout.flush()
+    sys.stderr.flush()
+    logging.shutdown()
 
 atexit.register(on_exit)
+
+# Log that we've registered everything
+logger.info("All handlers and middleware registered successfully")
