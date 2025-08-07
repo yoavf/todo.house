@@ -275,6 +275,100 @@ async def test_create_todo_success(client, test_user_id):
 - **Backend tests are mandatory** 
 - **Frontend tests mandatory** 
 
+## Internationalization (i18n) and RTL Support
+
+### Overview
+TodoHouse supports multiple languages with RTL (Right-to-Left) text direction. Currently supported:
+- **English (en)** - LTR, default locale
+- **Hebrew (he)** - RTL
+
+### Implementation Details
+
+#### 1. Locale Configuration
+- Locales are defined in `frontend/src/i18n/config.ts`
+- RTL locales are explicitly listed in the config
+- Locale detection happens server-side via `next-intl`
+
+#### 2. Translation Files
+- Messages stored in `frontend/src/messages/[locale].json`
+- Nested structure for organization (common, tasks, errors, etc.)
+- All user-facing strings should be in translation files
+
+#### 3. RTL Styling
+- HTML `dir` attribute set based on locale in root layout
+- RTL-specific font (Noto Sans Hebrew) loaded conditionally
+- CSS uses logical properties where possible (e.g., `start` instead of `left`)
+- RTL-specific styles in `globals.css` with `[dir="rtl"]` selector
+
+### Adding New Strings
+
+1. **Add to all locale files** - New strings must be added to both `en.json` and `he.json`
+2. **Use consistent keys** - Follow existing naming patterns
+3. **Use the translation hook**:
+   ```typescript
+   import { useTranslations } from 'next-intl';
+   
+   const t = useTranslations('tasks'); // namespace
+   const label = t('fields.title'); // "What needs to be done"
+   ```
+
+### Creating New Frontend Elements
+
+1. **Use logical CSS properties**:
+   ```css
+   /* Good - works for both LTR and RTL */
+   margin-inline-start: 1rem;
+   padding-inline-end: 0.5rem;
+   text-align: start;
+   
+   /* Avoid - doesn't flip for RTL */
+   margin-left: 1rem;
+   padding-right: 0.5rem;
+   text-align: left;
+   ```
+
+2. **Use Tailwind's RTL utilities**:
+   ```tsx
+   <div className="ms-4 me-2"> {/* margin-start/end */}
+   <div className="ps-3 pe-1"> {/* padding-start/end */}
+   ```
+
+3. **Direction-aware animations**:
+   - Slide animations should respect text direction
+   - Use `slide-in-start` instead of `slide-in-left`
+   - RTL-specific animation overrides in globals.css
+
+4. **Icons and directional elements**:
+   ```tsx
+   import { ArrowRight, ArrowLeft } from 'lucide-react';
+   import { useLocale } from '@/hooks/useLocale';
+   
+   const { isRTL } = useLocale();
+   const ArrowForward = isRTL ? ArrowLeft : ArrowRight;
+   ```
+
+5. **Forms and inputs**:
+   - Input text alignment handled automatically via CSS
+   - Placeholders use translations
+   - Form layouts use logical properties
+
+### Testing Localization
+
+1. **Switch locale**: Add `?locale=he` to URL or use locale switcher
+2. **Verify**:
+   - Text direction flips correctly
+   - Animations work in correct direction  
+   - Layout doesn't break
+   - All text is translated
+
+### Best Practices
+
+1. **Never hardcode user-facing strings** - Always use translations
+2. **Test both LTR and RTL** - Especially for new UI components
+3. **Use semantic HTML** - Helps with automatic RTL handling
+4. **Avoid absolute positioning** - Use flexbox/grid instead
+5. **Consider reading direction** - Important items should be at the "start"
+
 ## Development Memory
 
 - When writing commit messages, do not include ghost fixes: meaning, if since the last commit you introduced a bug, and then fixed it, and are then committing again, that bug has no meaning in the codebase, it was never there, and shouldn't be mentioned.

@@ -57,8 +57,7 @@ async def robots_txt():
             return FileResponse(robots_path, media_type="text/plain")
     except Exception as e:
         # Log the error but continue with fallback
-        import logging
-        logging.error(f"Error reading robots.txt file: {e}")
+        logger.error(f"Error reading robots.txt file: {e}")
     # Fallback if file doesn't exist or error occurs
     return PlainTextResponse("User-agent: *\nDisallow: /\n")
 
