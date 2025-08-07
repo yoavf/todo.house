@@ -6,9 +6,8 @@ fake = Faker()
 
 
 @pytest.mark.asyncio
-async def test_create_task(client: AsyncClient, setup_test_user):
+async def test_create_task(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test creating a new task."""
-    user_id = setup_test_user
     task_data = {
         "title": fake.sentence(nb_words=4),
         "description": fake.text(max_nb_chars=100),
@@ -16,7 +15,7 @@ async def test_create_task(client: AsyncClient, setup_test_user):
     }
 
     response = await client.post(
-        "/api/tasks/", json=task_data, headers={"x-user-id": user_id}
+        "/api/tasks/", json=task_data, headers=auth_headers
     )
 
     assert response.status_code == 200
@@ -30,44 +29,42 @@ async def test_create_task(client: AsyncClient, setup_test_user):
 
 
 @pytest.mark.asyncio
-async def test_get_tasks_empty(client: AsyncClient, setup_test_user):
+async def test_get_tasks_empty(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test getting tasks when none exist for user."""
-    user_id = setup_test_user
-    response = await client.get("/api/tasks/", headers={"x-user-id": user_id})
+    response = await client.get("/api/tasks/", headers=auth_headers)
 
     assert response.status_code == 200
     assert response.json() == []
 
 
 @pytest.mark.asyncio
-async def test_get_tasks_with_filter(client: AsyncClient, setup_test_user):
+async def test_get_tasks_with_filter(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test filtering tasks by status."""
-    user_id = setup_test_user
 
     # Create an active task
     await client.post(
         "/api/tasks/",
         json={"title": "Active task", "priority": "high"},
-        headers={"x-user-id": user_id},
+        headers=auth_headers,
     )
 
     # Create and complete a task
     task_response = await client.post(
         "/api/tasks/",
         json={"title": "Completed task", "priority": "low"},
-        headers={"x-user-id": user_id},
+        headers=auth_headers,
     )
     task_id = task_response.json()["id"]
 
     await client.put(
         f"/api/tasks/{task_id}",
         json={"completed": True},
-        headers={"x-user-id": user_id},
+        headers=auth_headers,
     )
 
     # Get only active tasks
     response = await client.get(
-        "/api/tasks/?status=active", headers={"x-user-id": user_id}
+        "/api/tasks/?status=active", headers=auth_headers
     )
 
     tasks = response.json()
@@ -77,15 +74,14 @@ async def test_get_tasks_with_filter(client: AsyncClient, setup_test_user):
 
 
 @pytest.mark.asyncio
-async def test_update_task(client: AsyncClient, setup_test_user):
+async def test_update_task(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test updating a task."""
-    user_id = setup_test_user
 
     # Create a task
     create_response = await client.post(
         "/api/tasks/",
         json={"title": "Original title", "priority": "low"},
-        headers={"x-user-id": user_id},
+        headers=auth_headers,
     )
     task_id = create_response.json()["id"]
 
@@ -97,7 +93,7 @@ async def test_update_task(client: AsyncClient, setup_test_user):
     }
 
     response = await client.put(
-        f"/api/tasks/{task_id}", json=update_data, headers={"x-user-id": user_id}
+        f"/api/tasks/{task_id}", json=update_data, headers=auth_headers
     )
 
     assert response.status_code == 200
@@ -108,15 +104,14 @@ async def test_update_task(client: AsyncClient, setup_test_user):
 
 
 @pytest.mark.asyncio
-async def test_complete_task(client: AsyncClient, setup_test_user):
+async def test_complete_task(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test marking a task as completed."""
-    user_id = setup_test_user
 
     # Create a task
     create_response = await client.post(
         "/api/tasks/",
         json={"title": "Task to complete", "priority": "medium"},
-        headers={"x-user-id": user_id},
+        headers=auth_headers,
     )
     task_id = create_response.json()["id"]
 
@@ -124,7 +119,7 @@ async def test_complete_task(client: AsyncClient, setup_test_user):
     response = await client.put(
         f"/api/tasks/{task_id}",
         json={"completed": True},
-        headers={"x-user-id": user_id},
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -134,21 +129,20 @@ async def test_complete_task(client: AsyncClient, setup_test_user):
 
 
 @pytest.mark.asyncio
-async def test_delete_task(client: AsyncClient, setup_test_user):
+async def test_delete_task(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test deleting a task."""
-    user_id = setup_test_user
 
     # Create a task
     create_response = await client.post(
         "/api/tasks/",
         json={"title": "Task to delete", "priority": "low"},
-        headers={"x-user-id": user_id},
+        headers=auth_headers,
     )
     task_id = create_response.json()["id"]
 
     # Delete the task
     response = await client.delete(
-        f"/api/tasks/{task_id}", headers={"x-user-id": user_id}
+        f"/api/tasks/{task_id}", headers=auth_headers
     )
 
     assert response.status_code == 200
@@ -156,16 +150,15 @@ async def test_delete_task(client: AsyncClient, setup_test_user):
 
     # Verify it's gone
     get_response = await client.get(
-        f"/api/tasks/{task_id}", headers={"x-user-id": user_id}
+        f"/api/tasks/{task_id}", headers=auth_headers
     )
     assert get_response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_task_not_found(client: AsyncClient, setup_test_user):
+async def test_task_not_found(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test accessing non-existent task returns 404."""
-    user_id = setup_test_user
-    response = await client.get("/api/tasks/99999", headers={"x-user-id": user_id})
+    response = await client.get("/api/tasks/99999", headers=auth_headers)
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Task not found"

@@ -9,7 +9,7 @@ class TestTasksAIIntegration:
     """Integration tests for AI-generated task functionality."""
 
     @pytest.mark.asyncio
-    async def test_create_ai_task_endpoint(self, client, setup_test_user, db_session):
+    async def test_create_ai_task_endpoint(self, client, setup_test_user, auth_headers: dict, db_session):
         """Test creating an AI-generated task through the dedicated endpoint."""
         # First create an image record
         from app.database import Image as ImageModel
@@ -40,7 +40,7 @@ class TestTasksAIIntegration:
         response = await client.post(
             "/api/tasks/ai-generated",
             json=task_data,
-            headers={"X-User-Id": setup_test_user},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -53,7 +53,7 @@ class TestTasksAIIntegration:
 
     @pytest.mark.asyncio
     async def test_create_ai_task_low_confidence(
-        self, client, setup_test_user, db_session
+        self, client, setup_test_user, auth_headers: dict, db_session
     ):
         """Test that low confidence AI tasks get low priority."""
         # First create an image record
@@ -85,7 +85,7 @@ class TestTasksAIIntegration:
         response = await client.post(
             "/api/tasks/ai-generated",
             json=task_data,
-            headers={"X-User-Id": setup_test_user},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -93,7 +93,7 @@ class TestTasksAIIntegration:
         assert data["priority"] == "low"
 
     @pytest.mark.asyncio
-    async def test_filter_tasks_by_source(self, client, setup_test_user, db_session):
+    async def test_filter_tasks_by_source(self, client, setup_test_user, auth_headers: dict, db_session):
         """Test filtering tasks by source (manual vs ai_generated)."""
         # Create a manual task
         manual_task = {
@@ -102,7 +102,7 @@ class TestTasksAIIntegration:
             "priority": "medium",
         }
         await client.post(
-            "/api/tasks/", json=manual_task, headers={"X-User-Id": setup_test_user}
+            "/api/tasks/", json=manual_task, headers=auth_headers
         )
 
         # Create an AI task (first create image record)
@@ -133,12 +133,12 @@ class TestTasksAIIntegration:
         await client.post(
             "/api/tasks/ai-generated",
             json=ai_task,
-            headers={"X-User-Id": setup_test_user},
+            headers=auth_headers,
         )
 
         # Get only AI-generated tasks
         response = await client.get(
-            "/api/tasks/?source=ai_generated", headers={"X-User-Id": setup_test_user}
+            "/api/tasks/?source=ai_generated", headers=auth_headers
         )
 
         assert response.status_code == 200
@@ -149,7 +149,7 @@ class TestTasksAIIntegration:
 
         # Get only manual tasks
         response = await client.get(
-            "/api/tasks/?source=manual", headers={"X-User-Id": setup_test_user}
+            "/api/tasks/?source=manual", headers=auth_headers
         )
 
         assert response.status_code == 200
@@ -159,7 +159,7 @@ class TestTasksAIIntegration:
         assert tasks[0]["source"] == "manual"
 
     @pytest.mark.asyncio
-    async def test_get_ai_tasks_with_images(self, client, setup_test_user, db_session):
+    async def test_get_ai_tasks_with_images(self, client, setup_test_user, auth_headers: dict, db_session):
         """Test getting AI tasks with their source image details."""
         # First, we need to create an image record
         # In a real scenario, this would be done by the image upload endpoint
@@ -192,13 +192,13 @@ class TestTasksAIIntegration:
         await client.post(
             "/api/tasks/ai-generated",
             json=task_data,
-            headers={"X-User-Id": setup_test_user},
+            headers=auth_headers,
         )
 
         # Get AI tasks with images
         response = await client.get(
             "/api/tasks/ai-generated/with-images",
-            headers={"X-User-Id": setup_test_user},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -213,7 +213,7 @@ class TestTasksAIIntegration:
         # Cleanup is handled by test transaction rollback
 
     @pytest.mark.asyncio
-    async def test_create_regular_task_has_manual_source(self, client, setup_test_user):
+    async def test_create_regular_task_has_manual_source(self, client, setup_test_user, auth_headers: dict):
         """Test that regular tasks created through standard endpoint have 'manual' source."""
         task_data = {
             "title": "Regular task",
@@ -222,7 +222,7 @@ class TestTasksAIIntegration:
         }
 
         response = await client.post(
-            "/api/tasks/", json=task_data, headers={"X-User-Id": setup_test_user}
+            "/api/tasks/", json=task_data, headers=auth_headers
         )
 
         assert response.status_code == 200

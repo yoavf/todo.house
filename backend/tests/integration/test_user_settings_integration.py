@@ -15,30 +15,26 @@ from app.ai.image_processing import ImageProcessingService
 class TestUserSettingsIntegration:
     """Integration tests for user settings endpoints."""
 
-    async def test_get_user_settings_legacy_user_creation(self, client: AsyncClient):
-        """Test that legacy users are created automatically when using X-User-Id."""
-        non_existent_user_id = uuid.uuid4()
-        
+    async def test_get_user_settings_new_user_creation(self, client: AsyncClient, test_user_id: str, auth_headers: dict):
+        """Test that new users are created automatically on first auth."""
         response = await client.get(
             "/api/user-settings/me",
-            headers={"X-User-Id": str(non_existent_user_id)}
+            headers=auth_headers
         )
         
-        # With the new auth system, legacy users are created automatically
+        # With JWT auth, users are created automatically on first sign-in
         assert response.status_code == 200
         data = response.json()
-        assert data["user_id"] == str(non_existent_user_id)
+        assert data["user_id"] == str(test_user_id)  # ID comes from JWT token
         assert data["locale_preference"] is None  # Default for new users
 
     async def test_get_user_settings_success(
         self, client: AsyncClient, test_user_id: str, setup_test_user, db_session: AsyncSession
-    ):
+    , auth_headers: dict):
         """Test getting user settings successfully."""
         response = await client.get(
             "/api/user-settings/me",
-            headers={
-                "X-User-Id": str(test_user_id),
-                "Accept-Language": "en-US,en;q=0.9"
+            headers={**auth_headers, "Accept-Language": "en-US,en;q=0.9"
             }
         )
         
@@ -52,7 +48,7 @@ class TestUserSettingsIntegration:
 
     async def test_update_user_settings_locale_preference(
         self, client: AsyncClient, test_user_id: str, setup_test_user, db_session: AsyncSession
-    ):
+    , auth_headers: dict):
         """Test updating user locale preference."""
         # Update locale preference to Hebrew
         update_data = {"locale_preference": "he"}
@@ -60,9 +56,7 @@ class TestUserSettingsIntegration:
         response = await client.patch(
             "/api/user-settings/me",
             json=update_data,
-            headers={
-                "X-User-Id": str(test_user_id),
-                "Accept-Language": "en-US,en;q=0.9"
+            headers={**auth_headers, "Accept-Language": "en-US,en;q=0.9"
             }
         )
         
@@ -81,14 +75,14 @@ class TestUserSettingsIntegration:
 
     async def test_update_user_settings_invalid_locale(
         self, client: AsyncClient, test_user_id: str, setup_test_user
-    ):
+    , auth_headers: dict):
         """Test updating user settings with invalid locale."""
         update_data = {"locale_preference": "invalid"}
         
         response = await client.patch(
             "/api/user-settings/me",
             json=update_data,
-            headers={"X-User-Id": str(test_user_id)}
+            headers=auth_headers
         )
         
         assert response.status_code == 422  # Pydantic validation error
@@ -96,14 +90,14 @@ class TestUserSettingsIntegration:
 
     async def test_update_user_settings_clear_preference(
         self, client: AsyncClient, test_user_id: str, setup_test_user, db_session: AsyncSession
-    ):
+    , auth_headers: dict):
         """Test clearing user locale preference."""
         # First set a preference
         update_data = {"locale_preference": "he"}
         response = await client.patch(
             "/api/user-settings/me",
             json=update_data,
-            headers={"X-User-Id": str(test_user_id)}
+            headers=auth_headers
         )
         assert response.status_code == 200
         
@@ -112,7 +106,7 @@ class TestUserSettingsIntegration:
         response = await client.patch(
             "/api/user-settings/me",
             json=update_data,
-            headers={"X-User-Id": str(test_user_id)}
+            headers=auth_headers
         )
         
         assert response.status_code == 200
@@ -121,22 +115,20 @@ class TestUserSettingsIntegration:
 
     async def test_get_user_locale_info(
         self, client: AsyncClient, test_user_id: str, setup_test_user, db_session: AsyncSession
-    ):
+    , auth_headers: dict):
         """Test getting detailed user locale information."""
         # First set a Hebrew preference
         update_data = {"locale_preference": "he"}
         await client.patch(
             "/api/user-settings/me",
             json=update_data,
-            headers={"X-User-Id": str(test_user_id)}
+            headers=auth_headers
         )
         
         # Get user settings (which includes locale info)
         response = await client.get(
             "/api/user-settings/me",
-            headers={
-                "X-User-Id": str(test_user_id),
-                "Accept-Language": "en-US,en;q=0.9"
+            headers={**auth_headers, "Accept-Language": "en-US,en;q=0.9"
             }
         )
         
@@ -148,13 +140,11 @@ class TestUserSettingsIntegration:
 
     async def test_get_user_settings_no_preference(
         self, client: AsyncClient, test_user_id: str, setup_test_user
-    ):
+    , auth_headers: dict):
         """Test user settings when no preference is set."""
         response = await client.get(
             "/api/user-settings/me",
-            headers={
-                "X-User-Id": str(test_user_id),
-                "Accept-Language": "he-IL,he;q=0.9,en;q=0.8"
+            headers={**auth_headers, "Accept-Language": "he-IL,he;q=0.9,en;q=0.8"
             }
         )
         
@@ -171,14 +161,14 @@ class TestLocaleAwareTasksIntegration:
 
     async def test_tasks_respect_user_locale_preference(
         self, client: AsyncClient, test_user_id: str, setup_test_user, db_session: AsyncSession
-    ):
+    , auth_headers: dict):
         """Test that task endpoints respect user locale preference."""
         # Set user locale preference to Hebrew
         update_data = {"locale_preference": "he"}
         await client.patch(
             "/api/user-settings/me",
             json=update_data,
-            headers={"X-User-Id": str(test_user_id)}
+            headers=auth_headers
         )
         
         # Create a task
@@ -192,7 +182,7 @@ class TestLocaleAwareTasksIntegration:
             "/api/tasks/",
             json=task_data,
             headers={
-                "x-user-id": str(test_user_id),
+                **auth_headers,
                 "Accept-Language": "en-US,en;q=0.9"  # Different from preference
             }
         )
@@ -203,7 +193,7 @@ class TestLocaleAwareTasksIntegration:
         response = await client.get(
             "/api/tasks/",
             headers={
-                "x-user-id": str(test_user_id),
+                **auth_headers,
                 "Accept-Language": "en-US,en;q=0.9"  # Different from preference
             }
         )
@@ -219,7 +209,7 @@ class TestLocaleAwareTasksIntegration:
 
     async def test_tasks_fallback_to_header_when_no_preference(
         self, client: AsyncClient, test_user_id: str, setup_test_user
-    ):
+    , auth_headers: dict):
         """Test that task endpoints fall back to Accept-Language header."""
         # Ensure no locale preference is set (should be None by default)
         
@@ -233,7 +223,7 @@ class TestLocaleAwareTasksIntegration:
         create_response = await client.post(
             "/api/tasks/",
             json=task_data,
-            headers={"x-user-id": str(test_user_id)}
+            headers=auth_headers
         )
         assert create_response.status_code in [200, 201]  # Accept either status
         
@@ -241,7 +231,7 @@ class TestLocaleAwareTasksIntegration:
         response = await client.get(
             "/api/tasks/",
             headers={
-                "x-user-id": str(test_user_id),
+                **auth_headers,
                 "Accept-Language": "he-IL,he;q=0.9,en;q=0.8"
             }
         )
@@ -264,7 +254,7 @@ class TestLocaleAwareTasksIntegration:
         response_en = await client.get(
             "/api/tasks/",
             headers={
-                "x-user-id": str(test_user_id),
+                **auth_headers,
                 "Accept-Language": "en-US,en;q=0.9"
             }
         )
@@ -277,14 +267,14 @@ class TestLocaleAwareTasksIntegration:
 
     async def test_snooze_task_respects_user_locale(
         self, client: AsyncClient, test_user_id: str, setup_test_user, db_session: AsyncSession
-    ):
+    , auth_headers: dict):
         """Test that snoozing tasks respects user locale preference."""
         # Set user locale preference to Hebrew
         update_data = {"locale_preference": "he"}
         await client.patch(
             "/api/user-settings/me",
             json=update_data,
-            headers={"X-User-Id": str(test_user_id)}
+            headers=auth_headers
         )
         
         # Create a task
@@ -297,7 +287,7 @@ class TestLocaleAwareTasksIntegration:
         create_response = await client.post(
             "/api/tasks/",
             json=task_data,
-            headers={"x-user-id": str(test_user_id)}
+            headers=auth_headers
         )
         
         assert create_response.status_code == 200
@@ -310,7 +300,7 @@ class TestLocaleAwareTasksIntegration:
             f"/api/tasks/{task_id}/snooze",
             json=snooze_data,
             headers={
-                "x-user-id": str(test_user_id),
+                **auth_headers,
                 "Accept-Language": "en-US,en;q=0.9"  # Different from preference
             }
         )
@@ -330,14 +320,14 @@ class TestLocaleAwareImageAnalysisIntegration:
 
     async def test_image_analysis_respects_user_locale_preference(
         self, client: AsyncClient, test_user_id: str, setup_test_user, sample_image_bytes: bytes
-    ):
+    , auth_headers: dict):
         """Test that image analysis respects user locale preference."""
         # Set user locale preference to Hebrew
         update_data = {"locale_preference": "he"}
         await client.patch(
             "/api/user-settings/me",
             json=update_data,
-            headers={"X-User-Id": str(test_user_id)}
+            headers=auth_headers
         )
         
         # Mock the image processing service to avoid real API calls
@@ -363,7 +353,7 @@ class TestLocaleAwareImageAnalysisIntegration:
                 files=files,
                 data=data,
                 headers={
-                    "x-user-id": str(test_user_id),
+                    **auth_headers,
                     "Accept-Language": "en-US,en;q=0.9"  # Different from preference
                 }
             )
@@ -377,7 +367,8 @@ class TestLocaleAwareImageAnalysisIntegration:
             assert call_args.kwargs.get('locale') == 'he'
 
     async def test_image_analysis_fallback_to_header(
-        self, client: AsyncClient, test_user_id: str, setup_test_user, sample_image_bytes: bytes
+        self, client: AsyncClient, test_user_id: str, setup_test_user, sample_image_bytes: bytes,
+        auth_headers: dict
     ):
         """Test that image analysis falls back to Accept-Language header."""
         # Ensure no locale preference is set
@@ -405,7 +396,7 @@ class TestLocaleAwareImageAnalysisIntegration:
                 files=files,
                 data=data,
                 headers={
-                    "x-user-id": str(test_user_id),
+                    **auth_headers,
                     "Accept-Language": "he-IL,he;q=0.9,en;q=0.8"
                 }
             )

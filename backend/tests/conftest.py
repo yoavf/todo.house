@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
+from jose import jwt
+from datetime import datetime, timezone, timedelta
+import os
 
 # Load test environment variables before importing app
 load_dotenv(".env.test", override=True)
@@ -122,6 +125,41 @@ def sample_todo():
         "title": "Test Todo",
         "description": "This is a test todo item",
         "completed": False,
+    }
+
+
+@pytest.fixture
+def test_jwt_token(test_user_id: str) -> str:
+    """
+    Generate a valid JWT token for testing.
+    
+    This mimics the JWT tokens that NextAuth creates.
+    """
+    # Get the secret from environment or use a test default
+    secret = os.getenv("JWT_SECRET", os.getenv("NEXTAUTH_SECRET", "test-secret-for-testing-only"))
+    
+    # Create a token payload similar to NextAuth
+    payload = {
+        "sub": str(test_user_id),  # Subject (user ID)
+        "email": f"test-{test_user_id}@example.com",
+        "name": "Test User",
+        "picture": None,
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+    }
+    
+    # Encode the token
+    token = jwt.encode(payload, secret, algorithm="HS256")
+    return token
+
+
+@pytest.fixture
+def auth_headers(test_jwt_token: str) -> dict:
+    """
+    Generate authorization headers with a valid JWT token.
+    """
+    return {
+        "Authorization": f"Bearer {test_jwt_token}"
     }
 
 

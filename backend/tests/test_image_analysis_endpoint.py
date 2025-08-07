@@ -50,11 +50,11 @@ def create_test_image(format="JPEG", size=(100, 100)) -> bytes:
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_endpoint_exists(client: AsyncClient, setup_test_user):
+async def test_analyze_image_endpoint_exists(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test that the analyze image endpoint exists and returns proper error for missing file."""
     response = await client.post(
         "/api/images/analyze",
-        headers={"x-user-id": setup_test_user},
+        headers=auth_headers,
         data={"generate_tasks": "true"},
     )
     # Should return 422 for missing file
@@ -62,7 +62,7 @@ async def test_analyze_image_endpoint_exists(client: AsyncClient, setup_test_use
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_with_valid_image(client: AsyncClient, setup_test_user):
+async def test_analyze_image_with_valid_image(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test image analysis with a valid image file."""
     # Create test image
     image_data = create_test_image()
@@ -70,7 +70,7 @@ async def test_analyze_image_with_valid_image(client: AsyncClient, setup_test_us
     # Test the endpoint
     response = await client.post(
         "/api/images/analyze",
-        headers={"x-user-id": setup_test_user},
+        headers=auth_headers,
         files={"image": ("test.jpg", image_data, "image/jpeg")},
         data={"generate_tasks": "true"},
     )
@@ -85,13 +85,13 @@ async def test_analyze_image_with_valid_image(client: AsyncClient, setup_test_us
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_without_tasks(client: AsyncClient, setup_test_user):
+async def test_analyze_image_without_tasks(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test image analysis without generating tasks."""
     image_data = create_test_image()
 
     response = await client.post(
         "/api/images/analyze",
-        headers={"x-user-id": setup_test_user},
+        headers=auth_headers,
         files={"image": ("test.jpg", image_data, "image/jpeg")},
         data={"generate_tasks": "false"},
     )
@@ -107,14 +107,14 @@ async def test_analyze_image_without_tasks(client: AsyncClient, setup_test_user)
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_invalid_format(client: AsyncClient, setup_test_user):
+async def test_analyze_image_invalid_format(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test image analysis with invalid file format."""
     # Create a text file instead of image
     text_data = b"This is not an image"
 
     response = await client.post(
         "/api/images/analyze",
-        headers={"x-user-id": setup_test_user},
+        headers=auth_headers,
         files={"image": ("test.txt", text_data, "text/plain")},
         data={"generate_tasks": "true"},
     )
@@ -160,11 +160,11 @@ async def test_health_check_endpoint(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_empty_file(client: AsyncClient, setup_test_user):
+async def test_analyze_image_empty_file(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test image analysis with empty file."""
     response = await client.post(
         "/api/images/analyze",
-        headers={"x-user-id": setup_test_user},
+        headers=auth_headers,
         files={"image": ("empty.jpg", b"", "image/jpeg")},
         data={"generate_tasks": "true"},
     )
@@ -174,13 +174,13 @@ async def test_analyze_image_empty_file(client: AsyncClient, setup_test_user):
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_with_prompt_override(client: AsyncClient, setup_test_user):
+async def test_analyze_image_with_prompt_override(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test image analysis with custom prompt."""
     image_data = create_test_image()
 
     response = await client.post(
         "/api/images/analyze",
-        headers={"x-user-id": setup_test_user},
+        headers=auth_headers,
         files={"image": ("test.jpg", image_data, "image/jpeg")},
         data={"generate_tasks": "true", "prompt_override": "Custom test prompt"},
     )

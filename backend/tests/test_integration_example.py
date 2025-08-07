@@ -8,9 +8,8 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user):
+async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user, auth_headers: dict):
     """Test creating, reading, updating, and deleting a todo."""
-    user_id = setup_test_user  # This fixture creates and cleans up a test user
 
     # 1. Create a todo
     create_data = {
@@ -20,7 +19,7 @@ async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user):
     }
 
     create_response = await client.post(
-        "/api/tasks/", json=create_data, headers={"x-user-id": user_id}
+        "/api/tasks/", json=create_data, headers=auth_headers
     )
 
     assert create_response.status_code == 200
@@ -31,7 +30,7 @@ async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user):
 
     # 2. Retrieve the todo
     get_response = await client.get(
-        f"/api/tasks/{todo_id}", headers={"x-user-id": user_id}
+        f"/api/tasks/{todo_id}", headers=auth_headers
     )
 
     assert get_response.status_code == 200
@@ -44,7 +43,7 @@ async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user):
     update_response = await client.put(
         f"/api/tasks/{todo_id}",
         json={"completed": True},
-        headers={"x-user-id": user_id},
+        headers=auth_headers,
     )
 
     assert update_response.status_code == 200
@@ -55,7 +54,7 @@ async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user):
     print(f"✅ Updated todo status to: {updated_todo['status']}")
 
     # 4. List all todos for user
-    list_response = await client.get("/api/tasks/", headers={"x-user-id": user_id})
+    list_response = await client.get("/api/tasks/", headers=auth_headers)
 
     assert list_response.status_code == 200
     todos = list_response.json()
@@ -66,7 +65,7 @@ async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user):
 
     # 5. Delete the todo
     delete_response = await client.delete(
-        f"/api/tasks/{todo_id}", headers={"x-user-id": user_id}
+        f"/api/tasks/{todo_id}", headers=auth_headers
     )
 
     assert delete_response.status_code == 200
@@ -75,7 +74,7 @@ async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user):
 
     # 6. Verify it's gone
     verify_response = await client.get(
-        f"/api/tasks/{todo_id}", headers={"x-user-id": user_id}
+        f"/api/tasks/{todo_id}", headers=auth_headers
     )
 
     assert verify_response.status_code == 404
