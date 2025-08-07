@@ -69,7 +69,7 @@ class TestUserLocalePreference:
         """Test handling database errors when getting user locale preference."""
         # Mock database session to raise exception
         mock_session = AsyncMock(spec=AsyncSession)
-        mock_session.execute.side_effect = Exception("Database error")
+        mock_session.execute.side_effect = SQLAlchemyError("Database error")
         
         user_id = uuid.uuid4()
         

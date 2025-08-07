@@ -150,7 +150,7 @@ async def get_user_locale_preference(db: AsyncSession, user_id: uuid.UUID) -> Op
         elif preference:
             logger.warning(f"User has unsupported locale preference: {preference}")
             
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(f"Failed to get user locale preference: {e}")
     
     return None
