@@ -6,12 +6,15 @@ import uvicorn
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    print(f"Starting server on port {port}...", flush=True)
+    # Use IPv6 for Railway (::) instead of IPv4 (0.0.0.0)
+    host = "::" if os.environ.get("RAILWAY_ENVIRONMENT") else "0.0.0.0"
+    
+    print(f"Starting server on {host}:{port}...", flush=True)
     
     # Run uvicorn directly without subprocesses
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0",
+        host=host,
         port=port,
         log_level="info",
         access_log=True,
