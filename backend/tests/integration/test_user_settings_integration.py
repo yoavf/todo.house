@@ -15,24 +15,31 @@ from app.ai.image_processing import ImageProcessingService
 class TestUserSettingsIntegration:
     """Integration tests for user settings endpoints."""
 
-    async def test_get_user_settings_not_found(self, client: AsyncClient):
-        """Test getting settings for non-existent user."""
+    async def test_get_user_settings_legacy_user_creation(self, client: AsyncClient):
+        """Test that legacy users are created automatically when using X-User-Id."""
         non_existent_user_id = uuid.uuid4()
         
         response = await client.get(
-            f"/api/user-settings/{non_existent_user_id}"
+            "/api/user-settings/me",
+            headers={"X-User-Id": str(non_existent_user_id)}
         )
         
-        assert response.status_code == 404
-        assert response.json()["detail"] == "User not found"
+        # With the new auth system, legacy users are created automatically
+        assert response.status_code == 200
+        data = response.json()
+        assert data["user_id"] == str(non_existent_user_id)
+        assert data["locale_preference"] is None  # Default for new users
 
     async def test_get_user_settings_success(
         self, client: AsyncClient, test_user_id: str, setup_test_user, db_session: AsyncSession
     ):
         """Test getting user settings successfully."""
         response = await client.get(
-            f"/api/user-settings/{test_user_id}",
-            headers={"Accept-Language": "en-US,en;q=0.9"}
+            "/api/user-settings/me",
+            headers={
+                "X-User-Id": str(test_user_id),
+                "Accept-Language": "en-US,en;q=0.9"
+            }
         )
         
         assert response.status_code == 200
@@ -51,9 +58,12 @@ class TestUserSettingsIntegration:
         update_data = {"locale_preference": "he"}
         
         response = await client.patch(
-            f"/api/user-settings/{test_user_id}",
+            "/api/user-settings/me",
             json=update_data,
-            headers={"Accept-Language": "en-US,en;q=0.9"}
+            headers={
+                "X-User-Id": str(test_user_id),
+                "Accept-Language": "en-US,en;q=0.9"
+            }
         )
         
         assert response.status_code == 200
@@ -76,8 +86,9 @@ class TestUserSettingsIntegration:
         update_data = {"locale_preference": "invalid"}
         
         response = await client.patch(
-            f"/api/user-settings/{test_user_id}",
-            json=update_data
+            "/api/user-settings/me",
+            json=update_data,
+            headers={"X-User-Id": str(test_user_id)}
         )
         
         assert response.status_code == 422  # Pydantic validation error
@@ -90,16 +101,18 @@ class TestUserSettingsIntegration:
         # First set a preference
         update_data = {"locale_preference": "he"}
         response = await client.patch(
-            f"/api/user-settings/{test_user_id}",
-            json=update_data
+            "/api/user-settings/me",
+            json=update_data,
+            headers={"X-User-Id": str(test_user_id)}
         )
         assert response.status_code == 200
         
         # Then clear it
         update_data = {"locale_preference": None}
         response = await client.patch(
-            f"/api/user-settings/{test_user_id}",
-            json=update_data
+            "/api/user-settings/me",
+            json=update_data,
+            headers={"X-User-Id": str(test_user_id)}
         )
         
         assert response.status_code == 200
@@ -113,14 +126,18 @@ class TestUserSettingsIntegration:
         # First set a Hebrew preference
         update_data = {"locale_preference": "he"}
         await client.patch(
-            f"/api/user-settings/{test_user_id}",
-            json=update_data
+            "/api/user-settings/me",
+            json=update_data,
+            headers={"X-User-Id": str(test_user_id)}
         )
         
         # Get user settings (which includes locale info)
         response = await client.get(
-            f"/api/user-settings/{test_user_id}",
-            headers={"Accept-Language": "en-US,en;q=0.9"}
+            "/api/user-settings/me",
+            headers={
+                "X-User-Id": str(test_user_id),
+                "Accept-Language": "en-US,en;q=0.9"
+            }
         )
         
         assert response.status_code == 200
@@ -134,8 +151,11 @@ class TestUserSettingsIntegration:
     ):
         """Test user settings when no preference is set."""
         response = await client.get(
-            f"/api/user-settings/{test_user_id}",
-            headers={"Accept-Language": "he-IL,he;q=0.9,en;q=0.8"}
+            "/api/user-settings/me",
+            headers={
+                "X-User-Id": str(test_user_id),
+                "Accept-Language": "he-IL,he;q=0.9,en;q=0.8"
+            }
         )
         
         assert response.status_code == 200
@@ -156,8 +176,9 @@ class TestLocaleAwareTasksIntegration:
         # Set user locale preference to Hebrew
         update_data = {"locale_preference": "he"}
         await client.patch(
-            f"/api/user-settings/{test_user_id}",
-            json=update_data
+            "/api/user-settings/me",
+            json=update_data,
+            headers={"X-User-Id": str(test_user_id)}
         )
         
         # Create a task
@@ -261,8 +282,9 @@ class TestLocaleAwareTasksIntegration:
         # Set user locale preference to Hebrew
         update_data = {"locale_preference": "he"}
         await client.patch(
-            f"/api/user-settings/{test_user_id}",
-            json=update_data
+            "/api/user-settings/me",
+            json=update_data,
+            headers={"X-User-Id": str(test_user_id)}
         )
         
         # Create a task
@@ -313,8 +335,9 @@ class TestLocaleAwareImageAnalysisIntegration:
         # Set user locale preference to Hebrew
         update_data = {"locale_preference": "he"}
         await client.patch(
-            f"/api/user-settings/{test_user_id}",
-            json=update_data
+            "/api/user-settings/me",
+            json=update_data,
+            headers={"X-User-Id": str(test_user_id)}
         )
         
         # Mock the image processing service to avoid real API calls
