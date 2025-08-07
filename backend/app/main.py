@@ -20,22 +20,22 @@ setup_logging(
 app = FastAPI(title="todo.house API", version="1.0.0")
 
 # CORS configuration
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else []
+CORS_ORIGINS = []
 
-# Default origins for local development
-if not CORS_ORIGINS:
+# Check for environment variable
+env_origins = os.getenv("CORS_ORIGINS", "")
+if env_origins:
+    CORS_ORIGINS.extend(env_origins.split(","))
+else:
+    # Default origins for local development
     CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
-# Add production domains
+# Always add production domains
 CORS_ORIGINS.extend([
     "https://dev.todo.house",
-    "https://todo.house",
+    "https://todo.house", 
     "https://www.todo.house",
 ])
-
-# Support Railway PR preview environments
-# Railway PR environments follow pattern: https://*.up.railway.app
-CORS_ORIGINS.append("https://*.up.railway.app")
 
 # CORS middleware for Next.js frontend
 app.add_middleware(
@@ -56,10 +56,15 @@ app.include_router(user_settings_router)
 
 @app.get("/robots.txt")
 async def robots_txt():
-    robots_path = Path(__file__).parent / "static" / "robots.txt"
-    if robots_path.exists():
-        return FileResponse(robots_path, media_type="text/plain")
-    # Fallback if file doesn't exist
+    try:
+        robots_path = Path(__file__).parent / "static" / "robots.txt"
+        if robots_path.exists():
+            return FileResponse(robots_path, media_type="text/plain")
+    except Exception as e:
+        # Log the error but continue with fallback
+        import logging
+        logging.error(f"Error reading robots.txt file: {e}")
+    # Fallback if file doesn't exist or error occurs
     return PlainTextResponse("User-agent: *\nDisallow: /\n")
 
 
