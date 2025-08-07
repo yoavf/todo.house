@@ -6,6 +6,7 @@ import { FAB } from "@/components/FAB";
 import { GeneratedTasksModal } from "@/components/GeneratedTasksModal";
 import { Header } from "@/components/Header";
 import { MicrophoneView } from "@/components/MicrophoneView";
+import NoTasksFoundDialog from "@/components/NoTasksFoundDialog";
 import { TabNavigation } from "@/components/TabNavigation";
 import { TaskList } from "@/components/TaskList";
 import { TypingView } from "@/components/TypingView";
@@ -17,14 +18,23 @@ function HomePageContent() {
 	const [analysisResponse, setAnalysisResponse] =
 		useState<ImageAnalysisResponse | null>(null);
 	const [showGeneratedTasks, setShowGeneratedTasks] = useState(false);
+	const [showNoTasksFoundDialog, setShowNoTasksFoundDialog] = useState(false);
 	const [showMicrophone, setShowMicrophone] = useState(false);
 	const [showTyping, setShowTyping] = useState(false);
 	const [showCamera, setShowCamera] = useState(false);
+	const [imageIDForManualTask, setImageIDForManualTask] = useState<
+		string | undefined
+	>(undefined);
 	const { triggerRefetch } = useTaskContext();
 
 	const handleTasksGenerated = (response: ImageAnalysisResponse) => {
-		setAnalysisResponse(response);
-		setShowGeneratedTasks(true);
+		if (response.tasks.length === 0) {
+			setAnalysisResponse(response);
+			setShowNoTasksFoundDialog(true);
+		} else {
+			setAnalysisResponse(response);
+			setShowGeneratedTasks(true);
+		}
 	};
 
 	const handleTasksCreated = useCallback(() => {
@@ -97,8 +107,12 @@ function HomePageContent() {
 
 			<TypingView
 				isOpen={showTyping}
-				onClose={() => setShowTyping(false)}
+				onClose={() => {
+					setShowTyping(false);
+					setImageIDForManualTask(undefined);
+				}}
 				onTaskCreated={handleManualTaskCreated}
+				source_image_id={imageIDForManualTask}
 			/>
 
 			<CameraView
@@ -112,6 +126,15 @@ function HomePageContent() {
 				onClose={() => setShowGeneratedTasks(false)}
 				analysisResponse={analysisResponse}
 				onTasksCreated={handleTasksCreated}
+			/>
+			<NoTasksFoundDialog
+				isOpen={showNoTasksFoundDialog}
+				onClose={() => setShowNoTasksFoundDialog(false)}
+				onAddManually={() => {
+					setShowNoTasksFoundDialog(false);
+					setImageIDForManualTask(analysisResponse?.image_id ?? undefined);
+					setShowTyping(true);
+				}}
 			/>
 		</div>
 	);

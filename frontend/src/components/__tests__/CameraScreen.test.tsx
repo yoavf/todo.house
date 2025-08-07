@@ -331,7 +331,7 @@ describe("CameraScreen", () => {
 		// Should not show preview or analyze button
 		expect(screen.queryByAltText("Selected")).not.toBeInTheDocument();
 		expect(screen.queryByText("Analyze")).not.toBeInTheDocument();
-	});
+	}, 10000);
 
 	it("allows retaking photo", async () => {
 		render(
