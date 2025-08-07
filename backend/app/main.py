@@ -9,6 +9,7 @@ from .locations import router as locations_router
 from .user_settings import router as user_settings_router
 from .logging_config import setup_logging
 import os
+import logging
 from pathlib import Path
 
 # Initialize structured logging
@@ -16,6 +17,12 @@ setup_logging(
     log_level=os.getenv("LOG_LEVEL", "INFO"),
     enable_json=os.getenv("ENABLE_JSON_LOGGING", "true").lower() == "true",
 )
+
+# Get logger for startup messages
+logger = logging.getLogger(__name__)
+logger.info("Starting todo.house API backend")
+logger.info(f"Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'local')}")
+logger.info(f"Database URL configured: {'Yes' if os.getenv('DATABASE_URL') else 'No'}")
 
 app = FastAPI(title="todo.house API", version="1.0.0")
 
@@ -54,6 +61,27 @@ async def robots_txt():
         logging.error(f"Error reading robots.txt file: {e}")
     # Fallback if file doesn't exist or error occurs
     return PlainTextResponse("User-agent: *\nDisallow: /\n")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Log when the application starts."""
+    logger.info("FastAPI application startup complete")
+    logger.info(f"CORS regex pattern: {CORS_ORIGIN_REGEX}")
+    
+    # Test database connection on startup
+    try:
+        async with get_session() as session:
+            await session.execute(text("SELECT 1"))
+        logger.info("Database connection verified")
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Log when the application shuts down."""
+    logger.info("FastAPI application shutting down")
 
 
 @app.get("/")

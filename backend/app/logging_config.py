@@ -134,8 +134,10 @@ def setup_logging(log_level: str = "INFO", enable_json: bool = True) -> None:
     root_logger.addHandler(console_handler)
 
     # Set specific logger levels
-    logging.getLogger("uvicorn").setLevel(logging.WARNING)
-    logging.getLogger("fastapi").setLevel(logging.WARNING)
+    # Allow uvicorn access logs and startup info to show
+    logging.getLogger("uvicorn").setLevel(logging.INFO)
+    logging.getLogger("uvicorn.access").setLevel(logging.INFO)
+    logging.getLogger("fastapi").setLevel(logging.INFO)
 
 
 def generate_correlation_id() -> str:
