@@ -13,8 +13,16 @@ from .logging_config import StructuredLogger
 logger = StructuredLogger(__name__)
 
 # JWT configuration
-JWT_SECRET = os.getenv("JWT_SECRET", os.getenv("NEXTAUTH_SECRET", ""))
 JWT_ALGORITHM = "HS256"
+
+def get_jwt_secret() -> str:
+    """Get JWT secret from environment, checking at runtime."""
+    secret = os.getenv("JWT_SECRET") or os.getenv("NEXTAUTH_SECRET") or ""
+    if not secret:
+        # In test environment, use the test secret
+        if os.getenv("TESTING") == "true":
+            secret = "test-secret-key-for-jwt-encoding"
+    return secret
 
 # HTTP Bearer for Authorization header
 security = HTTPBearer(auto_error=False)
@@ -23,10 +31,11 @@ security = HTTPBearer(auto_error=False)
 async def decode_nextauth_jwt(token: str) -> Dict[str, Any]:
     """Decode a NextAuth JWT token"""
     try:
-        if not JWT_SECRET:
+        jwt_secret = get_jwt_secret()
+        if not jwt_secret:
             raise ValueError("JWT_SECRET or NEXTAUTH_SECRET not configured")
             
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, jwt_secret, algorithms=[JWT_ALGORITHM])
         return payload
     except JWTError as e:
         logger.error("JWT decode error", error=str(e))

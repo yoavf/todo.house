@@ -135,8 +135,8 @@ def test_jwt_token(test_user_id: str) -> str:
     
     This mimics the JWT tokens that NextAuth creates.
     """
-    # Get the secret from environment or use a test default
-    secret = os.getenv("JWT_SECRET", os.getenv("NEXTAUTH_SECRET", "test-secret-for-testing-only"))
+    # Get the secret from environment, matching what auth.py expects
+    secret = os.getenv("JWT_SECRET") or os.getenv("NEXTAUTH_SECRET") or "test-secret-key-for-jwt-encoding"
     
     # Create a token payload similar to NextAuth
     payload = {
