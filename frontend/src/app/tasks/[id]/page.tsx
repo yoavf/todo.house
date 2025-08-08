@@ -11,7 +11,7 @@ import {
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { SnoozeModal } from "@/components/SnoozeModal";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type ShoppingListItem, type Task, tasksAPI } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-export default function TaskDetailPage() {
+function TaskDetailPageInner() {
 	const params = useParams();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -426,6 +426,14 @@ export default function TaskDetailPage() {
 				error={snoozeError}
 			/>
 		</div>
+	);
+}
+
+export default function TaskDetailPage() {
+	return (
+		<Suspense fallback={<div className="min-h-screen" />}>
+			<TaskDetailPageInner />
+		</Suspense>
 	);
 }
 

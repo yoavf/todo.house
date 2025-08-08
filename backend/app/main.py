@@ -8,6 +8,7 @@ from .images import router as images_router
 from .locations import router as locations_router
 from .user_settings import router as user_settings_router
 from .logging_config import setup_logging
+from .auth import log_secret_diagnostics
 import os
 from pathlib import Path
 
@@ -56,6 +57,14 @@ app.include_router(tasks_router)
 app.include_router(images_router)
 app.include_router(locations_router)
 app.include_router(user_settings_router)
+
+# Log auth secret diagnostics at startup
+@app.on_event("startup")
+async def _log_auth_secret():
+    try:
+        log_secret_diagnostics()
+    except Exception:
+        pass
 
 
 @app.get("/robots.txt")

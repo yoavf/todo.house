@@ -1,5 +1,6 @@
 # TodoHouse Backend
 
+
 FastAPI backend for the TodoHouse application using SQLAlchemy ORM.
 
 ## Architecture
@@ -9,6 +10,15 @@ FastAPI backend for the TodoHouse application using SQLAlchemy ORM.
 - **Database**: PostgreSQL (via Supabase or any PostgreSQL instance)
 - **Storage**: Supabase Storage for file uploads
 - **Python Package Manager**: uv
+
+### Authentication
+
+- The backend validates Auth.js (NextAuth) encrypted JWTs sent in the `Authorization: Bearer <token>` header.
+- Token decryption is handled by [`fastapi-nextauth-jwt`](https://github.com/TCatshoek/fastapi-nextauth-jwt).
+- Required env vars:
+  - `AUTH_SECRET` (or `NEXTAUTH_SECRET`) — must exactly match the frontend Auth.js secret
+  - Recommended: `AUTH_URL=https://dev.todo.house` (enables secure-cookie defaults in libs)
+- In production the frontend uses a server-side proxy (`/api/proxy/*`) to attach the `Authorization` header; the token is never exposed to client JS.
 
 ## Setup
 
@@ -28,6 +38,8 @@ Required environment variables:
 - `SUPABASE_URL`: Supabase project URL (for storage)
 - `SUPABASE_KEY`: Supabase anon key (for storage)
 - `GEMINI_API_KEY`: Google Gemini API key (for AI features)
+- `AUTH_SECRET` (or `NEXTAUTH_SECRET`): Shared secret with the frontend Auth.js
+- `AUTH_URL`: Public frontend origin (e.g., `https://dev.todo.house`)
 
 3. Run the development server:
 ```bash

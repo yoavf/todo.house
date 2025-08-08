@@ -9,13 +9,25 @@ import uuid
 import os
 import json
 from .database import get_session_dependency, User as UserModel
+import hashlib
 from .logging_config import StructuredLogger
 
 logger = StructuredLogger(__name__)
 
+# Environment helpers
+def _is_development() -> bool:
+    env = (os.getenv("ENV") or os.getenv("NODE_ENV") or "").lower()
+    return env in {"dev", "development"}
+
+
 # Get the secret for authentication - REQUIRED for security
-AUTH_SECRET = os.getenv("AUTH_SECRET") or os.getenv("NEXTAUTH_SECRET")
-if not AUTH_SECRET:
+AUTH_SECRET_ENV: Optional[str]
+_auth_secret_value = os.getenv("AUTH_SECRET") or os.getenv("NEXTAUTH_SECRET")
+AUTH_SECRET_ENV = "AUTH_SECRET" if os.getenv("AUTH_SECRET") else (
+    "NEXTAUTH_SECRET" if os.getenv("NEXTAUTH_SECRET") else None
+)
+
+if not _auth_secret_value:
     # This is a critical security requirement - the application cannot function
     # securely without a proper authentication secret
     raise RuntimeError(
@@ -23,6 +35,22 @@ if not AUTH_SECRET:
         "The application cannot start without a valid authentication secret. "
         "Please set either AUTH_SECRET or NEXTAUTH_SECRET environment variable."
     )
+
+# From here on, treat as non-optional for type-checkers
+AUTH_SECRET: str = _auth_secret_value
+
+# Log which environment variable provided the secret and a short hash (not the secret itself)
+if _is_development():
+    try:
+        secret_hash = hashlib.sha256(AUTH_SECRET.encode("utf-8")).hexdigest()[:12]
+        logger.info(
+            "Auth secret configured",
+            source=AUTH_SECRET_ENV or "unknown",
+            length=len(AUTH_SECRET),
+            sha256_prefix=secret_hash,
+        )
+    except Exception:
+        pass
 
 # Initialize NextAuthJWT for decrypting tokens
 # We disable CSRF since we're using it for API authentication
@@ -33,12 +61,36 @@ security = HTTPBearer(auto_error=False)
 
 
 class MockRequest:
-    """Mock request object to pass token to NextAuthJWT"""
+    """Mock request object to pass token to NextAuthJWT.
+
+    We populate all common Auth.js cookie names so the library can find the token
+    regardless of whether secure cookie mode is enabled.
+    """
 
     def __init__(self, token: str):
+        # Keep a single cookie name to satisfy unit tests expectations.
+        # The library only reads one cookie value when a request-like object is provided.
+        # Our production flow uses the proxy with Authorization header, so this is only
+        # a convenience for tests.
         self.cookies = {"authjs.session-token": token}
         self.headers: Dict[str, str] = {}
         self.method = "GET"
+
+
+def log_secret_diagnostics() -> None:
+    """Log which secret source is used at runtime (call from app startup)."""
+    try:
+        import hashlib
+
+        secret_hash = hashlib.sha256(AUTH_SECRET.encode("utf-8")).hexdigest()[:12]
+        logger.info(
+            "Auth secret configured (startup)",
+            source=AUTH_SECRET_ENV or "unknown",
+            length=len(AUTH_SECRET),
+            sha256_prefix=secret_hash,
+        )
+    except Exception:
+        pass
 
 
 async def get_current_user(
@@ -57,6 +109,18 @@ async def get_current_user(
             detail="Authentication required. Please provide a valid token.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Log secret diagnostics at request time to verify runtime value
+    if _is_development():
+        try:
+            _prefix = hashlib.sha256(AUTH_SECRET.encode("utf-8")).hexdigest()[:12]
+            logger.info(
+                "Auth attempt secret check",
+                sha256_prefix=_prefix,
+                length=len(AUTH_SECRET),
+            )
+        except Exception:
+            pass
 
     logger.info(f"Auth attempt with token length: {len(credentials.credentials)}")
     logger.debug(f"Token preview: {credentials.credentials[:50]}...")

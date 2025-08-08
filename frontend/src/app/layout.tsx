@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Hebrew } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -28,20 +28,23 @@ export const metadata: Metadata = {
 	title: "TodoHouse",
 	description: "Your home's best friend",
 	manifest: "/manifest.json",
-	themeColor: "#f97316",
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: "default",
 		title: "TodoHouse",
 	},
-	viewport: {
-		width: "device-width",
-		initialScale: 1,
-		maximumScale: 1,
-		userScalable: false,
-		viewportFit: "cover",
-	},
 };
+
+export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
+	maximumScale: 1,
+	userScalable: false,
+	viewportFit: "cover",
+	themeColor: "#f97316",
+};
+
+export const dynamic = "force-dynamic";
 
 export default async function RootLayout({
 	children,

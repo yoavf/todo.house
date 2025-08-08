@@ -1,8 +1,17 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Ensure Node.js runtime for compatibility with NextAuth auth() and cookies()
+export const runtime = "nodejs";
+// Make sure this route is always dynamic so cookies are read per-request
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+// Prefer explicit production API URL, with safe local fallback for dev
+const API_URL =
+	process.env.NEXT_PUBLIC_API_URL ||
+	process.env.API_URL ||
+	"http://localhost:8000";
 
 /**
  * Secure API proxy that handles authentication server-side.
@@ -17,16 +26,47 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
  * never leaves the server.
  */
 
-async function getAuthToken(): Promise<string | null> {
+function parseCookieHeaderFor(
+	names: string[],
+	headerValue: string | null,
+): string | null {
+	if (!headerValue) return null;
+	const pairs = headerValue.split(/;\s*/);
+	const lookup: Record<string, string> = {};
+	for (const pair of pairs) {
+		const [rawKey, ...rest] = pair.split("=");
+		const key = rawKey?.trim();
+		if (!key) continue;
+		lookup[key] = rest.join("=");
+	}
+	for (const name of names) {
+		if (lookup[name]) return lookup[name];
+	}
+	return null;
+}
+
+async function getAuthToken(request: NextRequest): Promise<string | null> {
 	try {
 		const cookieStore = await cookies();
-		// NextAuth v5 session token (encrypted JWT)
-		const sessionToken =
-			cookieStore.get("authjs.session-token")?.value ||
-			cookieStore.get("__Secure-authjs.session-token")?.value ||
-			cookieStore.get("__Host-authjs.session-token")?.value;
+		// Try standard NextAuth cookie names first
+		const names = [
+			"authjs.session-token",
+			"__Secure-authjs.session-token",
+			"__Host-authjs.session-token",
+		];
+		for (const name of names) {
+			const value = cookieStore.get(name)?.value;
+			if (value) return value;
+		}
 
-		return sessionToken || null;
+		// Fallback: parse the Cookie header directly (defensive)
+		const headerToken = parseCookieHeaderFor(
+			names,
+			request.headers.get("cookie"),
+		);
+		if (headerToken) return headerToken;
+
+		return null;
 	} catch (error) {
 		console.error("Error getting auth token:", error);
 		return null;
@@ -38,48 +78,34 @@ async function handleRequest(
 	method: string,
 	params: { path: string[] },
 ) {
-	// Check if user is authenticated
-	const session = await auth();
-	console.log("[Proxy] Session check:", {
-		hasSession: !!session,
-		userEmail: session?.user?.email,
-		userId: session?.user?.id,
-	});
+	// Get the API path from the catch-all route
+	const apiPath = params.path.join("/");
+	const originalUrl = new URL(request.url);
+	const originalHasTrailingSlash = originalUrl.pathname.endsWith("/");
 
-	if (!session) {
-		console.log("[Proxy] No session, returning 401");
+	// Get auth token for backend
+	const token = await getAuthToken(request);
+	if (!token) {
 		return NextResponse.json(
 			{ error: "Authentication required" },
 			{ status: 401 },
 		);
 	}
 
-	// Get the API path from the catch-all route
-	const apiPath = params.path.join("/");
-
-	// Get auth token for backend
-	const token = await getAuthToken();
-	console.log("[Proxy] Token check:", {
-		hasToken: !!token,
-		tokenLength: token?.length,
-		tokenPreview: token?.substring(0, 50),
-	});
-
-	if (!token) {
-		console.log("[Proxy] No token available, returning 401");
-		return NextResponse.json(
-			{ error: "No session token available" },
-			{ status: 401 },
-		);
+	// Build the backend URL, avoiding FastAPI 307 redirects on collection endpoints
+	const isTopLevelCollection = !apiPath.includes("/");
+	const mustHaveTrailingSlash = isTopLevelCollection;
+	const baseBackendPath = `${API_URL}/api/${apiPath}`;
+	const backendUrl = `${baseBackendPath}${
+		mustHaveTrailingSlash || originalHasTrailingSlash ? "/" : ""
+	}${originalUrl.search}`;
+	if (process.env.NODE_ENV !== "production") {
+		// eslint-disable-next-line no-console
+		console.log("[Proxy] Backend request", { backendUrl });
 	}
 
-	// Build the backend URL
-	const backendUrl = `${API_URL}/api/${apiPath}${request.nextUrl.search}`;
-
 	// Prepare headers
-	const headers: HeadersInit = {
-		Authorization: `Bearer ${token}`,
-	};
+	const headers: HeadersInit = { Authorization: `Bearer ${token}` };
 
 	// Forward content-type if present and not multipart
 	const contentType = request.headers.get("content-type");
@@ -109,7 +135,31 @@ async function handleRequest(
 
 	try {
 		// Make the request to the backend
-		const response = await fetch(backendUrl, requestOptions);
+		let response = await fetch(backendUrl, requestOptions);
+		if (process.env.NODE_ENV !== "production") {
+			// eslint-disable-next-line no-console
+			console.log("[Proxy] First response status", { status: response.status });
+		}
+
+		// Handle potential redirect from missing trailing slash on collection endpoints
+		if (
+			response.status === 307 ||
+			response.status === 308 ||
+			response.status === 301 ||
+			response.status === 302
+		) {
+			const location = response.headers.get("location");
+			if (location && requestOptions.method === "GET") {
+				const redirectedUrl = location.startsWith("http")
+					? location
+					: `${API_URL}${location.startsWith("/") ? "" : "/"}${location}`;
+				if (process.env.NODE_ENV !== "production") {
+					// eslint-disable-next-line no-console
+					console.log("[Proxy] Following redirect", { redirectedUrl });
+				}
+				response = await fetch(redirectedUrl, requestOptions);
+			}
+		}
 
 		// Create response with same status and headers
 		const responseHeaders = new Headers();
@@ -119,6 +169,7 @@ async function handleRequest(
 			"content-type",
 			"content-length",
 			"cache-control",
+			"content-disposition",
 		];
 		headersToForward.forEach((header) => {
 			const value = response.headers.get(header);
@@ -143,46 +194,36 @@ async function handleRequest(
 }
 
 // Handle all HTTP methods
-export async function GET(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function GET(request: NextRequest, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "GET", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function POST(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function POST(request: NextRequest, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "POST", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function PUT(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function PUT(request: NextRequest, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "PUT", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function PATCH(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function PATCH(request: NextRequest, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "PATCH", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function DELETE(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function DELETE(request: NextRequest, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "DELETE", {
 		path: await Promise.resolve(params.path),
 	});

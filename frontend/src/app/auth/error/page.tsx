@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 
-export default function AuthErrorPage() {
+function AuthErrorPageInner() {
 	const searchParams = useSearchParams();
 	const error = searchParams.get("error");
 
@@ -50,5 +51,13 @@ export default function AuthErrorPage() {
 				</CardContent>
 			</Card>
 		</div>
+	);
+}
+
+export default function AuthErrorPage() {
+	return (
+		<Suspense fallback={<div className="min-h-screen" />}>
+			<AuthErrorPageInner />
+		</Suspense>
 	);
 }

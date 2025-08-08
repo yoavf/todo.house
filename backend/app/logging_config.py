@@ -70,6 +70,10 @@ class StructuredLogger:
             - Filters out any `None` values from `**kwargs`.
             - Adds the remaining fields to the log entry under the `extra_fields` key.
         """
+        # Respect the configured log level; skip if not enabled
+        if not self.logger.isEnabledFor(level):
+            return
+
         extra_fields = {k: v for k, v in kwargs.items() if v is not None}
 
         # Create a custom LogRecord with extra fields

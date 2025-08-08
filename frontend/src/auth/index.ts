@@ -44,6 +44,24 @@ if (providers.length === 0) {
 	);
 }
 
+// Ensure a single secret source and log a short hash prefix for verification
+const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+const AUTH_SECRET_SOURCE = process.env.AUTH_SECRET
+	? "AUTH_SECRET"
+	: process.env.NEXTAUTH_SECRET
+		? "NEXTAUTH_SECRET"
+		: "missing";
+if (!AUTH_SECRET) {
+	throw new Error("Missing AUTH secret. Set AUTH_SECRET or NEXTAUTH_SECRET");
+}
+if (process.env.NODE_ENV !== "production") {
+	// eslint-disable-next-line no-console
+	console.log("[Auth] Secret configured", {
+		source: AUTH_SECRET_SOURCE,
+		length: AUTH_SECRET.length,
+	});
+}
+
 export const authConfig: NextAuthConfig = {
 	providers,
 	pages: {
@@ -51,17 +69,9 @@ export const authConfig: NextAuthConfig = {
 		error: "/auth/error",
 		verifyRequest: "/auth/verify",
 	},
+	trustHost: true, // Important for production deployments
 	callbacks: {
 		async jwt({ token, user, account }) {
-			console.log("[Auth JWT Callback]", {
-				hasAccount: !!account,
-				hasUser: !!user,
-				userId: user?.id,
-				userEmail: user?.email,
-				provider: account?.provider,
-				providerAccountId: account?.providerAccountId,
-			});
-
 			// Initial sign in
 			if (account && user) {
 				// Use the provider account ID as the user ID if no user.id exists
@@ -71,50 +81,19 @@ export const authConfig: NextAuthConfig = {
 				token.name = user.name;
 				token.picture = user.image;
 			}
-
-			console.log("[Auth JWT Token]", {
-				sub: token.sub,
-				id: token.id,
-				email: token.email,
-			});
-
 			return token;
 		},
 		async session({ session, token }) {
-			console.log("[Auth Session Callback]", {
-				hasSession: !!session,
-				hasToken: !!token,
-				tokenSub: token?.sub,
-				tokenId: token?.id,
-				sessionEmail: session?.user?.email,
-			});
-
 			if (session.user && token) {
 				session.user.id = (token.id as string) || (token.sub as string);
 			}
 			return session;
 		},
 		async signIn({ user, account, profile }) {
-			console.log("[Auth SignIn Callback]", {
-				userEmail: user?.email,
-				userId: user?.id,
-				provider: account?.provider,
-				providerAccountId: account?.providerAccountId,
-			});
 			// Allow sign in
 			return true;
 		},
 		async redirect({ url, baseUrl }) {
-			console.log("[Auth Redirect Callback]", {
-				url,
-				baseUrl,
-				willRedirectTo: url.startsWith("/")
-					? `${baseUrl}${url}`
-					: new URL(url).origin === baseUrl
-						? url
-						: baseUrl,
-			});
-
 			// Allows relative callback URLs
 			if (url.startsWith("/")) return `${baseUrl}${url}`;
 			// Allows callback URLs on the same origin
@@ -125,6 +104,8 @@ export const authConfig: NextAuthConfig = {
 	session: {
 		strategy: "jwt",
 	},
+	// Explicitly set secret to ensure consistent usage in all environments
+	secret: AUTH_SECRET,
 };
 
 export const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
