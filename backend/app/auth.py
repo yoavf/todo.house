@@ -51,11 +51,15 @@ async def get_current_user(
     """
 
     if not credentials or not credentials.credentials:
+        logger.error("No credentials provided in request")
         raise HTTPException(
             status_code=401,
             detail="Authentication required. Please provide a valid token.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    logger.info(f"Auth attempt with token length: {len(credentials.credentials)}")
+    logger.debug(f"Token preview: {credentials.credentials[:50]}...")
 
     try:
         # Use fastapi-nextauth-jwt to decrypt the token
@@ -64,8 +68,10 @@ async def get_current_user(
 
         # Now use the library to decrypt
         token_data = nextauth(mock_request)
+        logger.info(f"Successfully decrypted NextAuth token for: {token_data.get('email')}")
 
-    except Exception:
+    except Exception as e:
+        logger.warning(f"NextAuth JWT decryption failed: {str(e)}")
         # If that doesn't work, the token might be a test token (base64 JSON)
         try:
             import base64
@@ -73,9 +79,9 @@ async def get_current_user(
             # Try to decode as base64 JSON (for testing)
             decoded = base64.b64decode(credentials.credentials + "==")
             token_data = json.loads(decoded)
-            pass
-        except Exception:
-            pass
+            logger.info("Using test token (base64 JSON)")
+        except Exception as test_error:
+            logger.error(f"Test token decoding also failed: {str(test_error)}")
             raise HTTPException(status_code=401, detail="Invalid authentication token")
 
     try:
@@ -122,13 +128,20 @@ async def get_current_user(
             user = result.scalar_one_or_none()
 
             if user:
-                # Update existing user's ID
+                # User exists with this email but different ID
+                # We cannot update the ID due to foreign key constraints
+                # Instead, use the existing user as-is
                 logger.info(
-                    "Updating existing user ID",
-                    old_id=str(user.id),
-                    new_id=str(user_uuid),
+                    "Found existing user with different ID, using existing",
+                    existing_id=str(user.id),
+                    token_id=str(user_uuid),
+                    email=user_email,
                 )
-                user.id = user_uuid
+                # Update metadata if needed
+                if user.name != user_name:
+                    user.name = user_name
+                if user.avatar_url != user_picture:
+                    user.avatar_url = user_picture
                 user.updated_at = datetime.now(timezone.utc)
             else:
                 # Create new user

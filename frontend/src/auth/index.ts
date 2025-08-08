@@ -53,6 +53,15 @@ export const authConfig: NextAuthConfig = {
 	},
 	callbacks: {
 		async jwt({ token, user, account }) {
+			console.log("[Auth JWT Callback]", {
+				hasAccount: !!account,
+				hasUser: !!user,
+				userId: user?.id,
+				userEmail: user?.email,
+				provider: account?.provider,
+				providerAccountId: account?.providerAccountId,
+			});
+
 			// Initial sign in
 			if (account && user) {
 				// Use the provider account ID as the user ID if no user.id exists
@@ -62,19 +71,50 @@ export const authConfig: NextAuthConfig = {
 				token.name = user.name;
 				token.picture = user.image;
 			}
+
+			console.log("[Auth JWT Token]", {
+				sub: token.sub,
+				id: token.id,
+				email: token.email,
+			});
+
 			return token;
 		},
 		async session({ session, token }) {
+			console.log("[Auth Session Callback]", {
+				hasSession: !!session,
+				hasToken: !!token,
+				tokenSub: token?.sub,
+				tokenId: token?.id,
+				sessionEmail: session?.user?.email,
+			});
+
 			if (session.user && token) {
 				session.user.id = (token.id as string) || (token.sub as string);
 			}
 			return session;
 		},
 		async signIn({ user, account, profile }) {
+			console.log("[Auth SignIn Callback]", {
+				userEmail: user?.email,
+				userId: user?.id,
+				provider: account?.provider,
+				providerAccountId: account?.providerAccountId,
+			});
 			// Allow sign in
 			return true;
 		},
 		async redirect({ url, baseUrl }) {
+			console.log("[Auth Redirect Callback]", {
+				url,
+				baseUrl,
+				willRedirectTo: url.startsWith("/")
+					? `${baseUrl}${url}`
+					: new URL(url).origin === baseUrl
+						? url
+						: baseUrl,
+			});
+
 			// Allows relative callback URLs
 			if (url.startsWith("/")) return `${baseUrl}${url}`;
 			// Allows callback URLs on the same origin

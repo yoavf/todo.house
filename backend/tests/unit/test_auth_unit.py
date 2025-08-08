@@ -241,10 +241,10 @@ class TestGetCurrentUser:
 
     @pytest.mark.asyncio
     @patch('app.auth.nextauth')
-    async def test_user_with_email_but_different_id_updates_id(
+    async def test_user_with_email_but_different_id_keeps_existing_id(
         self, mock_nextauth, mock_session, mock_credentials
     ):
-        """Test user with same email but different ID gets ID updated."""
+        """Test user with same email but different ID keeps existing ID to avoid FK violations."""
         old_user_id = uuid.uuid4()
         new_user_id = uuid.uuid4()
         
@@ -257,7 +257,8 @@ class TestGetCurrentUser:
         token_data = {
             "email": "test@example.com",
             "sub": str(new_user_id),
-            "name": "Test User",
+            "name": "Updated Name",
+            "picture": "https://example.com/pic.jpg",
         }
         mock_nextauth.return_value = token_data
         
@@ -272,8 +273,11 @@ class TestGetCurrentUser:
         
         await get_current_user(credentials=mock_credentials, session=mock_session)
         
-        # Verify ID was updated
-        assert existing_user.id == new_user_id
+        # Verify ID was NOT updated (to avoid FK violations)
+        assert existing_user.id == old_user_id
+        # But other fields should be updated
+        assert existing_user.name == "Updated Name"
+        assert existing_user.avatar_url == "https://example.com/pic.jpg"
         mock_session.commit.assert_called_once()
 
     @pytest.mark.asyncio

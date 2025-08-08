@@ -40,7 +40,14 @@ async function handleRequest(
 ) {
 	// Check if user is authenticated
 	const session = await auth();
+	console.log("[Proxy] Session check:", {
+		hasSession: !!session,
+		userEmail: session?.user?.email,
+		userId: session?.user?.id,
+	});
+
 	if (!session) {
+		console.log("[Proxy] No session, returning 401");
 		return NextResponse.json(
 			{ error: "Authentication required" },
 			{ status: 401 },
@@ -52,7 +59,14 @@ async function handleRequest(
 
 	// Get auth token for backend
 	const token = await getAuthToken();
+	console.log("[Proxy] Token check:", {
+		hasToken: !!token,
+		tokenLength: token?.length,
+		tokenPreview: token?.substring(0, 50),
+	});
+
 	if (!token) {
+		console.log("[Proxy] No token available, returning 401");
 		return NextResponse.json(
 			{ error: "No session token available" },
 			{ status: 401 },
