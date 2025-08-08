@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { NextAuthConfig } from "next-auth";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
@@ -56,18 +55,11 @@ if (!AUTH_SECRET) {
 	throw new Error("Missing AUTH secret. Set AUTH_SECRET or NEXTAUTH_SECRET");
 }
 if (process.env.NODE_ENV !== "production") {
-	try {
-		const prefix = createHash("sha256")
-			.update(AUTH_SECRET)
-			.digest("hex")
-			.slice(0, 12);
-		// eslint-disable-next-line no-console
-		console.log("[Auth] Secret configured", {
-			source: AUTH_SECRET_SOURCE,
-			length: AUTH_SECRET.length,
-			sha256_prefix: prefix,
-		});
-	} catch {}
+	// eslint-disable-next-line no-console
+	console.log("[Auth] Secret configured", {
+		source: AUTH_SECRET_SOURCE,
+		length: AUTH_SECRET.length,
+	});
 }
 
 export const authConfig: NextAuthConfig = {
