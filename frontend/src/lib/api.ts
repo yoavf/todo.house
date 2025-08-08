@@ -245,6 +245,18 @@ async function apiRequest<TResponse, TBody = unknown>(
 		throw new Error(errorMessage || `Request failed: ${response.statusText}`);
 	}
 
+	// Check if response has no content (204, 205, or Content-Length: 0)
+	// These responses should not be parsed as JSON
+	const contentLength = response.headers.get("content-length");
+	const hasNoContent =
+		response.status === 204 || response.status === 205 || contentLength === "0";
+
+	if (hasNoContent) {
+		// Return null for no-content responses
+		// TypeScript will need to handle this in the TResponse type
+		return null as TResponse;
+	}
+
 	return response.json();
 }
 
