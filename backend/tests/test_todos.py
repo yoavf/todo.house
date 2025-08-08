@@ -14,9 +14,7 @@ async def test_create_task(client: AsyncClient, setup_test_user, auth_headers: d
         "priority": "medium",
     }
 
-    response = await client.post(
-        "/api/tasks/", json=task_data, headers=auth_headers
-    )
+    response = await client.post("/api/tasks/", json=task_data, headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()
@@ -29,7 +27,9 @@ async def test_create_task(client: AsyncClient, setup_test_user, auth_headers: d
 
 
 @pytest.mark.asyncio
-async def test_get_tasks_empty(client: AsyncClient, setup_test_user, auth_headers: dict):
+async def test_get_tasks_empty(
+    client: AsyncClient, setup_test_user, auth_headers: dict
+):
     """Test getting tasks when none exist for user."""
     response = await client.get("/api/tasks/", headers=auth_headers)
 
@@ -38,7 +38,9 @@ async def test_get_tasks_empty(client: AsyncClient, setup_test_user, auth_header
 
 
 @pytest.mark.asyncio
-async def test_get_tasks_with_filter(client: AsyncClient, setup_test_user, auth_headers: dict):
+async def test_get_tasks_with_filter(
+    client: AsyncClient, setup_test_user, auth_headers: dict
+):
     """Test filtering tasks by status."""
 
     # Create an active task
@@ -63,9 +65,7 @@ async def test_get_tasks_with_filter(client: AsyncClient, setup_test_user, auth_
     )
 
     # Get only active tasks
-    response = await client.get(
-        "/api/tasks/?status=active", headers=auth_headers
-    )
+    response = await client.get("/api/tasks/?status=active", headers=auth_headers)
 
     tasks = response.json()
     assert len(tasks) == 1
@@ -141,17 +141,13 @@ async def test_delete_task(client: AsyncClient, setup_test_user, auth_headers: d
     task_id = create_response.json()["id"]
 
     # Delete the task
-    response = await client.delete(
-        f"/api/tasks/{task_id}", headers=auth_headers
-    )
+    response = await client.delete(f"/api/tasks/{task_id}", headers=auth_headers)
 
     assert response.status_code == 200
     assert response.json() == {"message": "Task deleted successfully"}
 
     # Verify it's gone
-    get_response = await client.get(
-        f"/api/tasks/{task_id}", headers=auth_headers
-    )
+    get_response = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
     assert get_response.status_code == 404
 
 

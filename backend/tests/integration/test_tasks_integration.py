@@ -16,7 +16,9 @@ from app.auth import get_current_user
 class TestTasksIntegration:
     """Integration tests for task functionality."""
 
-    async def test_task_lifecycle(self, client, test_user_id, db_session, auth_headers: dict):
+    async def test_task_lifecycle(
+        self, client, test_user_id, db_session, auth_headers: dict
+    ):
         """Test complete task lifecycle: create, read, update, complete, delete."""
         # 1. Create a task with all fields
         task_data = {
@@ -91,7 +93,9 @@ class TestTasksIntegration:
         db_task = await db_session.get(TaskModel, task_id)
         assert db_task is None
 
-    async def test_task_snooze_workflow(self, client, test_user_id, db_session, auth_headers: dict):
+    async def test_task_snooze_workflow(
+        self, client, test_user_id, db_session, auth_headers: dict
+    ):
         """Test snoozing and unsnoozing tasks."""
         # Create an active task
         task_data = {"title": "Task to snooze"}
@@ -101,9 +105,7 @@ class TestTasksIntegration:
         task_id = create_response.json()["id"]
 
         # Verify it appears in active tasks
-        active_response = await client.get(
-            "/api/tasks/active", headers=auth_headers
-        )
+        active_response = await client.get("/api/tasks/active", headers=auth_headers)
         active_tasks = active_response.json()
         assert any(t["id"] == task_id for t in active_tasks)
 
@@ -120,16 +122,12 @@ class TestTasksIntegration:
         assert snoozed["status"] == TaskStatus.SNOOZED.value
 
         # Verify it's in snoozed tasks
-        snoozed_response = await client.get(
-            "/api/tasks/snoozed", headers=auth_headers
-        )
+        snoozed_response = await client.get("/api/tasks/snoozed", headers=auth_headers)
         snoozed_tasks = snoozed_response.json()
         assert any(t["id"] == task_id for t in snoozed_tasks)
 
         # Verify it's NOT in active tasks
-        active_response2 = await client.get(
-            "/api/tasks/active", headers=auth_headers
-        )
+        active_response2 = await client.get("/api/tasks/active", headers=auth_headers)
         active_tasks2 = active_response2.json()
         assert not any(t["id"] == task_id for t in active_tasks2)
 
@@ -143,7 +141,9 @@ class TestTasksIntegration:
         assert unsnoozed["status"] == TaskStatus.ACTIVE.value
         assert unsnoozed["snoozed_until"] is None
 
-    async def test_task_filtering(self, client, test_user_id, db_session, auth_headers: dict):
+    async def test_task_filtering(
+        self, client, test_user_id, db_session, auth_headers: dict
+    ):
         """Test various task filtering options."""
         # Create tasks with different attributes
         tasks_data = [
@@ -210,8 +210,8 @@ class TestTasksIntegration:
         assert not any(t["title"] == "Active AI Task" for t in active_manual_tasks)
 
     async def test_task_with_location_integration(
-        self, client, test_user_id, db_session
-    , auth_headers: dict):
+        self, client, test_user_id, db_session, auth_headers: dict
+    ):
         """Test tasks with location references work correctly."""
         # Create a location
         location_data = {"name": "Workshop", "description": "Tools and projects"}
@@ -273,9 +273,7 @@ class TestTasksIntegration:
         """Test that tasks are properly isolated between users."""
         # User 1 creates a task
         task1_response = await client.post(
-            "/api/tasks/",
-            json={"title": "User 1 Private Task"},
-            headers=auth_headers
+            "/api/tasks/", json={"title": "User 1 Private Task"}, headers=auth_headers
         )
         assert task1_response.status_code == 200
         task1_id = task1_response.json()["id"]
@@ -292,44 +290,40 @@ class TestTasksIntegration:
         db_session.add(other_user)
         await db_session.commit()
         await db_session.refresh(other_user)
-        
+
         # Create temporary client with other user's auth
         from app.main import app
-        
+
         # Store existing overrides
         original_overrides = app.dependency_overrides.copy()
-        
+
         # Override for other user
         def override_get_db():
             return db_session
-        
+
         async def override_get_current_user():
             return other_user
-        
+
         app.dependency_overrides[get_session_dependency] = override_get_db
         app.dependency_overrides[get_current_user] = override_get_current_user
-        
+
         try:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as other_user_client:
                 # User 2 creates a task
                 task2_response = await other_user_client.post(
-                    "/api/tasks/",
-                    json={"title": "User 2 Private Task"}
+                    "/api/tasks/", json={"title": "User 2 Private Task"}
                 )
                 assert task2_response.status_code == 200
 
                 # User 2 cannot access User 1's task
-                get_response = await other_user_client.get(
-                    f"/api/tasks/{task1_id}"
-                )
+                get_response = await other_user_client.get(f"/api/tasks/{task1_id}")
                 assert get_response.status_code == 404
 
                 # User 2 cannot update User 1's task
                 update_response = await other_user_client.put(
-                    f"/api/tasks/{task1_id}",
-                    json={"title": "Hacked!"}
+                    f"/api/tasks/{task1_id}", json={"title": "Hacked!"}
                 )
                 assert update_response.status_code == 404
 
@@ -348,7 +342,9 @@ class TestTasksIntegration:
         assert "User 1 Private Task" in user1_task_titles
         assert "User 2 Private Task" not in user1_task_titles
 
-    async def test_bulk_task_operations(self, client, test_user_id, db_session, auth_headers: dict):
+    async def test_bulk_task_operations(
+        self, client, test_user_id, db_session, auth_headers: dict
+    ):
         """Test creating and managing multiple tasks."""
         # Create 10 tasks with various attributes
         for i in range(10):
@@ -370,9 +366,7 @@ class TestTasksIntegration:
             assert response.status_code == 200
 
         # Get all tasks
-        all_tasks = await client.get(
-            "/api/tasks/", headers=auth_headers
-        )
+        all_tasks = await client.get("/api/tasks/", headers=auth_headers)
         tasks = all_tasks.json()
         bulk_tasks = [t for t in tasks if t["title"].startswith("Bulk task")]
         assert len(bulk_tasks) == 10

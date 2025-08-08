@@ -52,23 +52,27 @@ class PromptService:
         """
         # Try to find locale-specific prompt first, then fallback to default
         prompt_paths = self._get_prompt_paths(prompt_name, locale)
-        
+
         for prompt_file in prompt_paths:
             try:
                 with open(prompt_file, "r", encoding="utf-8") as f:
                     content = f.read().strip()
-                    logger.debug(f"Loaded prompt '{prompt_name}' (locale: {locale}) from {prompt_file}")
+                    logger.debug(
+                        f"Loaded prompt '{prompt_name}' (locale: {locale}) from {prompt_file}"
+                    )
                     return content
             except FileNotFoundError:
                 continue
             except Exception as e:
-                logger.error(f"Error reading prompt '{prompt_name}' from {prompt_file}: {e}")
+                logger.error(
+                    f"Error reading prompt '{prompt_name}' from {prompt_file}: {e}"
+                )
                 # Re-raise non-FileNotFoundError exceptions (like IOError, PermissionError, etc.)
                 # but only if this is the last path to try, otherwise continue to fallback
                 if prompt_file == prompt_paths[-1]:
                     raise
                 continue
-        
+
         # If we get here, no prompt file was found
         raise PromptNotFoundError(
             f"Prompt '{prompt_name}' not found for locale '{locale}' or default. "
@@ -78,33 +82,33 @@ class PromptService:
     def _get_prompt_paths(self, prompt_name: str, locale: str) -> List[str]:
         """
         Get ordered list of prompt file paths to try for a given prompt and locale.
-        
+
         Args:
             prompt_name: Name of the prompt (without .txt extension)
             locale: Locale code (e.g., 'en', 'he')
-            
+
         Returns:
             List of file paths in order of preference
         """
         paths = []
-        
+
         # 1. Try locale-specific prompt in locales subdirectory
         locale_specific_path = os.path.join(
             self.prompts_dir, "locales", locale, f"{prompt_name}.txt"
         )
         paths.append(locale_specific_path)
-        
+
         # 2. Try default locale (en) in locales subdirectory if not already trying en
         if locale != "en":
             default_locale_path = os.path.join(
                 self.prompts_dir, "locales", "en", f"{prompt_name}.txt"
             )
             paths.append(default_locale_path)
-        
+
         # 3. Try fallback prompt in root prompts directory
         fallback_path = os.path.join(self.prompts_dir, f"{prompt_name}.txt")
         paths.append(fallback_path)
-        
+
         return paths
 
     def list_available_prompts(self, locale: Optional[str] = None) -> Dict[str, str]:
@@ -137,7 +141,9 @@ class PromptService:
                         for filename in os.listdir(locale_dir):
                             if filename.endswith(".txt"):
                                 prompt_name = filename[:-4]
-                                prompts[f"{prompt_name}_{locale}"] = os.path.join(locale_dir, filename)
+                                prompts[f"{prompt_name}_{locale}"] = os.path.join(
+                                    locale_dir, filename
+                                )
                 else:
                     # List prompts for all locales
                     for locale_name in os.listdir(locales_dir):
@@ -146,7 +152,9 @@ class PromptService:
                             for filename in os.listdir(locale_dir):
                                 if filename.endswith(".txt"):
                                     prompt_name = filename[:-4]
-                                    prompts[f"{prompt_name}_{locale_name}"] = os.path.join(locale_dir, filename)
+                                    prompts[f"{prompt_name}_{locale_name}"] = (
+                                        os.path.join(locale_dir, filename)
+                                    )
 
         except Exception as e:
             logger.error(f"Error listing prompts: {e}")

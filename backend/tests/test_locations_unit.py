@@ -11,7 +11,9 @@ from app.database.models import User as UserModel
 class TestLocationEndpoints:
     """Test location CRUD operations."""
 
-    async def test_create_location_success(self, client, test_user_id, auth_headers: dict):
+    async def test_create_location_success(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test creating a new location."""
         location_data = {
             "name": "Living Room",
@@ -34,7 +36,9 @@ class TestLocationEndpoints:
         assert "id" in data
         assert data["user_id"] == str(test_user_id)
 
-    async def test_list_locations_active_only(self, client, test_user_id, auth_headers: dict):
+    async def test_list_locations_active_only(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test listing only active locations."""
         response = await client.get(
             "/locations/?active_only=true", headers=auth_headers
@@ -69,21 +73,19 @@ class TestLocationEndpoints:
         location_id = create_response.json()["id"]
 
         # Then get it by ID
-        response = await client.get(
-            f"/locations/{location_id}", headers=auth_headers
-        )
+        response = await client.get(f"/locations/{location_id}", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == location_id
         assert data["name"] == "Kitchen"
 
-    async def test_get_location_not_found(self, client, test_user_id, auth_headers: dict):
+    async def test_get_location_not_found(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test getting a non-existent location."""
         random_id = str(uuid.uuid4())
-        response = await client.get(
-            f"/locations/{random_id}", headers=auth_headers
-        )
+        response = await client.get(f"/locations/{random_id}", headers=auth_headers)
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Location not found"
@@ -122,7 +124,9 @@ class TestLocationEndpoints:
         assert data["is_default"] is False  # User-created location
         assert data["location_metadata"] == {"has_workbench": True}
 
-    async def test_delete_location_soft_delete(self, client, test_user_id, auth_headers: dict):
+    async def test_delete_location_soft_delete(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test soft deleting a location."""
         # First create a location
         location_data = {"name": "Basement", "description": "Storage area"}
@@ -151,7 +155,9 @@ class TestLocationEndpoints:
         if deleted_location:
             assert deleted_location["is_active"] is False
 
-    async def test_create_location_minimal_data(self, client, test_user_id, auth_headers: dict):
+    async def test_create_location_minimal_data(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test creating a location with minimal required data."""
         location_data = {"name": "Attic"}
 
@@ -167,11 +173,11 @@ class TestLocationEndpoints:
         assert data["is_active"] is True
         assert data["location_metadata"] is None
 
-    async def test_list_locations_includes_defaults(self, client, test_user_id, auth_headers: dict):
+    async def test_list_locations_includes_defaults(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that listing locations includes default locations."""
-        response = await client.get(
-            "/locations/", headers=auth_headers
-        )
+        response = await client.get("/locations/", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -187,7 +193,9 @@ class TestLocationEndpoints:
         defaults = [loc for loc in data if loc["is_from_defaults"]]
         assert len(defaults) >= 4
 
-    async def test_create_default_location_marks_as_default(self, client, test_user_id, auth_headers: dict):
+    async def test_create_default_location_marks_as_default(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that creating a location with a default name marks it as default."""
         location_data = {"name": "Kitchen", "description": "My kitchen"}
 
@@ -210,7 +218,9 @@ class TestLocationEndpoints:
         # The mock always returns valid data, so we're testing that the endpoint
         # properly handles the authenticated user.
         response = await client.post(
-            "/locations/", json=location_data, headers={"Authorization": "Bearer test-token"}
+            "/locations/",
+            json=location_data,
+            headers={"Authorization": "Bearer test-token"},
         )
 
         # With mocked auth, this should succeed
@@ -219,8 +229,8 @@ class TestLocationEndpoints:
         assert data["name"] == "Test Location"
 
     async def test_list_locations_with_saved_and_virtual_defaults(
-        self, client, test_user_id
-    , auth_headers: dict):
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test listing locations with mix of saved and virtual defaults."""
         # Create one default location (Kitchen)
         await client.post(
@@ -237,9 +247,7 @@ class TestLocationEndpoints:
         )
 
         # List locations
-        response = await client.get(
-            "/locations/", headers=auth_headers
-        )
+        response = await client.get("/locations/", headers=auth_headers)
 
         assert response.status_code == 200
         locations = response.json()
@@ -262,7 +270,9 @@ class TestLocationEndpoints:
         assert "Garden" in virtual_names
         assert "Bathroom" in virtual_names
 
-    async def test_update_location_not_found(self, client, test_user_id, auth_headers: dict):
+    async def test_update_location_not_found(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test updating non-existent location returns 404."""
         non_existent_id = uuid.uuid4()
 
@@ -275,7 +285,9 @@ class TestLocationEndpoints:
         assert response.status_code == 404
         assert "Location not found" in response.json()["detail"]
 
-    async def test_update_location_wrong_user(self, client, db_session, test_user_id, auth_headers: dict):
+    async def test_update_location_wrong_user(
+        self, client, db_session, test_user_id, auth_headers: dict
+    ):
         """Test updating location belonging to another user returns 404."""
         # Create location with user 1
         location_data = {"name": "Private Office"}
@@ -283,7 +295,7 @@ class TestLocationEndpoints:
             "/locations/", json=location_data, headers=auth_headers
         )
         location_id = create_response.json()["id"]
-        
+
         # Now create a different user and try to update
         other_user_id = str(uuid.uuid4())
         other_user = UserModel(
@@ -295,17 +307,17 @@ class TestLocationEndpoints:
         )
         db_session.add(other_user)
         await db_session.commit()
-        
+
         # Create client for other user
         from app.main import app
         from app.auth import get_current_user
-        
+
         async def override_get_current_user():
             return other_user
-            
+
         # Temporarily override just the user
         app.dependency_overrides[get_current_user] = override_get_current_user
-        
+
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as other_client:
@@ -314,14 +326,16 @@ class TestLocationEndpoints:
                 f"/locations/{location_id}",
                 json={"description": "Hacked!"},
             )
-        
+
         # Clean up override
         del app.dependency_overrides[get_current_user]
 
         assert response.status_code == 404
         assert "Location not found" in response.json()["detail"]
 
-    async def test_update_location_all_fields(self, client, test_user_id, auth_headers: dict):
+    async def test_update_location_all_fields(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test updating all fields of a location."""
         # Create location
         location_data = {"name": "Study Room", "description": "For reading"}
@@ -353,7 +367,9 @@ class TestLocationEndpoints:
         assert data["is_default"] is True  # Should be updated
         assert data["location_metadata"] == {"shelves": 5, "capacity": 1000}
 
-    async def test_delete_location_not_found(self, client, test_user_id, auth_headers: dict):
+    async def test_delete_location_not_found(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test deleting non-existent location returns 404."""
         non_existent_id = uuid.uuid4()
 
@@ -364,7 +380,9 @@ class TestLocationEndpoints:
         assert response.status_code == 404
         assert "Location not found" in response.json()["detail"]
 
-    async def test_delete_location_wrong_user(self, client, db_session, test_user_id, auth_headers: dict):
+    async def test_delete_location_wrong_user(
+        self, client, db_session, test_user_id, auth_headers: dict
+    ):
         """Test deleting location belonging to another user returns 404."""
         # Create location with user 1
         location_data = {"name": "Secret Lab"}
@@ -372,7 +390,7 @@ class TestLocationEndpoints:
             "/locations/", json=location_data, headers=auth_headers
         )
         location_id = create_response.json()["id"]
-        
+
         # Now create a different user and try to delete
         other_user_id = str(uuid.uuid4())
         other_user = UserModel(
@@ -384,25 +402,23 @@ class TestLocationEndpoints:
         )
         db_session.add(other_user)
         await db_session.commit()
-        
+
         # Create client for other user
         from app.main import app
         from app.auth import get_current_user
-        
+
         async def override_get_current_user():
             return other_user
-            
+
         # Temporarily override just the user
         app.dependency_overrides[get_current_user] = override_get_current_user
-        
+
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as other_client:
             # Try to delete with different user
-            response = await other_client.delete(
-                f"/locations/{location_id}"
-            )
-        
+            response = await other_client.delete(f"/locations/{location_id}")
+
         # Clean up override
         del app.dependency_overrides[get_current_user]
 
@@ -413,9 +429,7 @@ class TestLocationEndpoints:
         """Test listing locations for a user with no locations shows only defaults."""
         uuid.uuid4()
 
-        response = await client.get(
-            "/locations/", headers=auth_headers
-        )
+        response = await client.get("/locations/", headers=auth_headers)
 
         assert response.status_code == 200
         locations = response.json()

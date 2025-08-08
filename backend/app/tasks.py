@@ -14,16 +14,17 @@ from .models import (
     TaskSource,
     Location,
 )
-from .database import get_session_dependency, Task as TaskModel, Image as ImageModel, User as UserModel
+from .database import (
+    get_session_dependency,
+    Task as TaskModel,
+    Image as ImageModel,
+    User as UserModel,
+)
 from .database.models import Location as LocationModel
 from .services.task_service import TaskService
 from .services.snooze_service import SnoozeService, SnoozeOption
 from .logging_config import StructuredLogger
-from .locale_detection import (
-    get_locale_string,
-    detect_locale_and_metadata,
-    LocaleData
-)
+from .locale_detection import get_locale_string, detect_locale_and_metadata, LocaleData
 from .auth import get_current_user
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -37,14 +38,16 @@ async def get_locale_data_dependency(
 ) -> LocaleData:
     """
     FastAPI dependency for locale detection.
-    
+
     Returns a LocaleData object containing:
     - locale: The detected locale code (e.g., "en", "he")
     - locale_str: The full locale string for services (e.g., "en_US", "he_IL")
     - metadata: Full metadata about locale detection
     - source: Where the locale was detected from
     """
-    locale, metadata = await detect_locale_and_metadata(session, current_user.id, accept_language)
+    locale, metadata = await detect_locale_and_metadata(
+        session, current_user.id, accept_language
+    )
     locale_str = get_locale_string(locale)
     return LocaleData(locale, locale_str, metadata)
 
@@ -182,7 +185,7 @@ async def get_tasks(
     detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, current_user.id, accept_language
     )
-    
+
     # Build query conditions
     conditions = [TaskModel.user_id == current_user.id]
 
@@ -220,20 +223,22 @@ async def get_active_tasks(
     detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, current_user.id, accept_language
     )
-    
+
     query = select(TaskModel).where(
-        and_(TaskModel.user_id == current_user.id, TaskModel.status == TaskStatus.ACTIVE)
+        and_(
+            TaskModel.user_id == current_user.id, TaskModel.status == TaskStatus.ACTIVE
+        )
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    
+
     # Log locale information for monitoring
     logger.info(
         f"Active tasks request - User: {current_user.id}, Locale: {detected_locale}, "
         f"Locale source: {locale_metadata.get('source')}, "
         f"Accept-Language: {accept_language}, Tasks count: {len(tasks)}"
     )
-    
+
     # Convert locale to locale_str format expected by snooze service
     locale_str = get_locale_string(detected_locale)
     return await populate_task_related_data(tasks, session, locale_str)
@@ -249,20 +254,22 @@ async def get_snoozed_tasks(
     detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, current_user.id, accept_language
     )
-    
+
     query = select(TaskModel).where(
-        and_(TaskModel.user_id == current_user.id, TaskModel.status == TaskStatus.SNOOZED)
+        and_(
+            TaskModel.user_id == current_user.id, TaskModel.status == TaskStatus.SNOOZED
+        )
     )
     result = await session.execute(query)
     tasks = result.scalars().all()
-    
+
     # Log locale information for monitoring
     logger.info(
         f"Snoozed tasks request - User: {current_user.id}, Locale: {detected_locale}, "
         f"Locale source: {locale_metadata.get('source')}, "
         f"Accept-Language: {accept_language}, Tasks count: {len(tasks)}"
     )
-    
+
     # Convert locale to locale_str format expected by snooze service
     locale_str = get_locale_string(detected_locale)
     return await populate_task_related_data(tasks, session, locale_str)
@@ -322,7 +329,7 @@ async def get_task(
     detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, current_user.id, accept_language
     )
-    
+
     query = select(TaskModel).where(
         and_(TaskModel.id == task_id, TaskModel.user_id == current_user.id)
     )
@@ -423,7 +430,7 @@ async def snooze_task(
         session, current_user.id, accept_language
     )
     locale_str = get_locale_string(detected_locale)
-    
+
     # Get existing task
     query = select(TaskModel).where(
         and_(TaskModel.id == task_id, TaskModel.user_id == current_user.id)
@@ -505,7 +512,9 @@ async def create_ai_task(
     session: AsyncSession = Depends(get_session_dependency),
 ):
     """Create a task from AI image analysis with automatic priority based on confidence"""
-    created_task = await TaskService.create_single_ai_task(session, task, current_user.id)
+    created_task = await TaskService.create_single_ai_task(
+        session, task, current_user.id
+    )
     if not created_task:
         raise HTTPException(status_code=500, detail="Failed to create AI task")
     return created_task
@@ -521,7 +530,8 @@ async def get_ai_tasks_with_images(
     # TODO: Add proper join with Image model when needed
     query = select(TaskModel).where(
         and_(
-            TaskModel.user_id == current_user.id, TaskModel.source == TaskSource.AI_GENERATED
+            TaskModel.user_id == current_user.id,
+            TaskModel.source == TaskSource.AI_GENERATED,
         )
     )
     result = await session.execute(query)

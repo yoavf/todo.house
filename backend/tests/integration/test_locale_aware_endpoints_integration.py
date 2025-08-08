@@ -16,16 +16,24 @@ class TestImageAnalysisLocaleIntegration:
         # Create a minimal 1x1 pixel JPEG image
         import io
         from PIL import Image
-        
-        img = Image.new('RGB', (1, 1), color='red')
+
+        img = Image.new("RGB", (1, 1), color="red")
         img_bytes = io.BytesIO()
-        img.save(img_bytes, format='JPEG')
+        img.save(img_bytes, format="JPEG")
         return img_bytes.getvalue()
 
-    async def test_image_analysis_with_english_locale(self, client: AsyncClient, setup_test_user, auth_headers: dict, sample_image_data):
+    async def test_image_analysis_with_english_locale(
+        self,
+        client: AsyncClient,
+        setup_test_user,
+        auth_headers: dict,
+        sample_image_data,
+    ):
         """Test image analysis endpoint with English Accept-Language header."""
         # Mock the AI provider and prompt service
-        with patch('app.images.create_image_processing_service') as mock_service_factory:
+        with patch(
+            "app.images.create_image_processing_service"
+        ) as mock_service_factory:
             mock_service = MagicMock(spec=ImageProcessingService)
             mock_service.analyze_image_and_generate_tasks.return_value = {
                 "image_metadata": {"original_size": 100, "processed_size": 80},
@@ -36,12 +44,12 @@ class TestImageAnalysisLocaleIntegration:
                         "description": "Test description",
                         "priority": "medium",
                         "category": "general",
-                        "confidence": 0.8
+                        "confidence": 0.8,
                     }
                 ],
                 "processing_time": 1.0,
                 "provider_used": "test",
-                "retry_count": 0
+                "retry_count": 0,
             }
             mock_service_factory.return_value = mock_service
             headers = auth_headers.copy()
@@ -50,19 +58,27 @@ class TestImageAnalysisLocaleIntegration:
                 "/api/images/analyze",
                 headers=headers,
                 files={"image": ("test.jpg", sample_image_data, "image/jpeg")},
-                data={"generate_tasks": "true"}
+                data={"generate_tasks": "true"},
             )
 
         assert response.status_code == 200
-        
+
         # Verify that the service was called with English locale
         mock_service.analyze_image_and_generate_tasks.assert_called_once()
         call_args = mock_service.analyze_image_and_generate_tasks.call_args
         assert call_args.kwargs["locale"] == "en"
 
-    async def test_image_analysis_with_hebrew_locale(self, client: AsyncClient, setup_test_user, auth_headers: dict, sample_image_data):
+    async def test_image_analysis_with_hebrew_locale(
+        self,
+        client: AsyncClient,
+        setup_test_user,
+        auth_headers: dict,
+        sample_image_data,
+    ):
         """Test image analysis endpoint with Hebrew Accept-Language header."""
-        with patch('app.images.create_image_processing_service') as mock_service_factory:
+        with patch(
+            "app.images.create_image_processing_service"
+        ) as mock_service_factory:
             mock_service = MagicMock(spec=ImageProcessingService)
             mock_service.analyze_image_and_generate_tasks.return_value = {
                 "image_metadata": {"original_size": 100, "processed_size": 80},
@@ -73,12 +89,12 @@ class TestImageAnalysisLocaleIntegration:
                         "description": "תיאור בדיקה",
                         "priority": "medium",
                         "category": "general",
-                        "confidence": 0.8
+                        "confidence": 0.8,
                     }
                 ],
                 "processing_time": 1.0,
                 "provider_used": "test",
-                "retry_count": 0
+                "retry_count": 0,
             }
             mock_service_factory.return_value = mock_service
 
@@ -88,19 +104,27 @@ class TestImageAnalysisLocaleIntegration:
                 "/api/images/analyze",
                 headers=headers,
                 files={"image": ("test.jpg", sample_image_data, "image/jpeg")},
-                data={"generate_tasks": "true"}
+                data={"generate_tasks": "true"},
             )
 
         assert response.status_code == 200
-        
+
         # Verify that the service was called with Hebrew locale
         mock_service.analyze_image_and_generate_tasks.assert_called_once()
         call_args = mock_service.analyze_image_and_generate_tasks.call_args
         assert call_args.kwargs["locale"] == "he"
 
-    async def test_image_analysis_with_unsupported_locale_fallback(self, client: AsyncClient, setup_test_user, auth_headers: dict, sample_image_data):
+    async def test_image_analysis_with_unsupported_locale_fallback(
+        self,
+        client: AsyncClient,
+        setup_test_user,
+        auth_headers: dict,
+        sample_image_data,
+    ):
         """Test image analysis endpoint with unsupported locale falls back to English."""
-        with patch('app.images.create_image_processing_service') as mock_service_factory:
+        with patch(
+            "app.images.create_image_processing_service"
+        ) as mock_service_factory:
             mock_service = MagicMock(spec=ImageProcessingService)
             mock_service.analyze_image_and_generate_tasks.return_value = {
                 "image_metadata": {"original_size": 100, "processed_size": 80},
@@ -108,7 +132,7 @@ class TestImageAnalysisLocaleIntegration:
                 "tasks": [],
                 "processing_time": 1.0,
                 "provider_used": "test",
-                "retry_count": 0
+                "retry_count": 0,
             }
             mock_service_factory.return_value = mock_service
 
@@ -118,19 +142,27 @@ class TestImageAnalysisLocaleIntegration:
                 "/api/images/analyze",
                 headers=headers,
                 files={"image": ("test.jpg", sample_image_data, "image/jpeg")},
-                data={"generate_tasks": "true"}
+                data={"generate_tasks": "true"},
             )
 
         assert response.status_code == 200
-        
+
         # Verify that the service was called with default English locale
         mock_service.analyze_image_and_generate_tasks.assert_called_once()
         call_args = mock_service.analyze_image_and_generate_tasks.call_args
         assert call_args.kwargs["locale"] == "en"
 
-    async def test_image_analysis_without_accept_language_header(self, client: AsyncClient, setup_test_user, auth_headers: dict, sample_image_data):
+    async def test_image_analysis_without_accept_language_header(
+        self,
+        client: AsyncClient,
+        setup_test_user,
+        auth_headers: dict,
+        sample_image_data,
+    ):
         """Test image analysis endpoint without Accept-Language header defaults to English."""
-        with patch('app.images.create_image_processing_service') as mock_service_factory:
+        with patch(
+            "app.images.create_image_processing_service"
+        ) as mock_service_factory:
             mock_service = MagicMock(spec=ImageProcessingService)
             mock_service.analyze_image_and_generate_tasks.return_value = {
                 "image_metadata": {"original_size": 100, "processed_size": 80},
@@ -138,7 +170,7 @@ class TestImageAnalysisLocaleIntegration:
                 "tasks": [],
                 "processing_time": 1.0,
                 "provider_used": "test",
-                "retry_count": 0
+                "retry_count": 0,
             }
             mock_service_factory.return_value = mock_service
 
@@ -146,11 +178,11 @@ class TestImageAnalysisLocaleIntegration:
                 "/api/images/analyze",
                 headers=auth_headers,
                 files={"image": ("test.jpg", sample_image_data, "image/jpeg")},
-                data={"generate_tasks": "true"}
+                data={"generate_tasks": "true"},
             )
 
         assert response.status_code == 200
-        
+
         # Verify that the service was called with default English locale
         mock_service.analyze_image_and_generate_tasks.assert_called_once()
         call_args = mock_service.analyze_image_and_generate_tasks.call_args
@@ -161,55 +193,53 @@ class TestImageAnalysisLocaleIntegration:
 class TestTaskEndpointsLocaleIntegration:
     """Integration tests for task endpoints with locale detection."""
 
-    async def test_get_tasks_with_english_locale(self, client: AsyncClient, setup_test_user, auth_headers: dict):
+    async def test_get_tasks_with_english_locale(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict
+    ):
         """Test get tasks endpoint with English Accept-Language header."""
         headers = auth_headers.copy()
         headers["Accept-Language"] = "en-US,en;q=0.9"
-        response = await client.get(
-            "/api/tasks/",
-            headers=headers
-        )
+        response = await client.get("/api/tasks/", headers=headers)
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
-    async def test_get_tasks_with_hebrew_locale(self, client: AsyncClient, setup_test_user, auth_headers: dict):
+    async def test_get_tasks_with_hebrew_locale(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict
+    ):
         """Test get tasks endpoint with Hebrew Accept-Language header."""
         headers = auth_headers.copy()
         headers["Accept-Language"] = "he-IL,he;q=0.9,en;q=0.8"
-        response = await client.get(
-            "/api/tasks/",
-            headers=headers
-        )
+        response = await client.get("/api/tasks/", headers=headers)
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
-    async def test_get_active_tasks_with_locale(self, client: AsyncClient, setup_test_user, auth_headers: dict):
+    async def test_get_active_tasks_with_locale(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict
+    ):
         """Test get active tasks endpoint with locale detection."""
         headers = auth_headers.copy()
         headers["Accept-Language"] = "he;q=0.9,en;q=0.8"
-        response = await client.get(
-            "/api/tasks/active",
-            headers=headers
-        )
+        response = await client.get("/api/tasks/active", headers=headers)
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
-    async def test_get_snoozed_tasks_with_locale(self, client: AsyncClient, setup_test_user, auth_headers: dict):
+    async def test_get_snoozed_tasks_with_locale(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict
+    ):
         """Test get snoozed tasks endpoint with locale detection."""
         headers = auth_headers.copy()
         headers["Accept-Language"] = "en-GB,en;q=0.9"
-        response = await client.get(
-            "/api/tasks/snoozed",
-            headers=headers
-        )
+        response = await client.get("/api/tasks/snoozed", headers=headers)
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
-    async def test_get_single_task_with_locale(self, client: AsyncClient, setup_test_user, auth_headers: dict):
+    async def test_get_single_task_with_locale(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict
+    ):
         """Test get single task endpoint with locale detection."""
         # First create a task
         create_response = await client.post(
@@ -221,27 +251,26 @@ class TestTaskEndpointsLocaleIntegration:
                 "priority": "medium",
                 "completed": False,
                 "status": "active",
-                "source": "manual"
-            }
+                "source": "manual",
+            },
         )
-        
+
         assert create_response.status_code == 200
         task_id = create_response.json()["id"]
 
         # Now get the task with locale
         headers = auth_headers.copy()
         headers["Accept-Language"] = "he-IL,he;q=0.9"
-        response = await client.get(
-            f"/api/tasks/{task_id}",
-            headers=headers
-        )
+        response = await client.get(f"/api/tasks/{task_id}", headers=headers)
 
         assert response.status_code == 200
         task_data = response.json()
         assert task_data["id"] == task_id
         assert "snooze_options" in task_data
 
-    async def test_snooze_task_with_locale(self, client: AsyncClient, setup_test_user, auth_headers: dict):
+    async def test_snooze_task_with_locale(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict
+    ):
         """Test snooze task endpoint with locale detection."""
         # First create a task
         create_response = await client.post(
@@ -253,10 +282,10 @@ class TestTaskEndpointsLocaleIntegration:
                 "priority": "medium",
                 "completed": False,
                 "status": "active",
-                "source": "manual"
-            }
+                "source": "manual",
+            },
         )
-        
+
         assert create_response.status_code == 200
         task_id = create_response.json()["id"]
 
@@ -266,7 +295,7 @@ class TestTaskEndpointsLocaleIntegration:
         response = await client.post(
             f"/api/tasks/{task_id}/snooze",
             headers=headers,
-            json={"snooze_option": "context_sensitive"}
+            json={"snooze_option": "context_sensitive"},
         )
 
         assert response.status_code == 200
@@ -274,17 +303,18 @@ class TestTaskEndpointsLocaleIntegration:
         assert task_data["status"] == "snoozed"
         assert task_data["snoozed_until"] is not None
 
-    async def test_tasks_without_accept_language_header(self, client: AsyncClient, setup_test_user, auth_headers: dict):
+    async def test_tasks_without_accept_language_header(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict
+    ):
         """Test task endpoints without Accept-Language header default to English."""
-        response = await client.get(
-            "/api/tasks/",
-            headers=auth_headers
-        )
+        response = await client.get("/api/tasks/", headers=auth_headers)
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
-    async def test_complex_accept_language_headers(self, client: AsyncClient, setup_test_user, auth_headers: dict):
+    async def test_complex_accept_language_headers(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict
+    ):
         """Test task endpoints with complex Accept-Language headers."""
         test_cases = [
             # Chrome-like header with Hebrew preference
@@ -298,10 +328,7 @@ class TestTaskEndpointsLocaleIntegration:
         for header in test_cases:
             headers = auth_headers.copy()
             headers["Accept-Language"] = header
-            response = await client.get(
-                "/api/tasks/active",
-                headers=headers
-            )
+            response = await client.get("/api/tasks/active", headers=headers)
             assert response.status_code == 200, f"Failed for header: {header}"
             assert isinstance(response.json(), list)
 
@@ -310,43 +337,50 @@ class TestTaskEndpointsLocaleIntegration:
 class TestLocaleLoggingIntegration:
     """Integration tests for locale information in API response logging."""
 
-    async def test_locale_logging_in_task_endpoints(self, client: AsyncClient, setup_test_user, auth_headers: dict, caplog):
+    async def test_locale_logging_in_task_endpoints(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict, caplog
+    ):
         """Test that locale information is properly logged in task endpoints."""
         import logging
-        
+
         # Set log level to capture info messages
         caplog.set_level(logging.INFO)
 
         headers = auth_headers.copy()
         headers["Accept-Language"] = "he-IL,he;q=0.9,en;q=0.8"
-        response = await client.get(
-            "/api/tasks/",
-            headers=headers
-        )
+        response = await client.get("/api/tasks/", headers=headers)
 
         assert response.status_code == 200
-        
+
         # Check that locale information was logged
         log_messages = [record.message for record in caplog.records]
-        locale_logs = [msg for msg in log_messages if "Locale: he" in msg and "Accept-Language:" in msg]
+        locale_logs = [
+            msg
+            for msg in log_messages
+            if "Locale: he" in msg and "Accept-Language:" in msg
+        ]
         assert len(locale_logs) > 0, f"No locale logging found in: {log_messages}"
 
-    async def test_locale_logging_in_image_analysis(self, client: AsyncClient, setup_test_user, auth_headers: dict, caplog):
+    async def test_locale_logging_in_image_analysis(
+        self, client: AsyncClient, setup_test_user, auth_headers: dict, caplog
+    ):
         """Test that locale information is properly logged in image analysis endpoint."""
         import logging
         from PIL import Image
         import io
-        
+
         # Set log level to capture info messages
         caplog.set_level(logging.INFO)
-        
+
         # Create a minimal valid JPEG image
-        img = Image.new('RGB', (1, 1), color='red')
+        img = Image.new("RGB", (1, 1), color="red")
         img_bytes = io.BytesIO()
-        img.save(img_bytes, format='JPEG')
+        img.save(img_bytes, format="JPEG")
         sample_image_data = img_bytes.getvalue()
 
-        with patch('app.images.create_image_processing_service') as mock_service_factory:
+        with patch(
+            "app.images.create_image_processing_service"
+        ) as mock_service_factory:
             mock_service = MagicMock(spec=ImageProcessingService)
             mock_service.analyze_image_and_generate_tasks.return_value = {
                 "image_metadata": {"original_size": 100, "processed_size": 80},
@@ -354,7 +388,7 @@ class TestLocaleLoggingIntegration:
                 "tasks": [],
                 "processing_time": 1.0,
                 "provider_used": "test",
-                "retry_count": 0
+                "retry_count": 0,
             }
             mock_service_factory.return_value = mock_service
 
@@ -364,12 +398,16 @@ class TestLocaleLoggingIntegration:
                 "/api/images/analyze",
                 headers=headers,
                 files={"image": ("test.jpg", sample_image_data, "image/jpeg")},
-                data={"generate_tasks": "true"}
+                data={"generate_tasks": "true"},
             )
 
         assert response.status_code == 200
-        
+
         # Check that locale information was logged
         log_messages = [record.message for record in caplog.records]
-        locale_logs = [msg for msg in log_messages if "Locale: he" in msg and "Accept-Language:" in msg]
+        locale_logs = [
+            msg
+            for msg in log_messages
+            if "Locale: he" in msg and "Accept-Language:" in msg
+        ]
         assert len(locale_logs) > 0, f"No locale logging found in: {log_messages}"

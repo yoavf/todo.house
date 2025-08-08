@@ -17,7 +17,9 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
-async def test_create_and_retrieve_task(client: AsyncClient, setup_test_user, auth_headers: dict):
+async def test_create_and_retrieve_task(
+    client: AsyncClient, setup_test_user, auth_headers: dict
+):
     """Integration test: Create a task and verify it's stored."""
 
     task_data = {
@@ -25,7 +27,6 @@ async def test_create_and_retrieve_task(client: AsyncClient, setup_test_user, au
         "description": "This tests the full flow",
         "priority": "high",
     }
-
 
     # Create task
     create_response = await client.post(
@@ -37,9 +38,7 @@ async def test_create_and_retrieve_task(client: AsyncClient, setup_test_user, au
     task_id = created_task["id"]
 
     # Retrieve the specific task
-    get_response = await client.get(
-        f"/api/tasks/{task_id}", headers=auth_headers
-    )
+    get_response = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
 
     assert get_response.status_code == 200
     retrieved_task = get_response.json()

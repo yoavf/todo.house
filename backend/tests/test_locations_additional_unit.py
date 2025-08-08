@@ -9,7 +9,9 @@ from unittest.mock import patch
 class TestLocationsCoverage:
     """Additional tests to improve coverage for locations.py."""
 
-    async def test_create_location_with_logging(self, client, test_user_id, auth_headers: dict):
+    async def test_create_location_with_logging(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that location creation logs correctly."""
         with patch("app.locations.logger") as mock_logger:
             location_data = {"name": "Test Location", "description": "Test"}
@@ -27,12 +29,12 @@ class TestLocationsCoverage:
             assert "Created location" in log_message
             assert str(test_user_id) in log_message
 
-    async def test_list_locations_with_logging(self, client, test_user_id, auth_headers: dict):
+    async def test_list_locations_with_logging(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that listing locations logs correctly."""
         with patch("app.locations.logger") as mock_logger:
-            response = await client.get(
-                "/locations/", headers=auth_headers
-            )
+            response = await client.get("/locations/", headers=auth_headers)
 
             assert response.status_code == 200
             # Check that logger.info was called
@@ -41,7 +43,9 @@ class TestLocationsCoverage:
             assert "Retrieved" in log_message
             assert "locations for user" in log_message
 
-    async def test_update_location_with_logging(self, client, test_user_id, auth_headers: dict):
+    async def test_update_location_with_logging(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that location update logs correctly."""
         # First create a location
         location_data = {"name": "Original Name"}
@@ -64,7 +68,9 @@ class TestLocationsCoverage:
             log_message = mock_logger.info.call_args[0][0]
             assert "Updated location" in log_message
 
-    async def test_delete_location_with_logging(self, client, test_user_id, auth_headers: dict):
+    async def test_delete_location_with_logging(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that location deletion logs correctly."""
         # First create a location
         location_data = {"name": "To Delete"}
@@ -84,7 +90,9 @@ class TestLocationsCoverage:
             log_message = mock_logger.info.call_args[0][0]
             assert "Deleted location" in log_message
 
-    async def test_list_locations_inactive_included(self, client, test_user_id, auth_headers: dict):
+    async def test_list_locations_inactive_included(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test listing locations with active_only=False includes inactive."""
         # Create an active location
         active_loc = await client.post(
@@ -103,9 +111,7 @@ class TestLocationsCoverage:
         inactive_id = inactive_loc.json()["id"]
 
         # Deactivate it
-        await client.delete(
-            f"/locations/{inactive_id}", headers=auth_headers
-        )
+        await client.delete(f"/locations/{inactive_id}", headers=auth_headers)
 
         # List with active_only=False
         response = await client.get(
@@ -127,8 +133,8 @@ class TestLocationsCoverage:
         assert inactive_found
 
     async def test_list_locations_with_many_saved_and_defaults(
-        self, client, test_user_id
-    , auth_headers: dict):
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test list sorting with multiple saved locations and defaults."""
         # Create multiple custom locations
         custom_names = ["Office", "Garage", "Attic"]
@@ -149,9 +155,7 @@ class TestLocationsCoverage:
             )
 
         # List all locations
-        response = await client.get(
-            "/locations/", headers=auth_headers
-        )
+        response = await client.get("/locations/", headers=auth_headers)
 
         assert response.status_code == 200
         locations = response.json()
@@ -180,7 +184,9 @@ class TestLocationsCoverage:
         remaining_names = set(location_names[saved_default_start + len(default_used) :])
         assert remaining_defaults == remaining_names
 
-    async def test_create_location_with_full_metadata(self, client, test_user_id, auth_headers: dict):
+    async def test_create_location_with_full_metadata(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test creating location with complete metadata."""
         location_data = {
             "name": "Master Suite",
@@ -207,7 +213,9 @@ class TestLocationsCoverage:
         assert data["location_metadata"]["floor"] == 2
         assert data["location_metadata"]["closets"] == ["walk-in", "standard"]
 
-    async def test_update_location_partial_update(self, client, test_user_id, auth_headers: dict):
+    async def test_update_location_partial_update(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test partial update only updates specified fields."""
         # Create location with full data
         create_data = {
@@ -234,14 +242,14 @@ class TestLocationsCoverage:
         assert data["description"] == "Reading room"  # Updated
         assert data["location_metadata"]["has_desk"] is True  # Unchanged
 
-    async def test_list_locations_virtual_defaults_have_temp_ids(self, client, auth_headers: dict):
+    async def test_list_locations_virtual_defaults_have_temp_ids(
+        self, client, auth_headers: dict
+    ):
         """Test that virtual default locations have valid temporary UUIDs."""
         # Use a fresh user with no saved locations
         uuid.uuid4()
 
-        response = await client.get(
-            "/locations/", headers=auth_headers
-        )
+        response = await client.get("/locations/", headers=auth_headers)
 
         assert response.status_code == 200
         locations = response.json()

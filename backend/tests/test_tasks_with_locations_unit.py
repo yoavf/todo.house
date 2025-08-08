@@ -9,7 +9,9 @@ from app.models import TaskPriority
 class TestTasksWithLocations:
     """Test task operations with location references."""
 
-    async def test_create_task_with_location(self, client, test_user_id, auth_headers: dict):
+    async def test_create_task_with_location(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test creating a task with a location reference."""
         # First create a location
         location_data = {"name": "Garden"}
@@ -40,7 +42,9 @@ class TestTasksWithLocations:
         assert data["location"]["id"] == location_id
         assert data["location"]["name"] == "Garden"
 
-    async def test_get_task_with_location(self, client, test_user_id, auth_headers: dict):
+    async def test_get_task_with_location(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test retrieving a task includes location data."""
         # Create location and task
         location_data = {"name": "Kitchen"}
@@ -56,9 +60,7 @@ class TestTasksWithLocations:
         task_id = task_response.json()["id"]
 
         # Get the task
-        response = await client.get(
-            f"/api/tasks/{task_id}", headers=auth_headers
-        )
+        response = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -103,7 +105,9 @@ class TestTasksWithLocations:
         assert data["location"]["id"] == location2_id
         assert data["location"]["name"] == "Bedroom"
 
-    async def test_create_task_without_location(self, client, test_user_id, auth_headers: dict):
+    async def test_create_task_without_location(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test creating a task without a location reference."""
         task_data = {
             "title": "General task",
@@ -119,7 +123,9 @@ class TestTasksWithLocations:
         assert data["location_id"] is None
         assert data.get("location") is None
 
-    async def test_list_tasks_with_locations(self, client, test_user_id, auth_headers: dict):
+    async def test_list_tasks_with_locations(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test listing tasks includes location data."""
         # Create a location
         location_data = {"name": "Office"}
@@ -142,9 +148,7 @@ class TestTasksWithLocations:
         )
 
         # List all tasks
-        response = await client.get(
-            "/api/tasks/", headers=auth_headers
-        )
+        response = await client.get("/api/tasks/", headers=auth_headers)
 
         assert response.status_code == 200
         tasks = response.json()

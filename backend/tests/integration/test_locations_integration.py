@@ -16,7 +16,9 @@ from app.auth import get_current_user
 class TestLocationsIntegration:
     """Integration tests for location functionality."""
 
-    async def test_location_lifecycle(self, client, test_user_id, db_session, auth_headers: dict):
+    async def test_location_lifecycle(
+        self, client, test_user_id, db_session, auth_headers: dict
+    ):
         """Test complete location lifecycle: create, read, update, delete."""
         # 1. Create a location
         location_data = {
@@ -84,13 +86,11 @@ class TestLocationsIntegration:
         assert db_location.is_active is False
 
     async def test_default_locations_persistence(
-        self, client, test_user_id, db_session
-    , auth_headers: dict):
+        self, client, test_user_id, db_session, auth_headers: dict
+    ):
         """Test that using a default location persists it to database."""
         # List locations - should include virtual defaults
-        list_response = await client.get(
-            "/locations/", headers=auth_headers
-        )
+        list_response = await client.get("/locations/", headers=auth_headers)
 
         locations = list_response.json()
         kitchen_virtual = next(
@@ -120,9 +120,7 @@ class TestLocationsIntegration:
         assert db_kitchen.is_default is True
 
         # List again - Kitchen should no longer be virtual
-        list_response2 = await client.get(
-            "/locations/", headers=auth_headers
-        )
+        list_response2 = await client.get("/locations/", headers=auth_headers)
 
         locations2 = list_response2.json()
         kitchen_saved = next(
@@ -154,44 +152,44 @@ class TestLocationsIntegration:
         db_session.add(other_user)
         await db_session.commit()
         await db_session.refresh(other_user)
-        
+
         # Create temporary client with other user's auth
         from app.main import app
-        
+
         # Store existing overrides
         original_overrides = app.dependency_overrides.copy()
-        
+
         # Override for other user
         def override_get_db():
             return db_session
-        
+
         async def override_get_current_user():
             return other_user
-        
+
         app.dependency_overrides[get_session_dependency] = override_get_db
         app.dependency_overrides[get_current_user] = override_get_current_user
-        
+
         try:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as other_user_client:
                 # User 2 creates a location
-                location2_data = {"name": "User2 Office", "description": "Different office"}
+                location2_data = {
+                    "name": "User2 Office",
+                    "description": "Different office",
+                }
                 response2 = await other_user_client.post(
                     "/locations/", json=location2_data
                 )
                 assert response2.status_code == 201
 
                 # User 2 cannot access User 1's location
-                get_response = await other_user_client.get(
-                    f"/locations/{location1_id}"
-                )
+                get_response = await other_user_client.get(f"/locations/{location1_id}")
                 assert get_response.status_code == 404
 
                 # User 2 cannot update User 1's location
                 update_response = await other_user_client.patch(
-                    f"/locations/{location1_id}",
-                    json={"description": "Hacked!"}
+                    f"/locations/{location1_id}", json={"description": "Hacked!"}
                 )
                 assert update_response.status_code == 404
 
@@ -211,8 +209,8 @@ class TestLocationsIntegration:
         assert user1_locations[0]["name"] == "User1 Office"
 
     async def test_location_with_tasks_relationship(
-        self, client, test_user_id, db_session
-    , auth_headers: dict):
+        self, client, test_user_id, db_session, auth_headers: dict
+    ):
         """Test that locations work correctly with tasks."""
         # Create a location
         location_data = {"name": "Garage", "description": "Car storage and workshop"}
@@ -236,9 +234,7 @@ class TestLocationsIntegration:
             task_ids.append(task_response.json()["id"])
 
         # Get all tasks and verify location is populated
-        tasks_response = await client.get(
-            "/api/tasks/", headers=auth_headers
-        )
+        tasks_response = await client.get("/api/tasks/", headers=auth_headers)
 
         tasks = tasks_response.json()
         garage_tasks = [

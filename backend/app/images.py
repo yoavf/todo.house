@@ -35,9 +35,7 @@ from .logging_config import (
     set_correlation_id,
 )
 from .auth import get_current_user
-from .locale_detection import (
-    detect_locale_and_metadata
-)
+from .locale_detection import detect_locale_and_metadata
 
 logger = logging.getLogger(__name__)
 processing_logger = ImageProcessingLogger()
@@ -316,22 +314,23 @@ async def analyze_image(
     # Generate correlation ID for request tracking
     correlation_id = generate_correlation_id()
     set_correlation_id(correlation_id)
-    
+
     # Convert str(current_user.id) to UUID for locale detection
     try:
         user_uuid = current_user.id
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Invalid user ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID format"
         )
-    
+
     # Detect locale and get metadata in one call
     detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, user_uuid, accept_language
     )
-    
-    logger.info(f"Detected locale: {detected_locale} from source: {locale_metadata.get('source')}")
+
+    logger.info(
+        f"Detected locale: {detected_locale} from source: {locale_metadata.get('source')}"
+    )
 
     # Validate file upload
     if not image.filename:
@@ -366,7 +365,7 @@ async def analyze_image(
         content_type=image.content_type or "application/octet-stream",
         correlation_id=correlation_id,
     )
-    
+
     # Log locale detection for monitoring
     logger.info(
         f"Image analysis request - User: {current_user.id}, Locale: {detected_locale}, "
@@ -425,7 +424,9 @@ async def analyze_image(
         raise
 
     except Exception as e:
-        logger.error(f"Unexpected error during image analysis for user {current_user.id}: {e}")
+        logger.error(
+            f"Unexpected error during image analysis for user {current_user.id}: {e}"
+        )
         return _create_error_response(
             error_code="INTERNAL_ERROR",
             message="An unexpected error occurred",
@@ -639,7 +640,7 @@ async def proxy_image(
 
     This endpoint serves images through the backend to avoid CORS issues
     and mixed content problems when accessing from different IPs.
-    
+
     Note: This endpoint is public (no authentication required) to allow
     browser image loading. Images are only accessible if you know the UUID.
 

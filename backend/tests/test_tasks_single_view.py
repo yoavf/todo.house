@@ -12,7 +12,9 @@ from app.auth import get_current_user
 
 
 @pytest.mark.unit
-async def test_get_single_task_success(client: AsyncClient, test_user_id: str, auth_headers: dict):
+async def test_get_single_task_success(
+    client: AsyncClient, test_user_id: str, auth_headers: dict
+):
     """Test successful retrieval of a single task."""
     # Create a task first
     task_data = {
@@ -30,9 +32,7 @@ async def test_get_single_task_success(client: AsyncClient, test_user_id: str, a
     task_id = created_task["id"]
 
     # Get the single task
-    response = await client.get(
-        f"/api/tasks/{task_id}", headers=auth_headers
-    )
+    response = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
 
     assert response.status_code == 200
     task = response.json()
@@ -45,7 +45,9 @@ async def test_get_single_task_success(client: AsyncClient, test_user_id: str, a
 
 
 @pytest.mark.unit
-async def test_get_single_task_not_found(client: AsyncClient, test_user_id: str, auth_headers: dict):
+async def test_get_single_task_not_found(
+    client: AsyncClient, test_user_id: str, auth_headers: dict
+):
     """Test getting a non-existent task returns 404."""
     response = await client.get("/api/tasks/99999", headers=auth_headers)
 
@@ -54,7 +56,9 @@ async def test_get_single_task_not_found(client: AsyncClient, test_user_id: str,
 
 
 @pytest.mark.unit
-async def test_get_single_task_wrong_user(client: AsyncClient, test_user_id: str, auth_headers: dict, db_session: AsyncSession):
+async def test_get_single_task_wrong_user(
+    client: AsyncClient, test_user_id: str, auth_headers: dict, db_session: AsyncSession
+):
     """Test that users cannot access other users' tasks."""
     # Create a task
     task_data = {"title": "Private Task"}
@@ -63,7 +67,7 @@ async def test_get_single_task_wrong_user(client: AsyncClient, test_user_id: str
     )
     assert create_response.status_code == 200
     task_id = create_response.json()["id"]
-    
+
     # Create another user
     other_user_id = str(uuid.uuid4())
     other_user = UserModel(
@@ -76,31 +80,29 @@ async def test_get_single_task_wrong_user(client: AsyncClient, test_user_id: str
     db_session.add(other_user)
     await db_session.commit()
     await db_session.refresh(other_user)
-    
+
     # Create temporary client with other user's auth
     from app.main import app
-    
+
     # Store existing overrides
     original_overrides = app.dependency_overrides.copy()
-    
+
     # Override for other user
     def override_get_db():
         return db_session
-    
+
     async def override_get_current_user():
         return other_user
-    
+
     app.dependency_overrides[get_session_dependency] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
-    
+
     try:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as other_client:
             # Try to access with different user
-            response = await other_client.get(
-                f"/api/tasks/{task_id}"
-            )
+            response = await other_client.get(f"/api/tasks/{task_id}")
 
             assert response.status_code == 404
             assert response.json()["detail"] == "Task not found"
@@ -110,7 +112,9 @@ async def test_get_single_task_wrong_user(client: AsyncClient, test_user_id: str
 
 
 @pytest.mark.unit
-async def test_get_task_with_guide_content(client: AsyncClient, test_user_id: str, auth_headers: dict):
+async def test_get_task_with_guide_content(
+    client: AsyncClient, test_user_id: str, auth_headers: dict
+):
     """Test getting a task with how-to guide content."""
     task_data = {
         "title": "Install Light Fixture",
@@ -138,9 +142,7 @@ async def test_get_task_with_guide_content(client: AsyncClient, test_user_id: st
     task_id = create_response.json()["id"]
 
     # Get the task
-    response = await client.get(
-        f"/api/tasks/{task_id}", headers=auth_headers
-    )
+    response = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
 
     assert response.status_code == 200
     task = response.json()
@@ -151,7 +153,9 @@ async def test_get_task_with_guide_content(client: AsyncClient, test_user_id: st
 
 
 @pytest.mark.unit
-async def test_get_task_with_shopping_list(client: AsyncClient, test_user_id: str, auth_headers: dict):
+async def test_get_task_with_shopping_list(
+    client: AsyncClient, test_user_id: str, auth_headers: dict
+):
     """Test getting a task with shopping list content."""
     task_data = {
         "title": "Buy Plumbing Supplies",
@@ -174,9 +178,7 @@ async def test_get_task_with_shopping_list(client: AsyncClient, test_user_id: st
     task_id = create_response.json()["id"]
 
     # Get the task
-    response = await client.get(
-        f"/api/tasks/{task_id}", headers=auth_headers
-    )
+    response = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
 
     assert response.status_code == 200
     task = response.json()
@@ -188,7 +190,9 @@ async def test_get_task_with_shopping_list(client: AsyncClient, test_user_id: st
 
 
 @pytest.mark.unit
-async def test_get_task_with_checklist(client: AsyncClient, test_user_id: str, auth_headers: dict):
+async def test_get_task_with_checklist(
+    client: AsyncClient, test_user_id: str, auth_headers: dict
+):
     """Test getting a task with checklist content."""
     task_data = {
         "title": "Home Inspection Checklist",
@@ -209,9 +213,7 @@ async def test_get_task_with_checklist(client: AsyncClient, test_user_id: str, a
     task_id = create_response.json()["id"]
 
     # Get the task
-    response = await client.get(
-        f"/api/tasks/{task_id}", headers=auth_headers
-    )
+    response = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
 
     assert response.status_code == 200
     task = response.json()
@@ -256,9 +258,7 @@ async def test_get_task_with_image_urls(
     task_id = create_response.json()["id"]
 
     # Get the task
-    response = await client.get(
-        f"/api/tasks/{task_id}", headers=auth_headers
-    )
+    response = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
 
     assert response.status_code == 200
     task = response.json()

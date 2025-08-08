@@ -47,7 +47,7 @@ async def test_create_task_unit():
     # Mock the current user dependency
     mock_user = MagicMock(spec=UserModel)
     mock_user.id = uuid.UUID(user_id)
-    
+
     async def mock_get_current_user():
         return mock_user
 
@@ -58,9 +58,7 @@ async def test_create_task_unit():
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
-        response = await client.post(
-            "/api/tasks/", json=task_data
-        )
+        response = await client.post("/api/tasks/", json=task_data)
 
         # Since the endpoint creates a new TaskModel, we can't easily check the exact response
         # but we can verify the status code
@@ -130,10 +128,10 @@ async def test_get_tasks_unit():
     # Mock the current user dependency
     from app.auth import get_current_user
     from app.database import User as UserModel
-    
+
     mock_user = MagicMock(spec=UserModel)
     mock_user.id = uuid.UUID(user_id)
-    
+
     async def mock_get_current_user():
         return mock_user
 
@@ -179,10 +177,10 @@ async def test_delete_task_not_found():
     # Mock the current user dependency
     from app.auth import get_current_user
     from app.database import User as UserModel
-    
+
     mock_user = MagicMock(spec=UserModel)
     mock_user.id = uuid.UUID(user_id)
-    
+
     async def mock_get_current_user():
         return mock_user
 

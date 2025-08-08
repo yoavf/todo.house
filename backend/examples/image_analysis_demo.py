@@ -45,16 +45,16 @@ def create_test_image(color="red", size=(200, 200)):
 def create_test_jwt_token(user_id: str) -> str:
     """
     Create a test JWT token for authentication.
-    
+
     Args:
         user_id: The user ID to include in the token
-        
+
     Returns:
         str: JWT token
     """
     # Use test secret for demo (in production, this would be a secure secret)
     secret = "test-secret-key-for-jwt-encoding"
-    
+
     payload = {
         "sub": user_id,
         "email": f"demo-{user_id}@example.com",
@@ -62,7 +62,7 @@ def create_test_jwt_token(user_id: str) -> str:
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(hours=1),
     }
-    
+
     return jwt.encode(payload, secret, algorithm="HS256")
 
 

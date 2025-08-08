@@ -8,7 +8,9 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user, auth_headers: dict):
+async def test_full_todo_lifecycle(
+    client: AsyncClient, setup_test_user, auth_headers: dict
+):
     """Test creating, reading, updating, and deleting a todo."""
 
     # 1. Create a todo
@@ -29,9 +31,7 @@ async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user, auth_he
     print(f"\n✅ Created todo with ID: {todo_id}")
 
     # 2. Retrieve the todo
-    get_response = await client.get(
-        f"/api/tasks/{todo_id}", headers=auth_headers
-    )
+    get_response = await client.get(f"/api/tasks/{todo_id}", headers=auth_headers)
 
     assert get_response.status_code == 200
     retrieved_todo = get_response.json()
@@ -64,18 +64,14 @@ async def test_full_todo_lifecycle(client: AsyncClient, setup_test_user, auth_he
     print(f"✅ Listed {len(todos)} todo(s) for user")
 
     # 5. Delete the todo
-    delete_response = await client.delete(
-        f"/api/tasks/{todo_id}", headers=auth_headers
-    )
+    delete_response = await client.delete(f"/api/tasks/{todo_id}", headers=auth_headers)
 
     assert delete_response.status_code == 200
 
     print("✅ Deleted todo")
 
     # 6. Verify it's gone
-    verify_response = await client.get(
-        f"/api/tasks/{todo_id}", headers=auth_headers
-    )
+    verify_response = await client.get(f"/api/tasks/{todo_id}", headers=auth_headers)
 
     assert verify_response.status_code == 404
 
