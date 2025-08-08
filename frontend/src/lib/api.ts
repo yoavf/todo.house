@@ -280,18 +280,18 @@ async function apiRequest<TResponse, TBody = unknown>(
 
 export const tasksAPI = {
 	async getTasks(): Promise<Task[]> {
-		return apiRequest<Task[], never>("/api/tasks/");
+		return apiRequest<Task[], never>("/tasks/");
 	},
 
 	async createTask(task: TaskCreate): Promise<Task> {
-		return apiRequest<Task, TaskCreate>("/api/tasks/", {
+		return apiRequest<Task, TaskCreate>("/tasks/", {
 			method: "POST",
 			body: task,
 		});
 	},
 
 	async updateTask(id: number, update: TaskUpdate): Promise<Task> {
-		return apiRequest<Task, TaskUpdate>(`/api/tasks/${id}`, {
+		return apiRequest<Task, TaskUpdate>(`/tasks/${id}`, {
 			method: "PUT",
 			body: update,
 		});
@@ -300,27 +300,24 @@ export const tasksAPI = {
 	async deleteTask(id: number): Promise<void> {
 		// DELETE requests typically return 204 No Content
 		// apiRequest will handle this and return null
-		await apiRequest<null, never>(`/api/tasks/${id}`, {
+		await apiRequest<null, never>(`/tasks/${id}`, {
 			method: "DELETE",
 		});
 	},
 
 	async getTask(id: number): Promise<Task> {
-		return apiRequest<Task, never>(`/api/tasks/${id}`);
+		return apiRequest<Task, never>(`/tasks/${id}`);
 	},
 
 	async snoozeTask(id: number, snoozeOption: string): Promise<Task> {
-		return apiRequest<Task, { snooze_option: string }>(
-			`/api/tasks/${id}/snooze`,
-			{
-				method: "POST",
-				body: { snooze_option: snoozeOption },
-			},
-		);
+		return apiRequest<Task, { snooze_option: string }>(`/tasks/${id}/snooze`, {
+			method: "POST",
+			body: { snooze_option: snoozeOption },
+		});
 	},
 
 	async unsnoozeTask(id: number): Promise<Task> {
-		return apiRequest<Task, never>(`/api/tasks/${id}/unsnooze`, {
+		return apiRequest<Task, never>(`/tasks/${id}/unsnooze`, {
 			method: "POST",
 		});
 	},
@@ -331,25 +328,25 @@ export const tasksAPI = {
 		formData.append("generate_tasks", "true");
 
 		// apiRequest now handles FormData properly
-		return apiRequest<ImageAnalysisResponse, FormData>("/api/images/analyze", {
+		return apiRequest<ImageAnalysisResponse, FormData>("/images/analyze", {
 			method: "POST",
 			body: formData,
 		});
 	},
 
 	async getImage(imageId: string): Promise<ImageMetadata> {
-		return apiRequest<ImageMetadata, never>(`/api/images/${imageId}`);
+		return apiRequest<ImageMetadata, never>(`/images/${imageId}`);
 	},
 };
 
 export const userAPI = {
 	async getSettings(): Promise<UserSettings> {
-		return apiRequest<UserSettings, never>("/api/user-settings/me");
+		return apiRequest<UserSettings, never>("/user-settings/me");
 	},
 
 	async updateSettings(settings: Partial<UserSettings>): Promise<UserSettings> {
 		return apiRequest<UserSettings, Partial<UserSettings>>(
-			"/api/user-settings/me",
+			"/user-settings/me",
 			{
 				method: "PATCH",
 				body: settings,
