@@ -5,17 +5,6 @@ export default auth((req) => {
 	const isLoggedIn = !!req.auth;
 	const isAuthPage = req.nextUrl.pathname.startsWith("/auth");
 	const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
-	const pathname = req.nextUrl.pathname;
-
-	// Log auth state for debugging
-	console.log("[Middleware] Auth check:", {
-		pathname,
-		isLoggedIn,
-		isAuthPage,
-		isApiAuth,
-		hasAuth: !!req.auth,
-		authUser: req.auth?.user?.email,
-	});
 
 	// Don't redirect on auth API calls
 	if (isApiAuth) {
@@ -23,7 +12,6 @@ export default auth((req) => {
 	}
 
 	if (!isLoggedIn && !isAuthPage) {
-		console.log("[Middleware] Not logged in, redirecting to signin");
 		const signInUrl = new URL("/auth/signin", req.url);
 		signInUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
 		return NextResponse.redirect(signInUrl);
