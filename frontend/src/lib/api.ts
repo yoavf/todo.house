@@ -151,13 +151,48 @@ interface ApiRequestOptions<T = unknown> extends Omit<RequestInit, "body"> {
 }
 
 /**
- * Type guard to validate headers are string values
+ * Normalize headers to a plain object with string values
+ * Handles Headers instances, arrays of tuples, and plain objects
  */
-function isStringRecord(value: unknown): value is Record<string, string> {
-	if (!value || typeof value !== "object") {
-		return false;
+function normalizeHeaders(
+	headers: HeadersInit | undefined,
+): Record<string, string> {
+	if (!headers) {
+		return {};
 	}
-	return Object.values(value).every((v) => typeof v === "string");
+
+	// Handle Headers instance
+	if (headers instanceof Headers) {
+		const result: Record<string, string> = {};
+		headers.forEach((value, key) => {
+			result[key] = value;
+		});
+		return result;
+	}
+
+	// Handle array of tuples [key, value][]
+	if (Array.isArray(headers)) {
+		const result: Record<string, string> = {};
+		headers.forEach(([key, value]) => {
+			if (typeof key === "string" && typeof value === "string") {
+				result[key] = value;
+			}
+		});
+		return result;
+	}
+
+	// Handle plain object
+	if (typeof headers === "object") {
+		const result: Record<string, string> = {};
+		for (const [key, value] of Object.entries(headers)) {
+			if (typeof value === "string") {
+				result[key] = value;
+			}
+		}
+		return result;
+	}
+
+	return {};
 }
 
 /**
@@ -169,10 +204,8 @@ async function apiRequest<TResponse, TBody = unknown>(
 ): Promise<TResponse> {
 	const { body, ...fetchOptions } = options;
 
-	// Validate headers before spreading
-	const additionalHeaders = isStringRecord(fetchOptions.headers)
-		? fetchOptions.headers
-		: {};
+	// Normalize headers to ensure all HeadersInit types are handled correctly
+	const additionalHeaders = normalizeHeaders(fetchOptions.headers);
 
 	const requestOptions: RequestInit = {
 		...fetchOptions,
