@@ -136,7 +136,6 @@ class TestDetectLocaleFromHeader:
         assert detect_locale_from_header("invalid;;;header") == DEFAULT_LOCALE
 
 
-
 class TestGetLocaleString:
     """Test locale string conversion helper function."""
 
@@ -162,10 +161,14 @@ class TestGetLocaleString:
         # The function should handle lowercase input (which is what detect_locale_from_header returns)
         assert get_locale_string("en") == "en_US"
         assert get_locale_string("he") == "he_IL"
-        
+
         # Test uppercase (though not expected in normal usage)
-        assert get_locale_string("EN") == "en_US"  # Should fallback since mapping uses lowercase
-        assert get_locale_string("HE") == "en_US"  # Should fallback since mapping uses lowercase
+        assert (
+            get_locale_string("EN") == "en_US"
+        )  # Should fallback since mapping uses lowercase
+        assert (
+            get_locale_string("HE") == "en_US"
+        )  # Should fallback since mapping uses lowercase
 
     def test_consistency_with_supported_locales(self):
         """Test that all supported locales have mappings."""
@@ -231,4 +234,6 @@ class TestLocaleDetectionIntegration:
         for header, expected_locale_string in test_cases:
             detected_locale = detect_locale_from_header(header)
             locale_string = get_locale_string(detected_locale)
-            assert locale_string == expected_locale_string, f"Failed for header: {header}"
+            assert locale_string == expected_locale_string, (
+                f"Failed for header: {header}"
+            )

@@ -38,7 +38,7 @@ target_metadata = Base.metadata
 def get_database_url():
     """Get the database URL from environment variables."""
     database_url = app_config.database.database_url
-    
+
     # Fix database URL for async PostgreSQL if needed (same as in engine.py)
     if database_url.startswith("postgresql://"):
         # Convert to async PostgreSQL URL for asyncpg
@@ -46,7 +46,7 @@ def get_database_url():
     elif database_url.startswith("postgres://"):
         # Handle older Heroku-style postgres:// URLs
         database_url = database_url.replace("postgres://", "postgresql+asyncpg://")
-    
+
     return database_url
 
 

@@ -1,3 +1,10 @@
+/**
+ * API client - Uses proper authentication via NextAuth
+ */
+
+import { authenticatedFetch } from "./api-client";
+
+// Type definitions
 export type TaskType =
 	| "interior"
 	| "exterior"
@@ -117,21 +124,6 @@ export interface ImageAnalysisResponse {
 	retry_count: number;
 }
 
-const API_URL =
-	process.env.NEXT_PUBLIC_API_URL ||
-	(() => {
-		throw new Error(
-			"API URL is not defined. Please set NEXT_PUBLIC_API_URL in your environment.",
-		);
-	})();
-const TEST_USER_ID =
-	process.env.NEXT_PUBLIC_TEST_USER_ID ||
-	(() => {
-		throw new Error(
-			"User ID is not defined. Please set NEXT_PUBLIC_TEST_USER_ID in your environment.",
-		);
-	})();
-
 export interface ImageMetadata {
 	id: string;
 	url: string;
@@ -143,85 +135,194 @@ export interface ImageMetadata {
 	analysis_status: string;
 }
 
+export interface UserSettings {
+	notifications?: {
+		enabled?: boolean;
+		email?: boolean;
+		push?: boolean;
+	};
+	theme?: "light" | "dark" | "system";
+	language?: string;
+	timezone?: string;
+}
+
+interface ApiRequestOptions<T = unknown> extends Omit<RequestInit, "body"> {
+	body?: T;
+}
+
+/**
+ * Normalize headers to a plain object with string values
+ * Handles Headers instances, arrays of tuples, and plain objects
+ */
+function normalizeHeaders(
+	headers: HeadersInit | undefined,
+): Record<string, string> {
+	if (!headers) {
+		return {};
+	}
+
+	// Handle Headers instance
+	if (headers instanceof Headers) {
+		const result: Record<string, string> = {};
+		headers.forEach((value, key) => {
+			result[key] = value;
+		});
+		return result;
+	}
+
+	// Handle array of tuples [key, value][]
+	if (Array.isArray(headers)) {
+		const result: Record<string, string> = {};
+		headers.forEach(([key, value]) => {
+			if (typeof key === "string" && typeof value === "string") {
+				result[key] = value;
+			}
+		});
+		return result;
+	}
+
+	// Handle plain object
+	if (typeof headers === "object") {
+		const result: Record<string, string> = {};
+		for (const [key, value] of Object.entries(headers)) {
+			if (typeof value === "string") {
+				result[key] = value;
+			}
+		}
+		return result;
+	}
+
+	return {};
+}
+
+/**
+ * Helper for JSON API requests
+ */
+async function apiRequest<TResponse, TBody = unknown>(
+	url: string,
+	options: ApiRequestOptions<TBody> = {},
+): Promise<TResponse> {
+	const { body, ...fetchOptions } = options;
+
+	// Normalize headers to ensure all HeadersInit types are handled correctly
+	const additionalHeaders = normalizeHeaders(fetchOptions.headers);
+
+	const requestOptions: RequestInit = {
+		...fetchOptions,
+		headers: additionalHeaders,
+	};
+
+	// Handle different body types
+	if (body) {
+		if (body instanceof FormData) {
+			// For FormData, don't set Content-Type (browser will set it with boundary)
+			requestOptions.body = body as any;
+		} else {
+			// For JSON data
+			requestOptions.headers = {
+				"Content-Type": "application/json",
+				...additionalHeaders,
+			};
+			requestOptions.body = JSON.stringify(body);
+		}
+	} else if (
+		!body &&
+		fetchOptions.method !== "GET" &&
+		fetchOptions.method !== "DELETE"
+	) {
+		// Ensure Content-Type is set for requests that might have empty bodies
+		requestOptions.headers = {
+			"Content-Type": "application/json",
+			...additionalHeaders,
+		};
+	}
+
+	const response = await authenticatedFetch(url, requestOptions);
+
+	if (!response.ok) {
+		// Handle error response based on content type
+		const contentType = response.headers.get("content-type");
+		let errorMessage: string;
+
+		if (contentType?.includes("application/json")) {
+			try {
+				const errorData = await response.json();
+				// FastAPI typically returns errors as { detail: "error message" }
+				errorMessage =
+					errorData.detail || errorData.message || JSON.stringify(errorData);
+			} catch {
+				errorMessage = `Request failed: ${response.statusText}`;
+			}
+		} else {
+			// Handle text or HTML error responses
+			errorMessage = await response
+				.text()
+				.catch(() => `Request failed: ${response.statusText}`);
+		}
+
+		throw new Error(errorMessage || `Request failed: ${response.statusText}`);
+	}
+
+	// Check if response has no content (204, 205, or Content-Length: 0)
+	// These responses should not be parsed as JSON
+	const contentLength = response.headers.get("content-length");
+	const hasNoContent =
+		response.status === 204 || response.status === 205 || contentLength === "0";
+
+	if (hasNoContent) {
+		// Return null for no-content responses
+		// TypeScript will need to handle this in the TResponse type
+		return null as TResponse;
+	}
+
+	return response.json();
+}
+
 export const tasksAPI = {
 	async getTasks(): Promise<Task[]> {
-		const response = await fetch(`${API_URL}/api/tasks/`, {
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
-		});
-		if (!response.ok) throw new Error("Failed to fetch tasks");
-		return response.json();
+		return apiRequest<Task[], never>("/api/tasks/");
 	},
 
 	async createTask(task: TaskCreate): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/`, {
+		return apiRequest<Task, TaskCreate>("/api/tasks/", {
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-User-Id": TEST_USER_ID,
-			},
-			body: JSON.stringify(task),
+			body: task,
 		});
-		if (!response.ok) throw new Error("Failed to create task");
-		return response.json();
 	},
 
 	async updateTask(id: number, update: TaskUpdate): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}`, {
+		return apiRequest<Task, TaskUpdate>(`/api/tasks/${id}`, {
 			method: "PUT",
-			headers: {
-				"Content-Type": "application/json",
-				"X-User-Id": TEST_USER_ID,
-			},
-			body: JSON.stringify(update),
+			body: update,
 		});
-		if (!response.ok) throw new Error("Failed to update task");
-		return response.json();
 	},
 
 	async deleteTask(id: number): Promise<void> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}`, {
+		// DELETE requests typically return 204 No Content
+		// apiRequest will handle this and return null
+		await apiRequest<null, never>(`/api/tasks/${id}`, {
 			method: "DELETE",
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
 		});
-		if (!response.ok) throw new Error("Failed to delete task");
 	},
 
 	async getTask(id: number): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}`, {
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
-		});
-		if (!response.ok) throw new Error("Failed to fetch task");
-		return response.json();
+		return apiRequest<Task, never>(`/api/tasks/${id}`);
 	},
 
 	async snoozeTask(id: number, snoozeOption: string): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}/snooze`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-User-Id": TEST_USER_ID,
+		return apiRequest<Task, { snooze_option: string }>(
+			`/api/tasks/${id}/snooze`,
+			{
+				method: "POST",
+				body: { snooze_option: snoozeOption },
 			},
-			body: JSON.stringify({ snooze_option: snoozeOption }),
-		});
-		if (!response.ok) throw new Error("Failed to snooze task");
-		return response.json();
+		);
 	},
 
 	async unsnoozeTask(id: number): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}/unsnooze`, {
+		return apiRequest<Task, never>(`/api/tasks/${id}/unsnooze`, {
 			method: "POST",
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
 		});
-		if (!response.ok) throw new Error("Failed to unsnooze task");
-		return response.json();
 	},
 
 	async analyzeImage(imageFile: File): Promise<ImageAnalysisResponse> {
@@ -229,29 +330,30 @@ export const tasksAPI = {
 		formData.append("image", imageFile);
 		formData.append("generate_tasks", "true");
 
-		const response = await fetch(`${API_URL}/api/images/analyze`, {
+		// apiRequest now handles FormData properly
+		return apiRequest<ImageAnalysisResponse, FormData>("/api/images/analyze", {
 			method: "POST",
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
 			body: formData,
 		});
-
-		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({}));
-			throw new Error(errorData.message || "Failed to analyze image");
-		}
-
-		return response.json();
 	},
 
 	async getImage(imageId: string): Promise<ImageMetadata> {
-		const response = await fetch(`${API_URL}/api/images/${imageId}`, {
-			headers: {
-				"X-User-Id": TEST_USER_ID,
+		return apiRequest<ImageMetadata, never>(`/api/images/${imageId}`);
+	},
+};
+
+export const userAPI = {
+	async getSettings(): Promise<UserSettings> {
+		return apiRequest<UserSettings, never>("/api/user-settings/me");
+	},
+
+	async updateSettings(settings: Partial<UserSettings>): Promise<UserSettings> {
+		return apiRequest<UserSettings, Partial<UserSettings>>(
+			"/api/user-settings/me",
+			{
+				method: "PATCH",
+				body: settings,
 			},
-		});
-		if (!response.ok) throw new Error("Failed to fetch image");
-		return response.json();
+		);
 	},
 };

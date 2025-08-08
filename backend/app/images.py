@@ -27,16 +27,15 @@ from .ai.providers import AIProviderFactory, AIProviderError
 from .config import config
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from .database import get_session_dependency, Image as ImageModel
+from .database import get_session_dependency, Image as ImageModel, User as UserModel
 from .storage import storage
 from .logging_config import (
     ImageProcessingLogger,
     generate_correlation_id,
     set_correlation_id,
 )
-from .locale_detection import (
-    detect_locale_and_metadata
-)
+from .auth import get_current_user
+from .locale_detection import detect_locale_and_metadata
 
 logger = logging.getLogger(__name__)
 processing_logger = ImageProcessingLogger()
@@ -273,7 +272,7 @@ def create_image_processing_service() -> ImageProcessingService:
 
 @router.post("/analyze", response_model=ImageAnalysisResponse)
 async def analyze_image(
-    user_id: str = Header(..., alias="x-user-id"),
+    current_user: UserModel = Depends(get_current_user),
     accept_language: Optional[str] = Header(None, alias="accept-language"),
     image: UploadFile = File(..., description="Image file to analyze"),
     generate_tasks: bool = Form(
@@ -315,22 +314,23 @@ async def analyze_image(
     # Generate correlation ID for request tracking
     correlation_id = generate_correlation_id()
     set_correlation_id(correlation_id)
-    
-    # Convert user_id to UUID for locale detection
+
+    # Convert str(current_user.id) to UUID for locale detection
     try:
-        user_uuid = uuid.UUID(user_id)
+        user_uuid = current_user.id
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Invalid user ID format"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID format"
         )
-    
+
     # Detect locale and get metadata in one call
     detected_locale, locale_metadata = await detect_locale_and_metadata(
         session, user_uuid, accept_language
     )
-    
-    logger.info(f"Detected locale: {detected_locale} from source: {locale_metadata.get('source')}")
+
+    logger.info(
+        f"Detected locale: {detected_locale} from source: {locale_metadata.get('source')}"
+    )
 
     # Validate file upload
     if not image.filename:
@@ -359,16 +359,16 @@ async def analyze_image(
 
     # Log image upload with locale information
     processing_logger.log_image_upload(
-        user_id=user_id,
+        user_id=str(current_user.id),
         filename=image.filename,
         file_size=len(image_data),
         content_type=image.content_type or "application/octet-stream",
         correlation_id=correlation_id,
     )
-    
+
     # Log locale detection for monitoring
     logger.info(
-        f"Image analysis request - User: {user_id}, Locale: {detected_locale}, "
+        f"Image analysis request - User: {current_user.id}, Locale: {detected_locale}, "
         f"Locale source: {locale_metadata.get('source')}, "
         f"Accept-Language: {accept_language}, File: {image.filename}"
     )
@@ -376,7 +376,7 @@ async def analyze_image(
     try:
         response = await _process_image_analysis(
             image_data=image_data,
-            user_id=user_id,
+            user_id=str(current_user.id),
             filename=image.filename,
             content_type=image.content_type or "application/octet-stream",
             generate_tasks=generate_tasks,
@@ -385,11 +385,11 @@ async def analyze_image(
             session=session,
         )
 
-        logger.info(f"Image analysis completed successfully for user {user_id}")
+        logger.info(f"Image analysis completed successfully for user {current_user.id}")
         return response
 
     except ImageValidationError as e:
-        logger.warning(f"Image validation failed for user {user_id}: {e}")
+        logger.warning(f"Image validation failed for user {current_user.id}: {e}")
         error_response = ImageAnalysisError(
             error_code="INVALID_IMAGE",
             message=str(e),
@@ -401,7 +401,7 @@ async def analyze_image(
         )
 
     except AIProviderError as e:
-        logger.error(f"AI provider error for user {user_id}: {e}")
+        logger.error(f"AI provider error for user {current_user.id}: {e}")
         return _create_error_response(
             error_code="AI_PROVIDER_ERROR",
             message="AI analysis service is temporarily unavailable",
@@ -411,7 +411,7 @@ async def analyze_image(
         )
 
     except ImageProcessingError as e:
-        logger.error(f"Image processing error for user {user_id}: {e}")
+        logger.error(f"Image processing error for user {current_user.id}: {e}")
         return _create_error_response(
             error_code="PROCESSING_ERROR",
             message="Failed to process image",
@@ -424,7 +424,9 @@ async def analyze_image(
         raise
 
     except Exception as e:
-        logger.error(f"Unexpected error during image analysis for user {user_id}: {e}")
+        logger.error(
+            f"Unexpected error during image analysis for user {current_user.id}: {e}"
+        )
         return _create_error_response(
             error_code="INTERNAL_ERROR",
             message="An unexpected error occurred",
@@ -536,7 +538,7 @@ async def update_image_analysis_status(
 @router.get("/{image_id}")
 async def get_image(
     image_id: uuid.UUID,
-    user_id: str = Header(..., alias="x-user-id"),
+    current_user: UserModel = Depends(get_current_user),
     session: AsyncSession = Depends(get_session_dependency),
 ):
     """
@@ -556,7 +558,7 @@ async def get_image(
     try:
         # Fetch image record from database
         query = select(ImageModel).where(
-            and_(ImageModel.id == image_id, ImageModel.user_id == user_id)
+            and_(ImageModel.id == image_id, ImageModel.user_id == str(current_user.id))
         )
         result = await session.execute(query)
         image_record = result.scalar_one_or_none()
@@ -630,7 +632,6 @@ async def health_check():
 async def proxy_image(
     image_id: str,
     session: AsyncSession = Depends(get_session_dependency),
-    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
     width: Optional[int] = None,
     height: Optional[int] = None,
 ):
@@ -640,9 +641,11 @@ async def proxy_image(
     This endpoint serves images through the backend to avoid CORS issues
     and mixed content problems when accessing from different IPs.
 
+    Note: This endpoint is public (no authentication required) to allow
+    browser image loading. Images are only accessible if you know the UUID.
+
     Args:
         image_id: The UUID of the image
-        x_user_id: User ID from header
         session: Database session
         width: Optional width for image resizing
         height: Optional height for image resizing
@@ -660,22 +663,9 @@ async def proxy_image(
                 detail="Invalid image ID format",
             )
 
-        # Build query - optionally filter by user if provided
-        if x_user_id:
-            try:
-                user_uuid = uuid.UUID(x_user_id)
-                query = select(ImageModel).where(
-                    and_(ImageModel.id == image_uuid, ImageModel.user_id == user_uuid)
-                )
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid user ID format",
-                )
-        else:
-            # No user ID provided - just get by image ID
-            # This is less secure but needed for browser image loading
-            query = select(ImageModel).where(ImageModel.id == image_uuid)
+        # Get image by ID - no user filtering since this is a public endpoint
+        # Security is through obscurity (UUID is hard to guess)
+        query = select(ImageModel).where(ImageModel.id == image_uuid)
 
         result = await session.execute(query)
         image_record = result.scalar_one_or_none()

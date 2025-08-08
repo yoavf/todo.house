@@ -479,7 +479,9 @@ class ImageProcessingService:
             logger.warning(f"Failed to calculate confidence score: {e}")
             return None
 
-    def generate_prompt(self, context: Optional[Dict[str, Any]] = None, locale: str = "en") -> str:
+    def generate_prompt(
+        self, context: Optional[Dict[str, Any]] = None, locale: str = "en"
+    ) -> str:
         """
         Generate AI prompt based on context and requirements.
 
@@ -491,7 +493,9 @@ class ImageProcessingService:
             Generated prompt string
         """
         try:
-            base_prompt = self.prompt_service.get_prompt("home_maintenance_analysis", locale)
+            base_prompt = self.prompt_service.get_prompt(
+                "home_maintenance_analysis", locale
+            )
         except PromptNotFoundError as e:
             logger.error(f"Failed to load prompt for locale '{locale}': {e}")
             raise ImageProcessingError(f"AI prompt configuration missing: {str(e)}")

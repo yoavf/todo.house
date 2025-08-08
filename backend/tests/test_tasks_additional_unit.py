@@ -12,31 +12,29 @@ from app.models import TaskStatus, TaskPriority, TaskSource, TaskType
 class TestTasksCoverage:
     """Additional tests to improve coverage for tasks.py."""
 
-    async def test_get_active_tasks(self, client, test_user_id):
+    async def test_get_active_tasks(self, client, test_user_id, auth_headers: dict):
         """Test getting only active tasks."""
         # Create tasks with different statuses
         await client.post(
             "/api/tasks/",
             json={"title": "Active Task", "status": TaskStatus.ACTIVE.value},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         await client.post(
             "/api/tasks/",
             json={"title": "Snoozed Task", "status": TaskStatus.SNOOZED.value},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         await client.post(
             "/api/tasks/",
             json={"title": "Completed Task", "status": TaskStatus.COMPLETED.value},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         # Get active tasks
-        response = await client.get(
-            "/api/tasks/active", headers={"x-user-id": str(test_user_id)}
-        )
+        response = await client.get("/api/tasks/active", headers=auth_headers)
 
         assert response.status_code == 200
         tasks = response.json()
@@ -47,7 +45,7 @@ class TestTasksCoverage:
         assert not any(task["title"] == "Snoozed Task" for task in tasks)
         assert not any(task["title"] == "Completed Task" for task in tasks)
 
-    async def test_get_snoozed_tasks(self, client, test_user_id):
+    async def test_get_snoozed_tasks(self, client, test_user_id, auth_headers: dict):
         """Test getting only snoozed tasks."""
         # Create a snoozed task
         await client.post(
@@ -57,20 +55,18 @@ class TestTasksCoverage:
                 "status": TaskStatus.SNOOZED.value,
                 "snoozed_until": (datetime.now() + timedelta(days=1)).isoformat(),
             },
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         # Create an active task
         await client.post(
             "/api/tasks/",
             json={"title": "Active Task"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         # Get snoozed tasks
-        response = await client.get(
-            "/api/tasks/snoozed", headers={"x-user-id": str(test_user_id)}
-        )
+        response = await client.get("/api/tasks/snoozed", headers=auth_headers)
 
         assert response.status_code == 200
         tasks = response.json()
@@ -80,37 +76,39 @@ class TestTasksCoverage:
         assert any(task["title"] == "Snoozed Task" for task in tasks)
         assert not any(task["title"] == "Active Task" for task in tasks)
 
-    async def test_get_task_not_found(self, client, test_user_id):
+    async def test_get_task_not_found(self, client, test_user_id, auth_headers: dict):
         """Test getting a non-existent task."""
         fake_task_id = 99999
 
-        response = await client.get(
-            f"/api/tasks/{fake_task_id}", headers={"x-user-id": str(test_user_id)}
-        )
+        response = await client.get(f"/api/tasks/{fake_task_id}", headers=auth_headers)
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"
 
-    async def test_update_task_not_found(self, client, test_user_id):
+    async def test_update_task_not_found(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test updating a non-existent task."""
         fake_task_id = 99999
 
         response = await client.put(
             f"/api/tasks/{fake_task_id}",
             json={"title": "Updated Title"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"
 
-    async def test_update_task_completed_status_transition(self, client, test_user_id):
+    async def test_update_task_completed_status_transition(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test updating task completion triggers status transition."""
         # Create an active task
         create_resp = await client.post(
             "/api/tasks/",
             json={"title": "Task to complete"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         task_id = create_resp.json()["id"]
 
@@ -118,7 +116,7 @@ class TestTasksCoverage:
         response = await client.put(
             f"/api/tasks/{task_id}",
             json={"completed": True},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -130,7 +128,7 @@ class TestTasksCoverage:
         response = await client.put(
             f"/api/tasks/{task_id}",
             json={"completed": False},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -139,13 +137,15 @@ class TestTasksCoverage:
         assert data["status"] == TaskStatus.ACTIVE.value
         assert data["snoozed_until"] is None
 
-    async def test_update_task_all_fields(self, client, test_user_id):
+    async def test_update_task_all_fields(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test updating all task fields."""
         # Create a basic task
         create_resp = await client.post(
             "/api/tasks/",
             json={"title": "Original Task"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         task_id = create_resp.json()["id"]
 
@@ -164,7 +164,7 @@ class TestTasksCoverage:
         response = await client.put(
             f"/api/tasks/{task_id}",
             json=update_data,
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -177,48 +177,48 @@ class TestTasksCoverage:
         assert data["tags"] == ["urgent", "indoor"]
         assert data["metrics"]["effort"] == 3
 
-    async def test_delete_task_success(self, client, test_user_id):
+    async def test_delete_task_success(self, client, test_user_id, auth_headers: dict):
         """Test deleting a task successfully."""
         # Create a task
         create_resp = await client.post(
             "/api/tasks/",
             json={"title": "Task to delete"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         task_id = create_resp.json()["id"]
 
         # Delete it
-        response = await client.delete(
-            f"/api/tasks/{task_id}", headers={"x-user-id": str(test_user_id)}
-        )
+        response = await client.delete(f"/api/tasks/{task_id}", headers=auth_headers)
 
         assert response.status_code == 200
         assert response.json()["message"] == "Task deleted successfully"
 
         # Verify it's gone
-        get_resp = await client.get(
-            f"/api/tasks/{task_id}", headers={"x-user-id": str(test_user_id)}
-        )
+        get_resp = await client.get(f"/api/tasks/{task_id}", headers=auth_headers)
         assert get_resp.status_code == 404
 
-    async def test_delete_task_not_found(self, client, test_user_id):
+    async def test_delete_task_not_found(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test deleting a non-existent task."""
         fake_task_id = 99999
 
         response = await client.delete(
-            f"/api/tasks/{fake_task_id}", headers={"x-user-id": str(test_user_id)}
+            f"/api/tasks/{fake_task_id}", headers=auth_headers
         )
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"
 
-    async def test_snooze_task_with_date(self, client, test_user_id):
+    async def test_snooze_task_with_date(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test snoozing a task with specific date."""
         # Create a task
         create_resp = await client.post(
             "/api/tasks/",
             json={"title": "Task to snooze"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         task_id = create_resp.json()["id"]
 
@@ -227,7 +227,7 @@ class TestTasksCoverage:
         response = await client.post(
             f"/api/tasks/{task_id}/snooze",
             json={"snooze_until": snooze_until.isoformat()},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -235,13 +235,15 @@ class TestTasksCoverage:
         assert data["status"] == TaskStatus.SNOOZED.value
         assert data["snoozed_until"] is not None
 
-    async def test_snooze_task_indefinitely(self, client, test_user_id):
+    async def test_snooze_task_indefinitely(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test snoozing a task without date (indefinitely)."""
         # Create a task
         create_resp = await client.post(
             "/api/tasks/",
             json={"title": "Task to snooze forever"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         task_id = create_resp.json()["id"]
 
@@ -249,7 +251,7 @@ class TestTasksCoverage:
         response = await client.post(
             f"/api/tasks/{task_id}/snooze",
             json={},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -262,20 +264,22 @@ class TestTasksCoverage:
         ).year
         assert snooze_year == 2099
 
-    async def test_snooze_task_not_found(self, client, test_user_id):
+    async def test_snooze_task_not_found(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test snoozing a non-existent task."""
         fake_task_id = 99999
 
         response = await client.post(
             f"/api/tasks/{fake_task_id}/snooze",
             json={},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"
 
-    async def test_unsnooze_task(self, client, test_user_id):
+    async def test_unsnooze_task(self, client, test_user_id, auth_headers: dict):
         """Test unsnoozing a snoozed task."""
         # Create and snooze a task
         create_resp = await client.post(
@@ -285,13 +289,13 @@ class TestTasksCoverage:
                 "status": TaskStatus.SNOOZED.value,
                 "snoozed_until": (datetime.now() + timedelta(days=1)).isoformat(),
             },
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         task_id = create_resp.json()["id"]
 
         # Unsnooze it
         response = await client.post(
-            f"/api/tasks/{task_id}/unsnooze", headers={"x-user-id": str(test_user_id)}
+            f"/api/tasks/{task_id}/unsnooze", headers=auth_headers
         )
 
         assert response.status_code == 200
@@ -299,19 +303,23 @@ class TestTasksCoverage:
         assert data["status"] == TaskStatus.ACTIVE.value
         assert data["snoozed_until"] is None
 
-    async def test_unsnooze_task_not_found(self, client, test_user_id):
+    async def test_unsnooze_task_not_found(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test unsnoozing a non-existent task."""
         fake_task_id = 99999
 
         response = await client.post(
             f"/api/tasks/{fake_task_id}/unsnooze",
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"
 
-    async def test_create_ai_task_success(self, client, test_user_id):
+    async def test_create_ai_task_success(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test creating an AI-generated task."""
         with patch(
             "app.services.task_service.TaskService.create_single_ai_task"
@@ -349,7 +357,7 @@ class TestTasksCoverage:
             response = await client.post(
                 "/api/tasks/ai-generated",
                 json=ai_task_data,
-                headers={"x-user-id": str(test_user_id)},
+                headers=auth_headers,
             )
 
             assert response.status_code == 200
@@ -357,7 +365,9 @@ class TestTasksCoverage:
             assert data["title"] == "AI Task"
             assert data["source"] == TaskSource.AI_GENERATED.value
 
-    async def test_create_ai_task_failure(self, client, test_user_id):
+    async def test_create_ai_task_failure(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test AI task creation failure."""
         with patch(
             "app.services.task_service.TaskService.create_single_ai_task"
@@ -377,13 +387,15 @@ class TestTasksCoverage:
             response = await client.post(
                 "/api/tasks/ai-generated",
                 json=ai_task_data,
-                headers={"x-user-id": str(test_user_id)},
+                headers=auth_headers,
             )
 
             assert response.status_code == 500
             assert response.json()["detail"] == "Failed to create AI task"
 
-    async def test_get_ai_tasks_with_images(self, client, test_user_id):
+    async def test_get_ai_tasks_with_images(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test getting AI-generated tasks."""
         # Create an AI task
         await client.post(
@@ -395,20 +407,20 @@ class TestTasksCoverage:
                 "ai_confidence": 0.85,
                 "ai_provider": "test-ai",
             },
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         # Create a manual task
         await client.post(
             "/api/tasks/",
             json={"title": "Manual Task"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         # Get AI tasks
         response = await client.get(
             "/api/tasks/ai-generated/with-images",
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -419,7 +431,9 @@ class TestTasksCoverage:
         assert any(task["title"] == "AI Generated Task" for task in tasks)
         assert not any(task["title"] == "Manual Task" for task in tasks)
 
-    async def test_get_tasks_with_filters(self, client, test_user_id):
+    async def test_get_tasks_with_filters(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test getting tasks with status and source filters."""
         # Create tasks with different statuses and sources
         await client.post(
@@ -429,7 +443,7 @@ class TestTasksCoverage:
                 "status": TaskStatus.ACTIVE.value,
                 "source": TaskSource.MANUAL.value,
             },
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         await client.post(
@@ -442,7 +456,7 @@ class TestTasksCoverage:
                 "ai_confidence": 0.8,
                 "ai_provider": "test",
             },
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         await client.post(
@@ -452,19 +466,17 @@ class TestTasksCoverage:
                 "status": TaskStatus.COMPLETED.value,
                 "source": TaskSource.MANUAL.value,
             },
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         # Test status filter
-        response = await client.get(
-            "/api/tasks/?status=active", headers={"x-user-id": str(test_user_id)}
-        )
+        response = await client.get("/api/tasks/?status=active", headers=auth_headers)
         tasks = response.json()
         assert all(task["status"] == TaskStatus.ACTIVE.value for task in tasks)
 
         # Test source filter
         response = await client.get(
-            "/api/tasks/?source=ai_generated", headers={"x-user-id": str(test_user_id)}
+            "/api/tasks/?source=ai_generated", headers=auth_headers
         )
         tasks = response.json()
         assert all(task["source"] == TaskSource.AI_GENERATED.value for task in tasks)
@@ -472,7 +484,7 @@ class TestTasksCoverage:
         # Test combined filters
         response = await client.get(
             "/api/tasks/?status=active&source=manual",
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         tasks = response.json()
         assert all(task["status"] == TaskStatus.ACTIVE.value for task in tasks)

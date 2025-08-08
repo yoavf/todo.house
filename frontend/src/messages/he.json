@@ -158,5 +158,37 @@
 			"airConditioner": "מזגן",
 			"waterHeater": "דוד מים"
 		}
+	},
+	"auth": {
+		"signIn": "התחברות",
+		"signInTitle": "התחבר ל-TodoHouse",
+		"welcomeTitle": "ברוכים הבאים ל-TodoHouse",
+		"welcomeDescription": "התחבר כדי לנהל את משימות הבית שלך",
+		"signInWithGoogle": "התחבר עם Google",
+		"continueWithGoogle": "המשך עם Google",
+		"signInWithEmail": "התחבר עם אימייל",
+		"orContinueWith": "או המשך עם",
+		"email": "אימייל",
+		"emailPlaceholder": "הכנס את האימייל שלך",
+		"sendMagicLink": "שלח קישור קסם",
+		"sendingMagicLink": "שולח קישור קסם...",
+		"checkEmail": "בדוק את האימייל שלך",
+		"magicLinkSent": "שלחנו לך קישור קסם להתחברות",
+		"magicLinkDescription": "נשלח לך קישור קסם להתחברות",
+		"error": "שגיאת אימות",
+		"errorDescription": "אירעה שגיאה במהלך האימות",
+		"tryAgain": "נסה שוב",
+		"errors": {
+			"OAuthSignin": "שגיאה בהתחברות לספק",
+			"OAuthCallback": "שגיאה במהלך האימות",
+			"OAuthCreateAccount": "לא ניתן ליצור חשבון",
+			"EmailCreateAccount": "לא ניתן ליצור חשבון",
+			"Callback": "שגיאה במהלך ההתחברות",
+			"OAuthAccountNotLinked": "האימייל כבר קיים עם ספק אחר",
+			"EmailSignin": "שגיאה בשליחת האימייל",
+			"CredentialsSignin": "ההתחברות נכשלה. בדוק את הפרטים שלך",
+			"SessionRequired": "יש להתחבר כדי להמשיך",
+			"Default": "אירעה שגיאה במהלך ההתחברות"
+		}
 	}
 }

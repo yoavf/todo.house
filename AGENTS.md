@@ -240,11 +240,11 @@ Never bypass the pre-commit hooks!
 
 ```python
 @pytest.mark.unit
-async def test_create_todo_success(client, test_user_id):
+async def test_create_todo_success(client, auth_headers):
     response = await client.post(
         "/todos/",
         json={"title": "Test Todo", "description": "Test"},
-        headers={"X-User-Id": test_user_id}
+        headers=auth_headers
     )
     assert response.status_code == 201
     assert response.json()["title"] == "Test Todo"

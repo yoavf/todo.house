@@ -5,26 +5,24 @@ import uuid
 from typing import List
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .database import get_session_dependency
+from .database import get_session_dependency, User as UserModel
 from .database.models import Location as LocationModel
 from .models import Location, LocationCreate, LocationUpdate
 from .config import app_config
+from .auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/locations", tags=["locations"])
 
 
-def get_user_id(user_id: str = Header(..., alias="x-user-id")) -> uuid.UUID:
-    """Convert user_id header to UUID."""
-    try:
-        return uuid.UUID(user_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid user ID format")
+def get_user_id(current_user: UserModel = Depends(get_current_user)) -> uuid.UUID:
+    """Get the user's UUID from the authenticated user."""
+    return current_user.id
 
 
 @router.post("/", response_model=Location, status_code=201)

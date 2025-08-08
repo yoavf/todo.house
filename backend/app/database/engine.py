@@ -21,7 +21,7 @@ def create_engine() -> AsyncEngine:
     """
     if not config.database.database_url:
         raise ValueError("DATABASE_URL environment variable is required")
-    
+
     # Fix database URL for async PostgreSQL if needed
     database_url = config.database.database_url
     if database_url.startswith("postgresql://"):

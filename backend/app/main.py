@@ -20,18 +20,22 @@ setup_logging(
 app = FastAPI(title="todo.house API", version="1.0.0")
 
 # CORS configuration
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else []
+CORS_ORIGINS = (
+    os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else []
+)
 
 # Default origins for local development
 if not CORS_ORIGINS:
     CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 # Add production domains
-CORS_ORIGINS.extend([
-    "https://dev.todo.house",
-    "https://todo.house",
-    "https://www.todo.house",
-])
+CORS_ORIGINS.extend(
+    [
+        "https://dev.todo.house",
+        "https://todo.house",
+        "https://www.todo.house",
+    ]
+)
 
 # Support Railway PR preview environments
 # Railway PR environments follow pattern: https://*.up.railway.app

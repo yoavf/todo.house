@@ -9,7 +9,9 @@ from unittest.mock import patch
 class TestLocationsCoverage:
     """Additional tests to improve coverage for locations.py."""
 
-    async def test_create_location_with_logging(self, client, test_user_id):
+    async def test_create_location_with_logging(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that location creation logs correctly."""
         with patch("app.locations.logger") as mock_logger:
             location_data = {"name": "Test Location", "description": "Test"}
@@ -17,7 +19,7 @@ class TestLocationsCoverage:
             response = await client.post(
                 "/locations/",
                 json=location_data,
-                headers={"x-user-id": str(test_user_id)},
+                headers=auth_headers,
             )
 
             assert response.status_code == 201
@@ -27,12 +29,12 @@ class TestLocationsCoverage:
             assert "Created location" in log_message
             assert str(test_user_id) in log_message
 
-    async def test_list_locations_with_logging(self, client, test_user_id):
+    async def test_list_locations_with_logging(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that listing locations logs correctly."""
         with patch("app.locations.logger") as mock_logger:
-            response = await client.get(
-                "/locations/", headers={"x-user-id": str(test_user_id)}
-            )
+            response = await client.get("/locations/", headers=auth_headers)
 
             assert response.status_code == 200
             # Check that logger.info was called
@@ -41,12 +43,14 @@ class TestLocationsCoverage:
             assert "Retrieved" in log_message
             assert "locations for user" in log_message
 
-    async def test_update_location_with_logging(self, client, test_user_id):
+    async def test_update_location_with_logging(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that location update logs correctly."""
         # First create a location
         location_data = {"name": "Original Name"}
         create_resp = await client.post(
-            "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
+            "/locations/", json=location_data, headers=auth_headers
         )
         location_id = create_resp.json()["id"]
 
@@ -55,7 +59,7 @@ class TestLocationsCoverage:
             response = await client.patch(
                 f"/locations/{location_id}",
                 json=update_data,
-                headers={"x-user-id": str(test_user_id)},
+                headers=auth_headers,
             )
 
             assert response.status_code == 200
@@ -64,18 +68,20 @@ class TestLocationsCoverage:
             log_message = mock_logger.info.call_args[0][0]
             assert "Updated location" in log_message
 
-    async def test_delete_location_with_logging(self, client, test_user_id):
+    async def test_delete_location_with_logging(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test that location deletion logs correctly."""
         # First create a location
         location_data = {"name": "To Delete"}
         create_resp = await client.post(
-            "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
+            "/locations/", json=location_data, headers=auth_headers
         )
         location_id = create_resp.json()["id"]
 
         with patch("app.locations.logger") as mock_logger:
             response = await client.delete(
-                f"/locations/{location_id}", headers={"x-user-id": str(test_user_id)}
+                f"/locations/{location_id}", headers=auth_headers
             )
 
             assert response.status_code == 204
@@ -84,13 +90,15 @@ class TestLocationsCoverage:
             log_message = mock_logger.info.call_args[0][0]
             assert "Deleted location" in log_message
 
-    async def test_list_locations_inactive_included(self, client, test_user_id):
+    async def test_list_locations_inactive_included(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test listing locations with active_only=False includes inactive."""
         # Create an active location
         active_loc = await client.post(
             "/locations/",
             json={"name": "Active Location"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         active_id = active_loc.json()["id"]
 
@@ -98,18 +106,16 @@ class TestLocationsCoverage:
         inactive_loc = await client.post(
             "/locations/",
             json={"name": "Inactive Location"},
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
         inactive_id = inactive_loc.json()["id"]
 
         # Deactivate it
-        await client.delete(
-            f"/locations/{inactive_id}", headers={"x-user-id": str(test_user_id)}
-        )
+        await client.delete(f"/locations/{inactive_id}", headers=auth_headers)
 
         # List with active_only=False
         response = await client.get(
-            "/locations/?active_only=false", headers={"x-user-id": str(test_user_id)}
+            "/locations/?active_only=false", headers=auth_headers
         )
 
         assert response.status_code == 200
@@ -127,7 +133,7 @@ class TestLocationsCoverage:
         assert inactive_found
 
     async def test_list_locations_with_many_saved_and_defaults(
-        self, client, test_user_id
+        self, client, test_user_id, auth_headers: dict
     ):
         """Test list sorting with multiple saved locations and defaults."""
         # Create multiple custom locations
@@ -136,7 +142,7 @@ class TestLocationsCoverage:
             await client.post(
                 "/locations/",
                 json={"name": name},
-                headers={"x-user-id": str(test_user_id)},
+                headers=auth_headers,
             )
 
         # Create some default locations that will be marked as such
@@ -145,13 +151,11 @@ class TestLocationsCoverage:
             await client.post(
                 "/locations/",
                 json={"name": name, "description": f"My {name}"},
-                headers={"x-user-id": str(test_user_id)},
+                headers=auth_headers,
             )
 
         # List all locations
-        response = await client.get(
-            "/locations/", headers={"x-user-id": str(test_user_id)}
-        )
+        response = await client.get("/locations/", headers=auth_headers)
 
         assert response.status_code == 200
         locations = response.json()
@@ -180,7 +184,9 @@ class TestLocationsCoverage:
         remaining_names = set(location_names[saved_default_start + len(default_used) :])
         assert remaining_defaults == remaining_names
 
-    async def test_create_location_with_full_metadata(self, client, test_user_id):
+    async def test_create_location_with_full_metadata(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test creating location with complete metadata."""
         location_data = {
             "name": "Master Suite",
@@ -197,7 +203,7 @@ class TestLocationsCoverage:
         }
 
         response = await client.post(
-            "/locations/", json=location_data, headers={"x-user-id": str(test_user_id)}
+            "/locations/", json=location_data, headers=auth_headers
         )
 
         assert response.status_code == 201
@@ -207,7 +213,9 @@ class TestLocationsCoverage:
         assert data["location_metadata"]["floor"] == 2
         assert data["location_metadata"]["closets"] == ["walk-in", "standard"]
 
-    async def test_update_location_partial_update(self, client, test_user_id):
+    async def test_update_location_partial_update(
+        self, client, test_user_id, auth_headers: dict
+    ):
         """Test partial update only updates specified fields."""
         # Create location with full data
         create_data = {
@@ -216,7 +224,7 @@ class TestLocationsCoverage:
             "location_metadata": {"has_desk": True},
         }
         create_resp = await client.post(
-            "/locations/", json=create_data, headers={"x-user-id": str(test_user_id)}
+            "/locations/", json=create_data, headers=auth_headers
         )
         location_id = create_resp.json()["id"]
 
@@ -225,7 +233,7 @@ class TestLocationsCoverage:
         response = await client.patch(
             f"/locations/{location_id}",
             json=update_data,
-            headers={"x-user-id": str(test_user_id)},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -234,14 +242,14 @@ class TestLocationsCoverage:
         assert data["description"] == "Reading room"  # Updated
         assert data["location_metadata"]["has_desk"] is True  # Unchanged
 
-    async def test_list_locations_virtual_defaults_have_temp_ids(self, client):
+    async def test_list_locations_virtual_defaults_have_temp_ids(
+        self, client, auth_headers: dict
+    ):
         """Test that virtual default locations have valid temporary UUIDs."""
         # Use a fresh user with no saved locations
-        fresh_user_id = uuid.uuid4()
+        uuid.uuid4()
 
-        response = await client.get(
-            "/locations/", headers={"x-user-id": str(fresh_user_id)}
-        )
+        response = await client.get("/locations/", headers=auth_headers)
 
         assert response.status_code == 200
         locations = response.json()

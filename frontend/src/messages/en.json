@@ -158,5 +158,40 @@
 			"airConditioner": "Air Conditioner",
 			"waterHeater": "Water Heater"
 		}
+	},
+	"auth": {
+		"signIn": "Sign In",
+		"signInTitle": "Sign in to TodoHouse",
+		"welcomeTitle": "Welcome to TodoHouse",
+		"welcomeDescription": "Sign in to manage your home tasks",
+		"signInWithGoogle": "Sign in with Google",
+		"continueWithGoogle": "Continue with Google",
+		"signInWithEmail": "Sign in with Email",
+		"orContinueWith": "Or continue with",
+		"email": "Email",
+		"emailPlaceholder": "Enter your email",
+		"sendMagicLink": "Send magic link",
+		"sendingMagicLink": "Sending magic link...",
+		"checkEmail": "Check your email",
+		"magicLinkSent": "We've sent you a magic link to sign in",
+		"magicLinkDescription": "We'll send you a magic link to sign in",
+		"error": "Authentication Error",
+		"errorDescription": "An error occurred during authentication",
+		"tryAgain": "Try Again",
+		"errors": {
+			"OAuthSignin": "Error connecting to the provider",
+			"OAuthCallback": "Error during authentication",
+			"OAuthCreateAccount": "Could not create account",
+			"EmailCreateAccount": "Could not create account",
+			"Callback": "Error during sign in",
+			"OAuthAccountNotLinked": "Email already exists with different provider",
+			"EmailSignin": "Error sending the email",
+			"CredentialsSignin": "Sign in failed. Check your credentials",
+			"Verification": "The verification link is invalid or has expired",
+			"AccessDenied": "Access denied",
+			"Configuration": "Configuration error",
+			"SessionRequired": "Please sign in to continue",
+			"Default": "An error occurred during sign in"
+		}
 	}
 }
