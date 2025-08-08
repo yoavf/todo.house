@@ -20,26 +20,26 @@ async function getSessionToken(): Promise<string | null> {
 	if (tokenCache && tokenCache.expires > Date.now()) {
 		return tokenCache.token;
 	}
-	
+
 	try {
 		const response = await fetch("/api/auth/token");
 		if (!response.ok) {
 			return null;
 		}
-		
+
 		const data = await response.json();
 		if (data.token) {
 			// Cache for 5 minutes
 			tokenCache = {
 				token: data.token,
-				expires: Date.now() + 5 * 60 * 1000
+				expires: Date.now() + 5 * 60 * 1000,
 			};
 			return data.token;
 		}
 	} catch (error) {
 		console.error("Failed to get session token:", error);
 	}
-	
+
 	return null;
 }
 
@@ -57,7 +57,7 @@ export async function authenticatedFetch(
 	const requestHeaders: Record<string, string> = {
 		...(headers as Record<string, string>),
 	};
-	
+
 	// Only set Content-Type if not already set and not FormData
 	if (!requestHeaders["Content-Type"] && !(rest.body instanceof FormData)) {
 		requestHeaders["Content-Type"] = "application/json";
@@ -84,7 +84,7 @@ export async function authenticatedFetch(
 	if (response.status === 401) {
 		// Clear token cache on auth error
 		tokenCache = null;
-		
+
 		if (requireAuth) {
 			// Session might be expired, trigger re-authentication
 			window.location.href = "/auth/signin";

@@ -3,9 +3,9 @@
  * This file is used by server components and can use server-only imports
  */
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { cookies } from "next/headers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -22,22 +22,22 @@ async function getAuthToken(): Promise<string | null> {
 		const cookieStore = await cookies();
 		// NextAuth v5 uses these cookie names for the session token
 		// The token is a JWE (JSON Web Encryption) that the backend will decrypt
-		const sessionToken = 
-			cookieStore.get("authjs.session-token")?.value || 
+		const sessionToken =
+			cookieStore.get("authjs.session-token")?.value ||
 			cookieStore.get("__Secure-authjs.session-token")?.value ||
 			cookieStore.get("__Host-authjs.session-token")?.value;
-		
+
 		if (sessionToken) {
 			return sessionToken;
 		}
-		
+
 		// If no session token in cookies, check if we have a session
 		// This handles edge cases where the cookie might not be accessible
 		const session = await auth();
 		if (!session) {
 			return null;
 		}
-		
+
 		// If we have a session but no cookie, something is wrong
 		console.warn("Session exists but no session token cookie found");
 		return null;
