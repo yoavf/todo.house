@@ -71,6 +71,8 @@ export async function authenticatedFetch(
 		// Pass the NextAuth session token as a Bearer token
 		// The backend will decrypt and validate it using fastapi-nextauth-jwt
 		requestHeaders.Authorization = `Bearer ${token}`;
+		// Also add custom header for Railway compatibility
+		requestHeaders["X-Auth-Token"] = token;
 	} else if (requireAuth) {
 		// If auth is required but no token, check session
 		const session = await getServerSession(authOptions);

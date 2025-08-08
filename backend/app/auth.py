@@ -1,6 +1,6 @@
 from typing import Optional, Dict
 from datetime import datetime, timezone
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi_nextauth_jwt import NextAuthJWTv4  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +32,27 @@ nextauth = NextAuthJWTv4(secret=AUTH_SECRET, csrf_prevention_enabled=False)
 security = HTTPBearer(auto_error=False)
 
 
+async def get_auth_credentials(
+    authorization: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
+) -> Optional[str]:
+    """
+    Get authentication token from either Authorization header or X-Auth-Token header.
+    Railway and some proxies strip Authorization headers, so we support both.
+    """
+    # Try Authorization header first (standard)
+    if authorization and authorization.credentials:
+        logger.debug("Using token from Authorization header")
+        return authorization.credentials
+    
+    # Fall back to X-Auth-Token header (Railway compatibility)
+    if x_auth_token:
+        logger.debug("Using token from X-Auth-Token header (Railway compatibility)")
+        return x_auth_token
+    
+    return None
+
+
 class MockRequest:
     """Mock request object to pass token to NextAuthJWT"""
 
@@ -43,30 +64,29 @@ class MockRequest:
 
 
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    token: Optional[str] = Depends(get_auth_credentials),
     session: AsyncSession = Depends(get_session_dependency),
 ) -> UserModel:
     """
     Get the current authenticated user from NextAuth JWT token.
-    Token should be passed via Authorization Bearer header.
+    Token can be passed via Authorization Bearer header or X-Auth-Token header.
     """
 
-    if not credentials or not credentials.credentials:
-        logger.error("No credentials provided in request")
-        logger.debug(f"Credentials object: {credentials}")
+    if not token:
+        logger.error("No auth token provided in request")
         raise HTTPException(
             status_code=401,
             detail="Authentication required. Please provide a valid token.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    logger.info(f"Auth attempt with token length: {len(credentials.credentials)}")
-    logger.debug(f"Token preview: {credentials.credentials[:50]}...")
+    logger.info(f"Auth attempt with token length: {len(token)}")
+    logger.debug(f"Token preview: {token[:50]}...")
 
     try:
         # Use fastapi-nextauth-jwt to decrypt the token
         # Create a mock request with the token as a cookie
-        mock_request = MockRequest(credentials.credentials)
+        mock_request = MockRequest(token)
 
         # Now use the library to decrypt
         token_data = nextauth(mock_request)
@@ -79,7 +99,7 @@ async def get_current_user(
             import base64
 
             # Try to decode as base64 JSON (for testing)
-            decoded = base64.b64decode(credentials.credentials + "==")
+            decoded = base64.b64decode(token + "==")
             token_data = json.loads(decoded)
             logger.info("Using test token (base64 JSON)")
         except Exception as test_error:
@@ -188,17 +208,17 @@ async def get_current_user(
 
 
 async def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    token: Optional[str] = Depends(get_auth_credentials),
     session: AsyncSession = Depends(get_session_dependency),
 ) -> Optional[UserModel]:
     """
     Get the current user if authenticated, otherwise return None.
     Useful for endpoints that have optional authentication.
     """
-    if not credentials or not credentials.credentials:
+    if not token:
         return None
 
     try:
-        return await get_current_user(credentials, session)
+        return await get_current_user(token, session)
     except HTTPException:
         return None

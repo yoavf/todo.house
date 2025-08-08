@@ -93,7 +93,7 @@ class TestGetCurrentUser:
     async def test_no_credentials_raises_401(self, mock_session):
         """Test that missing credentials raises 401."""
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(credentials=None, session=mock_session)
+            await get_current_user(token=None, session=mock_session)
         
         assert exc_info.value.status_code == 401
         assert "Authentication required" in exc_info.value.detail
@@ -106,7 +106,7 @@ class TestGetCurrentUser:
         creds.credentials = ""
         
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(credentials=creds, session=mock_session)
+            await get_current_user(token="", session=mock_session)
         
         assert exc_info.value.status_code == 401
 
@@ -123,7 +123,7 @@ class TestGetCurrentUser:
         mock_result.scalar_one_or_none.return_value = mock_existing_user
         mock_session.execute.return_value = mock_result
         
-        user = await get_current_user(credentials=mock_credentials, session=mock_session)
+        user = await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         assert user == mock_existing_user
         mock_nextauth.assert_called_once()
@@ -141,7 +141,7 @@ class TestGetCurrentUser:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
         
-        await get_current_user(credentials=mock_credentials, session=mock_session)
+        await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         # Verify user was added to session
         mock_session.add.assert_called_once()
@@ -163,7 +163,7 @@ class TestGetCurrentUser:
         mock_nextauth.return_value = {"sub": "123", "name": "Test"}
         
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(credentials=mock_credentials, session=mock_session)
+            await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         assert exc_info.value.status_code == 401
         assert "missing email" in exc_info.value.detail
@@ -177,7 +177,7 @@ class TestGetCurrentUser:
         mock_nextauth.return_value = {"email": "test@example.com", "name": "Test"}
         
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(credentials=mock_credentials, session=mock_session)
+            await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         assert exc_info.value.status_code == 401
         assert "missing user ID" in exc_info.value.detail
@@ -200,7 +200,7 @@ class TestGetCurrentUser:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
         
-        await get_current_user(credentials=mock_credentials, session=mock_session)
+        await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         # Verify UUID was generated
         added_user = mock_session.add.call_args[0][0]
@@ -231,7 +231,7 @@ class TestGetCurrentUser:
         mock_result.scalar_one_or_none.return_value = mock_existing_user
         mock_session.execute.return_value = mock_result
         
-        await get_current_user(credentials=mock_credentials, session=mock_session)
+        await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         # Verify user info was updated
         assert mock_existing_user.name == "Updated Name"
@@ -271,7 +271,7 @@ class TestGetCurrentUser:
         
         mock_session.execute.side_effect = [mock_result1, mock_result2]
         
-        await get_current_user(credentials=mock_credentials, session=mock_session)
+        await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         # Verify ID was NOT updated (to avoid FK violations)
         assert existing_user.id == old_user_id
@@ -302,7 +302,7 @@ class TestGetCurrentUser:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
         
-        await get_current_user(credentials=mock_credentials, session=mock_session)
+        await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         # Verify user was created
         mock_session.add.assert_called_once()
@@ -319,7 +319,7 @@ class TestGetCurrentUser:
         mock_credentials.credentials = "not_a_valid_token_or_base64"
         
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(credentials=mock_credentials, session=mock_session)
+            await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         assert exc_info.value.status_code == 401
         assert "Invalid authentication token" in exc_info.value.detail
@@ -336,7 +336,7 @@ class TestGetCurrentUser:
         mock_session.execute.side_effect = Exception("Database error")
         
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(credentials=mock_credentials, session=mock_session)
+            await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         assert exc_info.value.status_code == 401
         assert "Authentication failed" in exc_info.value.detail
@@ -360,7 +360,7 @@ class TestGetCurrentUser:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
         
-        await get_current_user(credentials=mock_credentials, session=mock_session)
+        await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         # Verify user was created with correct ID
         added_user = mock_session.add.call_args[0][0]
@@ -385,7 +385,7 @@ class TestGetCurrentUser:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
         
-        await get_current_user(credentials=mock_credentials, session=mock_session)
+        await get_current_user(token=mock_credentials.credentials, session=mock_session)
         
         # Verify user was created with correct avatar URL
         added_user = mock_session.add.call_args[0][0]
@@ -398,7 +398,7 @@ class TestGetOptionalCurrentUser:
     @pytest.mark.asyncio
     async def test_no_credentials_returns_none(self, mock_session):
         """Test that missing credentials returns None."""
-        result = await get_optional_current_user(credentials=None, session=mock_session)
+        result = await get_optional_current_user(token=None, session=mock_session)
         assert result is None
 
     @pytest.mark.asyncio
@@ -407,7 +407,7 @@ class TestGetOptionalCurrentUser:
         creds = Mock(spec=HTTPAuthorizationCredentials)
         creds.credentials = ""
         
-        result = await get_optional_current_user(credentials=creds, session=mock_session)
+        result = await get_optional_current_user(token="", session=mock_session)
         assert result is None
 
     @pytest.mark.asyncio
@@ -419,11 +419,11 @@ class TestGetOptionalCurrentUser:
         mock_get_current_user.return_value = mock_existing_user
         
         result = await get_optional_current_user(
-            credentials=mock_credentials, session=mock_session
+            token=mock_credentials.credentials, session=mock_session
         )
         
         assert result == mock_existing_user
-        mock_get_current_user.assert_called_once_with(mock_credentials, mock_session)
+        mock_get_current_user.assert_called_once_with(mock_credentials.credentials, mock_session)
 
     @pytest.mark.asyncio
     @patch('app.auth.get_current_user')
@@ -434,7 +434,7 @@ class TestGetOptionalCurrentUser:
         mock_get_current_user.side_effect = HTTPException(status_code=401, detail="Invalid")
         
         result = await get_optional_current_user(
-            credentials=mock_credentials, session=mock_session
+            token=mock_credentials.credentials, session=mock_session
         )
         
         assert result is None
@@ -448,7 +448,7 @@ class TestGetOptionalCurrentUser:
         mock_get_current_user.side_effect = HTTPException(status_code=500, detail="Server error")
         
         result = await get_optional_current_user(
-            credentials=mock_credentials, session=mock_session
+            token=mock_credentials.credentials, session=mock_session
         )
         
         assert result is None

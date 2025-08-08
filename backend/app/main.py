@@ -58,13 +58,16 @@ logger = StructuredLogger(__name__)
 async def log_request_headers(request: Request, call_next):
     """Log incoming request headers for debugging."""
     if request.url.path.startswith("/api/"):
-        # Log the Authorization header specifically
+        # Log both Authorization and X-Auth-Token headers
         auth_header = request.headers.get("authorization")
+        x_auth_token = request.headers.get("x-auth-token")
         logger.debug(
             f"Request to {request.url.path}",
             method=request.method,
             has_auth_header=bool(auth_header),
+            has_x_auth_token=bool(x_auth_token),
             auth_header_preview=auth_header[:50] if auth_header else None,
+            x_auth_token_preview=x_auth_token[:50] if x_auth_token else None,
             all_headers=dict(request.headers) if os.getenv("LOG_LEVEL") == "DEBUG" else None
         )
     

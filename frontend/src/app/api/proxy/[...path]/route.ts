@@ -78,8 +78,10 @@ async function handleRequest(
 	const backendUrl = `${API_URL}/api/${apiPath}${new URL(request.url).search}`;
 
 	// Prepare headers
+	// Use both Authorization and a custom header for Railway compatibility
 	const headers: HeadersInit = {
 		Authorization: `Bearer ${token}`,
+		"X-Auth-Token": token, // Railway sometimes strips Authorization headers
 	};
 
 	// Forward content-type if present and not multipart
