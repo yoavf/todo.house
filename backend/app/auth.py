@@ -24,8 +24,18 @@ if not AUTH_SECRET:
         "Please set either AUTH_SECRET or NEXTAUTH_SECRET environment variable."
     )
 
+# Remove quotes if they were accidentally included
+AUTH_SECRET = AUTH_SECRET.strip('"').strip("'")
+logger.info(f"AUTH_SECRET configured (length: {len(AUTH_SECRET)}, first 10 chars: {AUTH_SECRET[:10]}...)")
+
+# Get AUTH_URL for NextAuth
+AUTH_URL = os.getenv("AUTH_URL", "http://localhost:3000")
+logger.info(f"AUTH_URL configured: {AUTH_URL}")
+
 # Initialize NextAuthJWTv4 for decrypting NextAuth v4 tokens
 # We disable CSRF since we're using it for API authentication
+# Set the AUTH_URL environment variable for the library
+os.environ["AUTH_URL"] = AUTH_URL
 nextauth = NextAuthJWTv4(secret=AUTH_SECRET, csrf_prevention_enabled=False)
 
 # HTTP Bearer for getting token from Authorization header
@@ -94,6 +104,8 @@ async def get_current_user(
 
     except Exception as e:
         logger.warning(f"NextAuth JWT decryption failed: {str(e)}")
+        logger.debug(f"Exception type: {type(e).__name__}")
+        logger.debug(f"Full exception: {repr(e)}")
         # If that doesn't work, the token might be a test token (base64 JSON)
         try:
             import base64
