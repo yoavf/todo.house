@@ -39,7 +39,9 @@ async function getAuthToken(): Promise<string | null> {
 		}
 
 		// If we have a session but no cookie, something is wrong
-		console.warn("Session exists but no session token cookie found");
+		if (process.env.NODE_ENV === "development") {
+			console.warn("Session exists but no session token cookie found");
+		}
 		return null;
 	} catch (error) {
 		console.error("Error getting auth token:", error);
