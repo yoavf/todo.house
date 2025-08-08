@@ -51,6 +51,9 @@ jobs:
         SUPABASE_KEY: test-key-for-ci
         STORAGE_BUCKET_NAME: test-images
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key-for-ci' }}
+        JWT_SECRET: test-secret-key-for-jwt-encoding
+        NEXTAUTH_SECRET: test-secret-key-for-jwt-encoding
+        TESTING: true
 
     - name: Generate coverage report
       run: |
@@ -61,6 +64,9 @@ jobs:
         SUPABASE_KEY: test-key-for-ci
         STORAGE_BUCKET_NAME: test-images
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key-for-ci' }}
+        JWT_SECRET: test-secret-key-for-jwt-encoding
+        NEXTAUTH_SECRET: test-secret-key-for-jwt-encoding
+        TESTING: true
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
