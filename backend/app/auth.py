@@ -1,6 +1,6 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 from datetime import datetime, timezone
-from fastapi import HTTPException, Depends, Request
+from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi_nextauth_jwt import NextAuthJWT  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,7 +61,7 @@ async def get_current_user(
         # Now use the library to decrypt
         token_data = nextauth(mock_request)
         
-    except Exception as e:
+    except Exception:
         # If that doesn't work, the token might be a test token (base64 JSON)
         try:
             import base64
@@ -93,7 +93,6 @@ async def get_current_user(
             user_uuid = uuid.UUID(user_id)
         except (ValueError, TypeError):
             # Generate UUID from email for non-UUID OAuth IDs
-            import hashlib
             namespace_uuid = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
             user_uuid = uuid.uuid5(namespace_uuid, user_email)
             logger.info("Generated UUID for non-UUID user ID", original_id=user_id, uuid=str(user_uuid))
