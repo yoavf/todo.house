@@ -6,7 +6,6 @@ export default auth((req) => {
 	const isAuthPage = req.nextUrl.pathname.startsWith("/auth");
 	const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
 
-	// Don't redirect on auth API calls
 	if (isApiAuth) {
 		return NextResponse.next();
 	}
@@ -20,18 +19,7 @@ export default auth((req) => {
 	return NextResponse.next();
 });
 
-// Protect all routes except auth and public paths
+// Protect all routes except auth, public paths, and ALL API routes
 export const config = {
-	matcher: [
-		/*
-		 * Match all request paths except for the ones starting with:
-		 * - api/auth (auth endpoints)
-		 * - auth (auth pages)
-		 * - _next/static (static files)
-		 * - _next/image (image optimization files)
-		 * - favicon.ico (favicon file)
-		 * - public folder
-		 */
-		"/((?!api/auth|auth|_next/static|_next/image|favicon.ico|public).*)",
-	],
+	matcher: ["/((?!api|auth|_next/static|_next/image|favicon.ico|public).*)"],
 };
