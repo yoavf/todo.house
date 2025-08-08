@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
-import { getSession } from "next-auth/react";
+/**
+ * Client-side API fetch wrapper
+ * This file is used by client components and handles cross-domain authentication
+ */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -7,8 +9,43 @@ interface FetchOptions extends RequestInit {
 	requireAuth?: boolean;
 }
 
+// Cache the token for a short time to avoid repeated fetches
+let tokenCache: { token: string; expires: number } | null = null;
+
 /**
- * Enhanced fetch wrapper that automatically includes authentication headers
+ * Get the NextAuth session token via our API route
+ */
+async function getSessionToken(): Promise<string | null> {
+	// Check cache first
+	if (tokenCache && tokenCache.expires > Date.now()) {
+		return tokenCache.token;
+	}
+	
+	try {
+		const response = await fetch("/api/auth/token");
+		if (!response.ok) {
+			return null;
+		}
+		
+		const data = await response.json();
+		if (data.token) {
+			// Cache for 5 minutes
+			tokenCache = {
+				token: data.token,
+				expires: Date.now() + 5 * 60 * 1000
+			};
+			return data.token;
+		}
+	} catch (error) {
+		console.error("Failed to get session token:", error);
+	}
+	
+	return null;
+}
+
+/**
+ * Client-side fetch wrapper for use in React components
+ * Gets the session token and sends it as Bearer token for cross-domain auth
  */
 export async function authenticatedFetch(
 	url: string,
@@ -16,38 +53,43 @@ export async function authenticatedFetch(
 ): Promise<Response> {
 	const { requireAuth = true, headers = {}, ...rest } = options;
 
-	// Get the current session
-	const session = await getSession();
-
 	// Build headers
 	const requestHeaders: Record<string, string> = {
 		...(headers as Record<string, string>),
 	};
+	
+	// Only set Content-Type if not already set and not FormData
+	if (!requestHeaders["Content-Type"] && !(rest.body instanceof FormData)) {
+		requestHeaders["Content-Type"] = "application/json";
+	}
 
-	// Add auth header if we have a session
-	if (session?.user) {
-		// For now, we'll use the user ID as a token until we implement proper JWT
-		requestHeaders.Authorization = `Bearer ${session.user.id}`;
+	// Get session token and add as Bearer token
+	const token = await getSessionToken();
+	if (token) {
+		requestHeaders["Authorization"] = `Bearer ${token}`;
+	} else if (requireAuth) {
+		// No token but auth required
+		window.location.href = "/auth/signin";
+		throw new Error("Authentication required");
 	}
 
 	// Make the request
 	const response = await fetch(`${API_URL}${url}`, {
 		...rest,
 		headers: requestHeaders,
+		// No need for credentials since we're sending the token explicitly
 	});
 
 	// Handle auth errors
-	if (response.status === 401 && requireAuth) {
-		// Session might be expired, trigger re-authentication
-		// Check if we're on the server or client
-		if (typeof window !== "undefined") {
-			// Client-side: use window.location for redirect
+	if (response.status === 401) {
+		// Clear token cache on auth error
+		tokenCache = null;
+		
+		if (requireAuth) {
+			// Session might be expired, trigger re-authentication
 			window.location.href = "/auth/signin";
-		} else {
-			// Server-side: use Next.js redirect
-			redirect("/auth/signin");
+			throw new Error("Authentication required");
 		}
-		throw new Error("Authentication required");
 	}
 
 	return response;

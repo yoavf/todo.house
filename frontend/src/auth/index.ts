@@ -23,14 +23,16 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
 }
 
 // Resend email provider configuration
-if (process.env.AUTH_RESEND_KEY) {
-	providers.push(
-		Resend({
-			from: process.env.AUTH_EMAIL_FROM || "noreply@todohouse.app",
-			apiKey: process.env.AUTH_RESEND_KEY,
-		}),
-	);
-}
+// Note: Email authentication requires a database adapter to store verification tokens
+// Uncomment this when a database adapter is configured
+// if (process.env.AUTH_RESEND_KEY) {
+// 	providers.push(
+// 		Resend({
+// 			from: process.env.AUTH_EMAIL_FROM || "noreply@todohouse.app",
+// 			apiKey: process.env.AUTH_RESEND_KEY,
+// 		}),
+// 	);
+// }
 
 // Ensure at least one authentication provider is configured
 if (providers.length === 0) {
@@ -38,7 +40,8 @@ if (providers.length === 0) {
 		"No authentication providers configured. " +
 			"Please configure at least one authentication method:\n" +
 			"- For Google OAuth: Set AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET\n" +
-			"- For Email (Resend): Set AUTH_RESEND_KEY",
+			"  Get these from: https://console.cloud.google.com/apis/credentials\n" +
+			"- For Email (Resend): Requires a database adapter (not yet configured)",
 	);
 }
 
@@ -50,9 +53,12 @@ export const authConfig: NextAuthConfig = {
 		verifyRequest: "/auth/verify",
 	},
 	callbacks: {
-		async jwt({ token, user }) {
-			if (user) {
-				token.id = user.id;
+		async jwt({ token, user, account }) {
+			// Initial sign in
+			if (account && user) {
+				// Use the provider account ID as the user ID if no user.id exists
+				token.sub = user.id || account.providerAccountId;
+				token.id = user.id || account.providerAccountId;
 				token.email = user.email;
 				token.name = user.name;
 				token.picture = user.image;
@@ -60,10 +66,21 @@ export const authConfig: NextAuthConfig = {
 			return token;
 		},
 		async session({ session, token }) {
-			if (session.user) {
-				session.user.id = token.id as string;
+			if (session.user && token) {
+				session.user.id = token.id as string || token.sub as string;
 			}
 			return session;
+		},
+		async signIn({ user, account, profile }) {
+			// Allow sign in
+			return true;
+		},
+		async redirect({ url, baseUrl }) {
+			// Allows relative callback URLs
+			if (url.startsWith("/")) return `${baseUrl}${url}`;
+			// Allows callback URLs on the same origin
+			else if (new URL(url).origin === baseUrl) return url;
+			return baseUrl;
 		},
 	},
 	session: {

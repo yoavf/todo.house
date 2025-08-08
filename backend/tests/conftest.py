@@ -5,15 +5,18 @@ from dotenv import load_dotenv
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
-from jose import jwt
+from sqlalchemy import select
 from datetime import datetime, timezone, timedelta
 import os
+from unittest.mock import Mock, AsyncMock
+from typing import Dict, Any
 
 # Load test environment variables before importing app
 load_dotenv(".env.test", override=True)
 
 from app.database import get_session_dependency, Base, User as UserModel  # noqa: E402
 from app.main import app  # noqa: E402
+from app.auth import get_current_user  # noqa: E402
 
 # Test database configuration
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -73,15 +76,25 @@ async def setup_test_user(test_user_id, db_session):
     Create a test user in the database and clean up after test.
     This fixture ensures tests can create tasks without foreign key errors.
     """
-    # Create test user using SQLAlchemy
-    db_user = UserModel(
-        id=uuid.UUID(test_user_id),
-        email=f"test-{test_user_id}@example.com",
+    # Check if user already exists (might be created by mock_user)
+    result = await db_session.execute(
+        select(UserModel).where(UserModel.id == uuid.UUID(test_user_id))
     )
+    existing_user = result.scalar_one_or_none()
+    
+    if not existing_user:
+        # Create test user using SQLAlchemy
+        db_user = UserModel(
+            id=uuid.UUID(test_user_id),
+            email=f"test-{test_user_id}@example.com",
+            name="Test User",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
 
-    db_session.add(db_user)
-    await db_session.commit()
-    await db_session.refresh(db_user)
+        db_session.add(db_user)
+        await db_session.commit()
+        await db_session.refresh(db_user)
 
     yield test_user_id
 
@@ -89,7 +102,37 @@ async def setup_test_user(test_user_id, db_session):
 
 
 @pytest_asyncio.fixture
-async def client(db_session):
+async def mock_user(test_user_id, db_session):
+    """
+    Create a mock user for testing that will be returned by get_current_user.
+    Only creates the user if it doesn't already exist.
+    """
+    # Check if user already exists
+    result = await db_session.execute(
+        select(UserModel).where(UserModel.id == uuid.UUID(test_user_id))
+    )
+    existing_user = result.scalar_one_or_none()
+    
+    if existing_user:
+        return existing_user
+    
+    # Create test user in database
+    db_user = UserModel(
+        id=uuid.UUID(test_user_id),
+        email=f"test-{test_user_id}@example.com",
+        name="Test User",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    db_session.add(db_user)
+    await db_session.commit()
+    await db_session.refresh(db_user)
+    
+    return db_user
+
+
+@pytest_asyncio.fixture
+async def client(db_session, mock_user):
     """
     Create an async test client for testing FastAPI endpoints.
 
@@ -102,6 +145,34 @@ async def client(db_session):
     def override_get_db():
         return db_session
 
+    # Mock the get_current_user dependency to return our test user
+    async def override_get_current_user():
+        return mock_user
+
+    app.dependency_overrides[get_session_dependency] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
+
+    # Clean up the overrides
+    app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def unauthenticated_client(db_session):
+    """
+    Create an unauthenticated test client for testing auth requirements.
+    
+    This client only overrides the database session, not authentication,
+    allowing us to test endpoints that require authentication.
+    """
+    # Override only the database session dependency
+    def override_get_db():
+        return db_session
+
     app.dependency_overrides[get_session_dependency] = override_get_db
 
     async with AsyncClient(
@@ -109,8 +180,58 @@ async def client(db_session):
     ) as ac:
         yield ac
 
-    # Clean up the override
+    # Clean up the overrides
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture  
+async def other_user(db_session):
+    """Create another test user for isolation tests."""
+    other_user_id = str(uuid.uuid4())
+    other_user = UserModel(
+        id=uuid.UUID(other_user_id),
+        email=f"other-{other_user_id}@example.com",
+        name="Other User",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    db_session.add(other_user)
+    await db_session.commit()
+    await db_session.refresh(other_user)
+    return other_user
+
+
+@pytest_asyncio.fixture
+async def other_user_client(db_session, other_user):
+    """
+    Create a test client authenticated as a different user.
+    Used for testing user isolation.
+    """
+    # Create a client for the other user
+    def override_get_db():
+        return db_session
+
+    async def override_get_current_user():
+        return other_user
+
+    # We need a separate app instance to avoid conflicts
+    from app.main import app
+    
+    # Store and clear existing overrides
+    original_overrides = app.dependency_overrides.copy()
+    app.dependency_overrides.clear()
+    
+    # Set new overrides
+    app.dependency_overrides[get_session_dependency] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
+
+    # Restore original overrides
+    app.dependency_overrides = original_overrides
 
 
 @pytest.fixture
@@ -129,37 +250,15 @@ def sample_todo():
 
 
 @pytest.fixture
-def test_jwt_token(test_user_id: str) -> str:
+def auth_headers() -> dict:
     """
-    Generate a valid JWT token for testing.
+    Generate authorization headers for testing.
     
-    This mimics the JWT tokens that NextAuth creates.
-    """
-    # Get the secret from environment, matching what auth.py expects
-    secret = os.getenv("JWT_SECRET") or os.getenv("NEXTAUTH_SECRET") or "test-secret-key-for-jwt-encoding"
-    
-    # Create a token payload similar to NextAuth
-    payload = {
-        "sub": str(test_user_id),  # Subject (user ID)
-        "email": f"test-{test_user_id}@example.com",
-        "name": "Test User",
-        "picture": None,
-        "iat": datetime.now(timezone.utc),
-        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-    }
-    
-    # Encode the token
-    token = jwt.encode(payload, secret, algorithm="HS256")
-    return token
-
-
-@pytest.fixture
-def auth_headers(test_jwt_token: str) -> dict:
-    """
-    Generate authorization headers with a valid JWT token.
+    Since we're mocking the get_current_user dependency in tests,
+    the actual header value doesn't matter.
     """
     return {
-        "Authorization": f"Bearer {test_jwt_token}"
+        "Authorization": "Bearer test-token"
     }
 
 

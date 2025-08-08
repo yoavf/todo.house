@@ -84,6 +84,7 @@ dependencies = [
     { name = "asyncpg" },
     { name = "babel" },
     { name = "fastapi" },
+    { name = "fastapi-nextauth-jwt" },
     { name = "google-generativeai" },
     { name = "greenlet" },
     { name = "pillow" },
@@ -117,6 +118,7 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "babel", specifier = ">=2.16.0" },
     { name = "fastapi", specifier = ">=0.116.1" },
+    { name = "fastapi-nextauth-jwt", specifier = ">=2.1.1" },
     { name = "google-generativeai", specifier = ">=0.8.3" },
     { name = "greenlet", specifier = ">=3.1.1" },
     { name = "pillow", specifier = ">=10.4.0" },
@@ -341,6 +343,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/78/d7/6c8b3bfe33eeffa208183ec037fee0cce9f7f024089ab1c5d12ef04bd27c/fastapi-0.116.1.tar.gz", hash = "sha256:ed52cbf946abfd70c5a0dccb24673f0670deeb517a88b3544d03c2a6bf283143", size = 296485, upload-time = "2025-07-11T16:22:32.057Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/47/d63c60f59a59467fda0f93f46335c9d18526d7071f025cb5b89d5353ea42/fastapi-0.116.1-py3-none-any.whl", hash = "sha256:c46ac7c312df840f0c9e220f7964bada936781bc4e2e6eb71f1c4d7553786565", size = 95631, upload-time = "2025-07-11T16:22:30.485Z" },
+]
+
+[[package]]
+name = "fastapi-nextauth-jwt"
+version = "2.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "fastapi" },
+    { name = "python-jose", extra = ["cryptography"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b1/e3/f569b861a78c92c1ba1a8abb450db757feb2d1e0f499cc44a558492ce473/fastapi_nextauth_jwt-2.1.1.tar.gz", hash = "sha256:97d24df96661c78a4c7003f78459cc6df36eccd77656a3067628cace34863754", size = 69830, upload-time = "2025-05-24T11:39:23.928Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/02/0f/77402cfd8791af1bd7ff8fcadf8b56c13aa83253201a5e3157b13c6d0faa/fastapi_nextauth_jwt-2.1.1-py2.py3-none-any.whl", hash = "sha256:2beb72fa7124e857c79204c4828ed50e783933f8a7c0bf51ac65f20806dc44df", size = 8669, upload-time = "2025-05-24T11:39:22.306Z" },
 ]
 
 [[package]]

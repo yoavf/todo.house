@@ -158,5 +158,19 @@
 			"airConditioner": "Air Conditioner",
 			"waterHeater": "Water Heater"
 		}
+	},
+	"auth": {
+		"signIn": "Sign In",
+		"signInTitle": "Sign in to TodoHouse",
+		"signInWithGoogle": "Sign in with Google",
+		"signInWithEmail": "Sign in with Email",
+		"email": "Email",
+		"emailPlaceholder": "Enter your email",
+		"sendMagicLink": "Send Magic Link",
+		"checkEmail": "Check your email",
+		"magicLinkSent": "We've sent you a magic link to sign in",
+		"error": "Authentication Error",
+		"errorDescription": "An error occurred during authentication",
+		"tryAgain": "Try Again"
 	}
 }

@@ -3,9 +3,13 @@
 import uuid
 import pytest
 from sqlalchemy import select
+from httpx import AsyncClient, ASGITransport
+from datetime import datetime, timezone
 
-from app.database.models import Location as LocationModel
+from app.database.models import Location as LocationModel, User as UserModel
 from app.models import TaskPriority
+from app.database import get_session_dependency
+from app.auth import get_current_user
 
 
 @pytest.mark.integration
@@ -128,84 +132,83 @@ class TestLocationsIntegration:
         assert kitchen_saved["id"] == kitchen["id"]
         assert kitchen_saved["description"] == "My kitchen"
 
-    async def test_user_isolation(self, client, db_session, test_jwt_token):
+    async def test_user_isolation(self, client, db_session, auth_headers: dict):
         """Test that locations are properly isolated between users."""
-        # Create two different users with different JWT tokens
-        user1_id = str(uuid.uuid4())
-        user2_id = str(uuid.uuid4())
-        
-        # Import JWT creation utilities
-        from jose import jwt
-        from datetime import datetime, timezone, timedelta
-        import os
-        
-        # Get JWT secret
-        secret = os.getenv("JWT_SECRET", os.getenv("NEXTAUTH_SECRET", "test-secret-for-testing-only"))
-        
-        # Create JWT for user 1
-        user1_payload = {
-            "sub": user1_id,
-            "email": f"user1-{user1_id}@example.com",
-            "name": "User 1",
-            "picture": None,
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-        }
-        user1_token = jwt.encode(user1_payload, secret, algorithm="HS256")
-        user1_headers = {"Authorization": f"Bearer {user1_token}"}
-        
-        # Create JWT for user 2
-        user2_payload = {
-            "sub": user2_id,
-            "email": f"user2-{user2_id}@example.com",
-            "name": "User 2",
-            "picture": None,
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-        }
-        user2_token = jwt.encode(user2_payload, secret, algorithm="HS256")
-        user2_headers = {"Authorization": f"Bearer {user2_token}"}
-
         # User 1 creates a location
         location1_data = {"name": "User1 Office", "description": "Private office"}
         response1 = await client.post(
-            "/locations/", json=location1_data, headers=user1_headers
+            "/locations/", json=location1_data, headers=auth_headers
         )
         assert response1.status_code == 201
         location1_id = response1.json()["id"]
 
-        # User 2 creates a location
-        location2_data = {"name": "User2 Office", "description": "Different office"}
-        response2 = await client.post(
-            "/locations/", json=location2_data, headers=user2_headers
+        # Create another user
+        other_user_id = str(uuid.uuid4())
+        other_user = UserModel(
+            id=uuid.UUID(other_user_id),
+            email=f"other-{other_user_id}@example.com",
+            name="Other User",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
-        assert response2.status_code == 201
+        db_session.add(other_user)
+        await db_session.commit()
+        await db_session.refresh(other_user)
+        
+        # Create temporary client with other user's auth
+        from app.main import app
+        
+        # Store existing overrides
+        original_overrides = app.dependency_overrides.copy()
+        
+        # Override for other user
+        def override_get_db():
+            return db_session
+        
+        async def override_get_current_user():
+            return other_user
+        
+        app.dependency_overrides[get_session_dependency] = override_get_db
+        app.dependency_overrides[get_current_user] = override_get_current_user
+        
+        try:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as other_user_client:
+                # User 2 creates a location
+                location2_data = {"name": "User2 Office", "description": "Different office"}
+                response2 = await other_user_client.post(
+                    "/locations/", json=location2_data
+                )
+                assert response2.status_code == 201
 
-        # User 1 lists their locations
-        list1 = await client.get("/locations/", headers=user1_headers)
+                # User 2 cannot access User 1's location
+                get_response = await other_user_client.get(
+                    f"/locations/{location1_id}"
+                )
+                assert get_response.status_code == 404
+
+                # User 2 cannot update User 1's location
+                update_response = await other_user_client.patch(
+                    f"/locations/{location1_id}",
+                    json={"description": "Hacked!"}
+                )
+                assert update_response.status_code == 404
+
+                # User 2 cannot delete User 1's location
+                delete_response = await other_user_client.delete(
+                    f"/locations/{location1_id}"
+                )
+                assert delete_response.status_code == 404
+        finally:
+            # Restore original overrides
+            app.dependency_overrides = original_overrides
+
+        # User 1 lists their locations (after restoring auth to original user)
+        list1 = await client.get("/locations/", headers=auth_headers)
         user1_locations = [loc for loc in list1.json() if not loc["is_from_defaults"]]
         assert len(user1_locations) == 1
         assert user1_locations[0]["name"] == "User1 Office"
-
-        # User 2 cannot access User 1's location
-        get_response = await client.get(
-            f"/locations/{location1_id}", headers=user2_headers
-        )
-        assert get_response.status_code == 404
-
-        # User 2 cannot update User 1's location
-        update_response = await client.patch(
-            f"/locations/{location1_id}",
-            json={"description": "Hacked!"},
-            headers=user2_headers,
-        )
-        assert update_response.status_code == 404
-
-        # User 2 cannot delete User 1's location
-        delete_response = await client.delete(
-            f"/locations/{location1_id}", headers=user2_headers
-        )
-        assert delete_response.status_code == 404
 
     async def test_location_with_tasks_relationship(
         self, client, test_user_id, db_session

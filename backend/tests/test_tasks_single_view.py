@@ -1,10 +1,14 @@
 """Tests for single task view functionality."""
 
+import uuid
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone
 
-from app.database.models import Image as ImageModel
+from app.database.models import Image as ImageModel, User as UserModel
+from app.database import get_session_dependency
+from app.auth import get_current_user
 
 
 @pytest.mark.unit
@@ -50,7 +54,7 @@ async def test_get_single_task_not_found(client: AsyncClient, test_user_id: str,
 
 
 @pytest.mark.unit
-async def test_get_single_task_wrong_user(client: AsyncClient, test_user_id: str, auth_headers: dict):
+async def test_get_single_task_wrong_user(client: AsyncClient, test_user_id: str, auth_headers: dict, db_session: AsyncSession):
     """Test that users cannot access other users' tasks."""
     # Create a task
     task_data = {"title": "Private Task"}
@@ -59,32 +63,50 @@ async def test_get_single_task_wrong_user(client: AsyncClient, test_user_id: str
     )
     assert create_response.status_code == 200
     task_id = create_response.json()["id"]
-
-    # Create JWT for a different user
-    import uuid
-    from jose import jwt
-    from datetime import datetime, timezone, timedelta
-    import os
     
-    different_user_id = str(uuid.uuid4())
-    secret = os.getenv("JWT_SECRET", os.getenv("NEXTAUTH_SECRET", "test-secret-for-testing-only"))
-    different_user_payload = {
-        "sub": different_user_id,
-        "email": f"different-{different_user_id}@example.com",
-        "name": "Different User",
-        "picture": None,
-        "iat": datetime.now(timezone.utc),
-        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-    }
-    different_user_token = jwt.encode(different_user_payload, secret, algorithm="HS256")
-    different_user_headers = {"Authorization": f"Bearer {different_user_token}"}
-    
-    response = await client.get(
-        f"/api/tasks/{task_id}", headers=different_user_headers
+    # Create another user
+    other_user_id = str(uuid.uuid4())
+    other_user = UserModel(
+        id=uuid.UUID(other_user_id),
+        email=f"other-{other_user_id}@example.com",
+        name="Other User",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
+    db_session.add(other_user)
+    await db_session.commit()
+    await db_session.refresh(other_user)
+    
+    # Create temporary client with other user's auth
+    from app.main import app
+    
+    # Store existing overrides
+    original_overrides = app.dependency_overrides.copy()
+    
+    # Override for other user
+    def override_get_db():
+        return db_session
+    
+    async def override_get_current_user():
+        return other_user
+    
+    app.dependency_overrides[get_session_dependency] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as other_client:
+            # Try to access with different user
+            response = await other_client.get(
+                f"/api/tasks/{task_id}"
+            )
 
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Task not found"
+            assert response.status_code == 404
+            assert response.json()["detail"] == "Task not found"
+    finally:
+        # Restore original overrides
+        app.dependency_overrides = original_overrides
 
 
 @pytest.mark.unit

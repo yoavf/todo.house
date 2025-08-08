@@ -128,11 +128,11 @@ async def test_analyze_image_invalid_format(client: AsyncClient, setup_test_user
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_missing_user_id(client: AsyncClient):
+async def test_analyze_image_missing_user_id(unauthenticated_client: AsyncClient):
     """Test image analysis without user ID header."""
     image_data = create_test_image()
 
-    response = await client.post(
+    response = await unauthenticated_client.post(
         "/api/images/analyze",
         files={"image": ("test.jpg", image_data, "image/jpeg")},
         data={"generate_tasks": "true"},

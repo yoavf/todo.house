@@ -2,11 +2,14 @@
 
 import uuid
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, and_
+from httpx import AsyncClient, ASGITransport
 
-from app.database.models import Task as TaskModel
+from app.database.models import Task as TaskModel, User as UserModel
 from app.models import TaskStatus, TaskPriority, TaskSource, TaskType
+from app.database import get_session_dependency
+from app.auth import get_current_user
 
 
 @pytest.mark.integration
@@ -266,88 +269,84 @@ class TestTasksIntegration:
         assert no_location["location_id"] is None
         assert no_location.get("location") is None
 
-    async def test_task_user_isolation(self, client, db_session, test_jwt_token):
+    async def test_task_user_isolation(self, client, db_session, auth_headers: dict):
         """Test that tasks are properly isolated between users."""
-        # Create two different users with different JWT tokens
-        user1_id = str(uuid.uuid4())
-        user2_id = str(uuid.uuid4())
-        
-        # Import JWT creation utilities
-        from jose import jwt
-        from datetime import datetime, timezone, timedelta
-        import os
-        
-        # Get JWT secret
-        secret = os.getenv("JWT_SECRET", os.getenv("NEXTAUTH_SECRET", "test-secret-for-testing-only"))
-        
-        # Create JWT for user 1
-        user1_payload = {
-            "sub": user1_id,
-            "email": f"user1-{user1_id}@example.com",
-            "name": "User 1",
-            "picture": None,
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-        }
-        user1_token = jwt.encode(user1_payload, secret, algorithm="HS256")
-        user1_headers = {"Authorization": f"Bearer {user1_token}"}
-        
-        # Create JWT for user 2
-        user2_payload = {
-            "sub": user2_id,
-            "email": f"user2-{user2_id}@example.com",
-            "name": "User 2",
-            "picture": None,
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-        }
-        user2_token = jwt.encode(user2_payload, secret, algorithm="HS256")
-        user2_headers = {"Authorization": f"Bearer {user2_token}"}
-
         # User 1 creates a task
         task1_response = await client.post(
             "/api/tasks/",
             json={"title": "User 1 Private Task"},
-            headers=user1_headers,
+            headers=auth_headers
         )
         assert task1_response.status_code == 200
         task1_id = task1_response.json()["id"]
 
-        # User 2 creates a task
-        task2_response = await client.post(
-            "/api/tasks/",
-            json={"title": "User 2 Private Task"},
-            headers=user2_headers,
+        # Create another user
+        other_user_id = str(uuid.uuid4())
+        other_user = UserModel(
+            id=uuid.UUID(other_user_id),
+            email=f"other-{other_user_id}@example.com",
+            name="Other User",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
-        assert task2_response.status_code == 200
+        db_session.add(other_user)
+        await db_session.commit()
+        await db_session.refresh(other_user)
+        
+        # Create temporary client with other user's auth
+        from app.main import app
+        
+        # Store existing overrides
+        original_overrides = app.dependency_overrides.copy()
+        
+        # Override for other user
+        def override_get_db():
+            return db_session
+        
+        async def override_get_current_user():
+            return other_user
+        
+        app.dependency_overrides[get_session_dependency] = override_get_db
+        app.dependency_overrides[get_current_user] = override_get_current_user
+        
+        try:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as other_user_client:
+                # User 2 creates a task
+                task2_response = await other_user_client.post(
+                    "/api/tasks/",
+                    json={"title": "User 2 Private Task"}
+                )
+                assert task2_response.status_code == 200
 
-        # User 1 can only see their task
-        user1_tasks = await client.get(
-            "/api/tasks/", headers=user1_headers
-        )
+                # User 2 cannot access User 1's task
+                get_response = await other_user_client.get(
+                    f"/api/tasks/{task1_id}"
+                )
+                assert get_response.status_code == 404
+
+                # User 2 cannot update User 1's task
+                update_response = await other_user_client.put(
+                    f"/api/tasks/{task1_id}",
+                    json={"title": "Hacked!"}
+                )
+                assert update_response.status_code == 404
+
+                # User 2 cannot delete User 1's task
+                delete_response = await other_user_client.delete(
+                    f"/api/tasks/{task1_id}"
+                )
+                assert delete_response.status_code == 404
+        finally:
+            # Restore original overrides
+            app.dependency_overrides = original_overrides
+
+        # User 1 can only see their task (after restoring auth to original user)
+        user1_tasks = await client.get("/api/tasks/", headers=auth_headers)
         user1_task_titles = [t["title"] for t in user1_tasks.json()]
         assert "User 1 Private Task" in user1_task_titles
         assert "User 2 Private Task" not in user1_task_titles
-
-        # User 2 cannot access User 1's task
-        get_response = await client.get(
-            f"/api/tasks/{task1_id}", headers=user2_headers
-        )
-        assert get_response.status_code == 404
-
-        # User 2 cannot update User 1's task
-        update_response = await client.put(
-            f"/api/tasks/{task1_id}",
-            json={"title": "Hacked!"},
-            headers=user2_headers,
-        )
-        assert update_response.status_code == 404
-
-        # User 2 cannot delete User 1's task
-        delete_response = await client.delete(
-            f"/api/tasks/{task1_id}", headers=user2_headers
-        )
-        assert delete_response.status_code == 404
 
     async def test_bulk_task_operations(self, client, test_user_id, db_session, auth_headers: dict):
         """Test creating and managing multiple tasks."""
