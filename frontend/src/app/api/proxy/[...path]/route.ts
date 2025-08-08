@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -34,7 +34,7 @@ async function getAuthToken(): Promise<string | null> {
 }
 
 async function handleRequest(
-	request: NextRequest,
+	request: Request,
 	method: string,
 	params: { path: string[] },
 ) {
@@ -74,7 +74,7 @@ async function handleRequest(
 	}
 
 	// Build the backend URL
-	const backendUrl = `${API_URL}/api/${apiPath}${request.nextUrl.search}`;
+	const backendUrl = `${API_URL}/api/${apiPath}${new URL(request.url).search}`;
 
 	// Prepare headers
 	const headers: HeadersInit = {
@@ -143,46 +143,36 @@ async function handleRequest(
 }
 
 // Handle all HTTP methods
-export async function GET(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function GET(request: Request, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "GET", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function POST(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function POST(request: Request, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "POST", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function PUT(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function PUT(request: Request, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "PUT", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function PATCH(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function PATCH(request: Request, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "PATCH", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function DELETE(
-	request: NextRequest,
-	{ params }: { params: { path: string[] } },
-) {
+export async function DELETE(request: Request, context: any) {
+	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "DELETE", {
 		path: await Promise.resolve(params.path),
 	});
