@@ -1,14 +1,14 @@
-import type { NextAuthConfig } from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import GoogleProvider from "next-auth/providers/google";
 
 // Validate OAuth providers configuration at startup
-const providers: NextAuthConfig["providers"] = [];
+const providers: NextAuthOptions["providers"] = [];
 
 // Google OAuth configuration
 if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
 	providers.push(
-		Google({
+		GoogleProvider({
 			clientId: process.env.AUTH_GOOGLE_ID,
 			clientSecret: process.env.AUTH_GOOGLE_SECRET,
 		}),
@@ -44,14 +44,14 @@ if (providers.length === 0) {
 	);
 }
 
-export const authConfig: NextAuthConfig = {
+export const authOptions: NextAuthOptions = {
 	providers,
+	secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 	pages: {
 		signIn: "/auth/signin",
 		error: "/auth/error",
 		verifyRequest: "/auth/verify",
 	},
-	trustHost: true, // Important for production deployments
 	callbacks: {
 		async jwt({ token, user, account }) {
 			// Initial sign in
@@ -86,17 +86,15 @@ export const authConfig: NextAuthConfig = {
 	session: {
 		strategy: "jwt",
 	},
-	cookies: {
-		sessionToken: {
-			name: `authjs.session-token`,
-			options: {
-				httpOnly: true,
-				sameSite: "lax",
-				path: "/",
-				secure: process.env.NODE_ENV === "production",
-			},
-		},
-	},
+	// v4 doesn't have the same cookie configuration structure as v5
+	// The session token name is handled automatically
 };
 
-export const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
+// For v4, we export NextAuth with options
+const handler = NextAuth(authOptions);
+
+// Export for App Router compatibility
+export { handler as GET, handler as POST };
+
+// Export the handler for middleware and other uses
+export default handler;

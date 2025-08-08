@@ -73,7 +73,7 @@ class TestMockRequest:
         token = "test_token"
         request = MockRequest(token)
         
-        assert request.cookies == {"authjs.session-token": token}
+        assert request.cookies == {"next-auth.session-token": token}
         assert request.headers == {}
         assert request.method == "GET"
 
@@ -83,7 +83,7 @@ class TestMockRequest:
         
         for token in tokens:
             request = MockRequest(token)
-            assert request.cookies["authjs.session-token"] == token
+            assert request.cookies["next-auth.session-token"] == token
 
 
 class TestGetCurrentUser:

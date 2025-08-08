@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -20,11 +21,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 async function getAuthToken(): Promise<string | null> {
 	try {
 		const cookieStore = await cookies();
-		// NextAuth v5 session token (encrypted JWT)
+		// NextAuth v4 session token (encrypted JWT)
 		const sessionToken =
-			cookieStore.get("authjs.session-token")?.value ||
-			cookieStore.get("__Secure-authjs.session-token")?.value ||
-			cookieStore.get("__Host-authjs.session-token")?.value;
+			cookieStore.get("next-auth.session-token")?.value ||
+			cookieStore.get("__Secure-next-auth.session-token")?.value ||
+			cookieStore.get("__Host-next-auth.session-token")?.value;
 
 		return sessionToken || null;
 	} catch (error) {
@@ -39,7 +40,7 @@ async function handleRequest(
 	params: { path: string[] },
 ) {
 	// Check if user is authenticated
-	const session = await auth();
+	const session = await getServerSession(authOptions);
 	console.log("[Proxy] Session check:", {
 		hasSession: !!session,
 		userEmail: session?.user?.email,

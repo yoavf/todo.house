@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 
 /**
  * Get the current session and redirect to sign in if not authenticated
  */
 export async function requireAuth() {
-	const session = await auth();
+	const session = await getServerSession(authOptions);
 
 	if (!session) {
 		redirect("/auth/signin");
@@ -18,5 +19,5 @@ export async function requireAuth() {
  * Get the current session without redirecting
  */
 export async function getOptionalAuth() {
-	return await auth();
+	return await getServerSession(authOptions);
 }

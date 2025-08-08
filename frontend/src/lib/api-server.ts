@@ -5,7 +5,8 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -20,12 +21,12 @@ interface FetchOptions extends RequestInit {
 async function getAuthToken(): Promise<string | null> {
 	try {
 		const cookieStore = await cookies();
-		// NextAuth v5 uses these cookie names for the session token
+		// NextAuth v4 uses these cookie names for the session token
 		// The token is a JWE (JSON Web Encryption) that the backend will decrypt
 		const sessionToken =
-			cookieStore.get("authjs.session-token")?.value ||
-			cookieStore.get("__Secure-authjs.session-token")?.value ||
-			cookieStore.get("__Host-authjs.session-token")?.value;
+			cookieStore.get("next-auth.session-token")?.value ||
+			cookieStore.get("__Secure-next-auth.session-token")?.value ||
+			cookieStore.get("__Host-next-auth.session-token")?.value;
 
 		if (sessionToken) {
 			return sessionToken;
@@ -33,7 +34,7 @@ async function getAuthToken(): Promise<string | null> {
 
 		// If no session token in cookies, check if we have a session
 		// This handles edge cases where the cookie might not be accessible
-		const session = await auth();
+		const session = await getServerSession(authOptions);
 		if (!session) {
 			return null;
 		}
@@ -72,7 +73,7 @@ export async function authenticatedFetch(
 		requestHeaders.Authorization = `Bearer ${token}`;
 	} else if (requireAuth) {
 		// If auth is required but no token, check session
-		const session = await auth();
+		const session = await getServerSession(authOptions);
 		if (!session) {
 			redirect("/auth/signin");
 		}

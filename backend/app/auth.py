@@ -2,7 +2,7 @@ from typing import Optional, Dict
 from datetime import datetime, timezone
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi_nextauth_jwt import NextAuthJWT  # type: ignore
+from fastapi_nextauth_jwt import NextAuthJWTv4  # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import uuid
@@ -24,9 +24,9 @@ if not AUTH_SECRET:
         "Please set either AUTH_SECRET or NEXTAUTH_SECRET environment variable."
     )
 
-# Initialize NextAuthJWT for decrypting tokens
+# Initialize NextAuthJWTv4 for decrypting NextAuth v4 tokens
 # We disable CSRF since we're using it for API authentication
-nextauth = NextAuthJWT(secret=AUTH_SECRET, csrf_prevention_enabled=False)
+nextauth = NextAuthJWTv4(secret=AUTH_SECRET, csrf_prevention_enabled=False)
 
 # HTTP Bearer for getting token from Authorization header
 security = HTTPBearer(auto_error=False)
@@ -36,7 +36,8 @@ class MockRequest:
     """Mock request object to pass token to NextAuthJWT"""
 
     def __init__(self, token: str):
-        self.cookies = {"authjs.session-token": token}
+        # NextAuth v4 uses "next-auth.session-token" as the cookie name
+        self.cookies = {"next-auth.session-token": token}
         self.headers: Dict[str, str] = {}
         self.method = "GET"
 

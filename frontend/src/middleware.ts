@@ -1,24 +1,36 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { withAuth } from "next-auth/middleware";
 
-export default auth((req) => {
-	const isLoggedIn = !!req.auth;
-	const isAuthPage = req.nextUrl.pathname.startsWith("/auth");
-	const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
-
-	// Don't redirect on auth API calls
-	if (isApiAuth) {
+export default withAuth(
+	function middleware(req) {
+		// This function is called after authentication
 		return NextResponse.next();
-	}
+	},
+	{
+		callbacks: {
+			authorized: ({ req, token }) => {
+				const isAuthPage = req.nextUrl.pathname.startsWith("/auth");
+				const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
 
-	if (!isLoggedIn && !isAuthPage) {
-		const signInUrl = new URL("/auth/signin", req.url);
-		signInUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
-		return NextResponse.redirect(signInUrl);
-	}
+				// Allow auth API calls
+				if (isApiAuth) {
+					return true;
+				}
 
-	return NextResponse.next();
-});
+				// Allow auth pages even when not logged in
+				if (isAuthPage) {
+					return true;
+				}
+
+				// For all other pages, require authentication
+				return !!token;
+			},
+		},
+		pages: {
+			signIn: "/auth/signin",
+		},
+	},
+);
 
 // Protect all routes except auth and public paths
 export const config = {
