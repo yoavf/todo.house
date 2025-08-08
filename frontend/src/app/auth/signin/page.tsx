@@ -22,7 +22,17 @@ export default function SignInPage() {
 	const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 	const searchParams = useSearchParams();
 	const error = searchParams.get("error");
-	const _t = useTranslations("auth");
+	const t = useTranslations("auth");
+
+	const getErrorMessage = (errorType: string | null) => {
+		if (!errorType) return null;
+		const errorKey = `errors.${errorType}` as const;
+		try {
+			return t(errorKey as Parameters<typeof t>[0]);
+		} catch {
+			return t("errors.Default");
+		}
+	};
 
 	const handleEmailSignIn = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -58,29 +68,16 @@ export default function SignInPage() {
 			<Card className="w-full max-w-md">
 				<CardHeader className="space-y-1">
 					<CardTitle className="text-2xl font-bold text-center">
-						Welcome to TodoHouse
+						{t("welcomeTitle")}
 					</CardTitle>
 					<CardDescription className="text-center">
-						Sign in to manage your home tasks
+						{t("welcomeDescription")}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					{error && (
 						<Alert variant="destructive">
-							<AlertDescription>
-								{error === "OAuthSignin" && "Error connecting to the provider"}
-								{error === "OAuthCallback" && "Error during authentication"}
-								{error === "OAuthCreateAccount" && "Could not create account"}
-								{error === "EmailCreateAccount" && "Could not create account"}
-								{error === "Callback" && "Error during sign in"}
-								{error === "OAuthAccountNotLinked" &&
-									"Email already exists with different provider"}
-								{error === "EmailSignin" && "Error sending the email"}
-								{error === "CredentialsSignin" &&
-									"Sign in failed. Check your credentials"}
-								{error === "SessionRequired" && "Please sign in to continue"}
-								{error === "Default" && "An error occurred during sign in"}
-							</AlertDescription>
+							<AlertDescription>{getErrorMessage(error)}</AlertDescription>
 						</Alert>
 					)}
 
@@ -95,7 +92,7 @@ export default function SignInPage() {
 						) : (
 							<Icons.google className="me-2 h-4 w-4" />
 						)}
-						Continue with Google
+						{t("continueWithGoogle")}
 					</Button>
 
 					<div className="relative">
@@ -104,7 +101,7 @@ export default function SignInPage() {
 						</div>
 						<div className="relative flex justify-center text-xs uppercase">
 							<span className="bg-background px-2 text-muted-foreground">
-								Or continue with
+								{t("orContinueWith")}
 							</span>
 						</div>
 					</div>
@@ -112,7 +109,7 @@ export default function SignInPage() {
 					<form onSubmit={handleEmailSignIn} className="space-y-4">
 						<Input
 							type="email"
-							placeholder="Enter your email"
+							placeholder={t("emailPlaceholder")}
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							required
@@ -126,16 +123,16 @@ export default function SignInPage() {
 							{isLoading ? (
 								<>
 									<Icons.spinner className="me-2 h-4 w-4 animate-spin" />
-									Sending magic link...
+									{t("sendingMagicLink")}
 								</>
 							) : (
-								"Send magic link"
+								t("sendMagicLink")
 							)}
 						</Button>
 					</form>
 
 					<p className="text-center text-sm text-muted-foreground">
-						We'll send you a magic link to sign in
+						{t("magicLinkDescription")}
 					</p>
 				</CardContent>
 			</Card>
