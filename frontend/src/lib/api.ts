@@ -135,24 +135,50 @@ export interface ImageMetadata {
 	analysis_status: string;
 }
 
-interface ApiRequestOptions extends Omit<RequestInit, "body"> {
-	body?: any;
+export interface UserSettings {
+	notifications?: {
+		enabled?: boolean;
+		email?: boolean;
+		push?: boolean;
+	};
+	theme?: "light" | "dark" | "system";
+	language?: string;
+	timezone?: string;
+}
+
+interface ApiRequestOptions<T = unknown> extends Omit<RequestInit, "body"> {
+	body?: T;
+}
+
+/**
+ * Type guard to validate headers are string values
+ */
+function isStringRecord(value: unknown): value is Record<string, string> {
+	if (!value || typeof value !== "object") {
+		return false;
+	}
+	return Object.values(value).every((v) => typeof v === "string");
 }
 
 /**
  * Helper for JSON API requests
  */
-async function apiRequest<T>(
+async function apiRequest<TResponse, TBody = unknown>(
 	url: string,
-	options: ApiRequestOptions = {},
-): Promise<T> {
+	options: ApiRequestOptions<TBody> = {},
+): Promise<TResponse> {
 	const { body, ...fetchOptions } = options;
+
+	// Validate headers before spreading
+	const additionalHeaders = isStringRecord(fetchOptions.headers)
+		? fetchOptions.headers
+		: {};
 
 	const requestOptions: RequestInit = {
 		...fetchOptions,
 		headers: {
 			"Content-Type": "application/json",
-			...(fetchOptions.headers as Record<string, string>),
+			...additionalHeaders,
 		},
 	};
 
@@ -172,42 +198,50 @@ async function apiRequest<T>(
 
 export const tasksAPI = {
 	async getTasks(): Promise<Task[]> {
-		return apiRequest<Task[]>("/api/tasks/");
+		return apiRequest<Task[], never>("/api/tasks/");
 	},
 
 	async createTask(task: TaskCreate): Promise<Task> {
-		return apiRequest<Task>("/api/tasks/", {
+		return apiRequest<Task, TaskCreate>("/api/tasks/", {
 			method: "POST",
 			body: task,
 		});
 	},
 
 	async updateTask(id: number, update: TaskUpdate): Promise<Task> {
-		return apiRequest<Task>(`/api/tasks/${id}`, {
+		return apiRequest<Task, TaskUpdate>(`/api/tasks/${id}`, {
 			method: "PUT",
 			body: update,
 		});
 	},
 
 	async deleteTask(id: number): Promise<void> {
-		await authenticatedFetch(`/api/tasks/${id}`, {
+		const response = await authenticatedFetch(`/api/tasks/${id}`, {
 			method: "DELETE",
 		});
+
+		if (!response.ok) {
+			const error = await response.text().catch(() => "Failed to delete task");
+			throw new Error(error || `Failed to delete task: ${response.statusText}`);
+		}
 	},
 
 	async getTask(id: number): Promise<Task> {
-		return apiRequest<Task>(`/api/tasks/${id}`);
+		return apiRequest<Task, never>(`/api/tasks/${id}`);
 	},
 
 	async snoozeTask(id: number, snoozeOption: string): Promise<Task> {
-		return apiRequest<Task>(`/api/tasks/${id}/snooze`, {
-			method: "POST",
-			body: { snooze_option: snoozeOption },
-		});
+		return apiRequest<Task, { snooze_option: string }>(
+			`/api/tasks/${id}/snooze`,
+			{
+				method: "POST",
+				body: { snooze_option: snoozeOption },
+			},
+		);
 	},
 
 	async unsnoozeTask(id: number): Promise<Task> {
-		return apiRequest<Task>(`/api/tasks/${id}/unsnooze`, {
+		return apiRequest<Task, never>(`/api/tasks/${id}/unsnooze`, {
 			method: "POST",
 		});
 	},
@@ -234,17 +268,17 @@ export const tasksAPI = {
 	},
 
 	async getImage(imageId: string): Promise<ImageMetadata> {
-		return apiRequest<ImageMetadata>(`/api/images/${imageId}`);
+		return apiRequest<ImageMetadata, never>(`/api/images/${imageId}`);
 	},
 };
 
 export const userAPI = {
-	async getSettings() {
-		return apiRequest("/api/user-settings/me");
+	async getSettings(): Promise<UserSettings> {
+		return apiRequest<UserSettings, never>("/api/user-settings/me");
 	},
 
-	async updateSettings(settings: any) {
-		return apiRequest("/api/user-settings/me", {
+	async updateSettings(settings: UserSettings): Promise<UserSettings> {
+		return apiRequest<UserSettings, UserSettings>("/api/user-settings/me", {
 			method: "PATCH",
 			body: settings,
 		});
