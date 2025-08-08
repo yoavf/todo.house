@@ -209,14 +209,32 @@ async function apiRequest<TResponse, TBody = unknown>(
 
 	const requestOptions: RequestInit = {
 		...fetchOptions,
-		headers: {
-			"Content-Type": "application/json",
-			...additionalHeaders,
-		},
+		headers: additionalHeaders,
 	};
 
+	// Handle different body types
 	if (body) {
-		requestOptions.body = JSON.stringify(body);
+		if (body instanceof FormData) {
+			// For FormData, don't set Content-Type (browser will set it with boundary)
+			requestOptions.body = body as any;
+		} else {
+			// For JSON data
+			requestOptions.headers = {
+				"Content-Type": "application/json",
+				...additionalHeaders,
+			};
+			requestOptions.body = JSON.stringify(body);
+		}
+	} else if (
+		!body &&
+		fetchOptions.method !== "GET" &&
+		fetchOptions.method !== "DELETE"
+	) {
+		// Ensure Content-Type is set for requests that might have empty bodies
+		requestOptions.headers = {
+			"Content-Type": "application/json",
+			...additionalHeaders,
+		};
 	}
 
 	const response = await authenticatedFetch(url, requestOptions);
@@ -280,31 +298,11 @@ export const tasksAPI = {
 	},
 
 	async deleteTask(id: number): Promise<void> {
-		const response = await authenticatedFetch(`/api/tasks/${id}`, {
+		// DELETE requests typically return 204 No Content
+		// apiRequest will handle this and return null
+		await apiRequest<null, never>(`/api/tasks/${id}`, {
 			method: "DELETE",
 		});
-
-		if (!response.ok) {
-			// Handle error response based on content type
-			const contentType = response.headers.get("content-type");
-			let errorMessage: string;
-
-			if (contentType?.includes("application/json")) {
-				try {
-					const errorData = await response.json();
-					errorMessage =
-						errorData.detail || errorData.message || "Failed to delete task";
-				} catch {
-					errorMessage = `Failed to delete task: ${response.statusText}`;
-				}
-			} else {
-				errorMessage = await response
-					.text()
-					.catch(() => `Failed to delete task: ${response.statusText}`);
-			}
-
-			throw new Error(errorMessage);
-		}
 	},
 
 	async getTask(id: number): Promise<Task> {
@@ -332,37 +330,11 @@ export const tasksAPI = {
 		formData.append("image", imageFile);
 		formData.append("generate_tasks", "true");
 
-		const response = await authenticatedFetch("/api/images/analyze", {
+		// apiRequest now handles FormData properly
+		return apiRequest<ImageAnalysisResponse, FormData>("/api/images/analyze", {
 			method: "POST",
 			body: formData,
-			headers: {
-				// Don't set Content-Type, let browser set it with boundary for multipart
-			},
 		});
-
-		if (!response.ok) {
-			// Handle error response based on content type
-			const contentType = response.headers.get("content-type");
-			let errorMessage: string;
-
-			if (contentType?.includes("application/json")) {
-				try {
-					const errorData = await response.json();
-					errorMessage =
-						errorData.detail || errorData.message || "Failed to analyze image";
-				} catch {
-					errorMessage = `Failed to analyze image: ${response.statusText}`;
-				}
-			} else {
-				errorMessage = await response
-					.text()
-					.catch(() => `Failed to analyze image: ${response.statusText}`);
-			}
-
-			throw new Error(errorMessage);
-		}
-
-		return response.json();
 	},
 
 	async getImage(imageId: string): Promise<ImageMetadata> {
