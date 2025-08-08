@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import type { NextAuthConfig } from "next-auth";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
@@ -44,6 +45,29 @@ if (providers.length === 0) {
 	);
 }
 
+// Ensure a single secret source and log a short hash prefix for verification
+const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+const AUTH_SECRET_SOURCE = process.env.AUTH_SECRET
+	? "AUTH_SECRET"
+	: process.env.NEXTAUTH_SECRET
+		? "NEXTAUTH_SECRET"
+		: "missing";
+if (!AUTH_SECRET) {
+	throw new Error("Missing AUTH secret. Set AUTH_SECRET or NEXTAUTH_SECRET");
+}
+try {
+	const prefix = createHash("sha256")
+		.update(AUTH_SECRET)
+		.digest("hex")
+		.slice(0, 12);
+	// eslint-disable-next-line no-console
+	console.log("[Auth] Secret configured", {
+		source: AUTH_SECRET_SOURCE,
+		length: AUTH_SECRET.length,
+		sha256_prefix: prefix,
+	});
+} catch {}
+
 export const authConfig: NextAuthConfig = {
 	providers,
 	pages: {
@@ -86,6 +110,8 @@ export const authConfig: NextAuthConfig = {
 	session: {
 		strategy: "jwt",
 	},
+	// Explicitly set secret to ensure consistent usage in all environments
+	secret: AUTH_SECRET,
 };
 
 export const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
