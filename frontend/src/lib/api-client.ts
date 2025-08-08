@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getSession } from "next-auth/react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -26,13 +27,7 @@ export async function authenticatedFetch(
 	// Add auth header if we have a session
 	if (session?.user) {
 		// For now, we'll use the user ID as a token until we implement proper JWT
-		requestHeaders["Authorization"] = `Bearer ${session.user.id}`;
-	}
-
-	// Fall back to legacy header if configured (for gradual migration)
-	const legacyUserId = process.env.NEXT_PUBLIC_TEST_USER_ID;
-	if (!session && legacyUserId && requireAuth) {
-		requestHeaders["X-User-Id"] = legacyUserId;
+		requestHeaders.Authorization = `Bearer ${session.user.id}`;
 	}
 
 	// Make the request
@@ -44,7 +39,14 @@ export async function authenticatedFetch(
 	// Handle auth errors
 	if (response.status === 401 && requireAuth) {
 		// Session might be expired, trigger re-authentication
-		window.location.href = "/auth/signin";
+		// Check if we're on the server or client
+		if (typeof window !== "undefined") {
+			// Client-side: use window.location for redirect
+			window.location.href = "/auth/signin";
+		} else {
+			// Server-side: use Next.js redirect
+			redirect("/auth/signin");
+		}
 		throw new Error("Authentication required");
 	}
 

@@ -1,3 +1,10 @@
+/**
+ * API client - Uses proper authentication via NextAuth
+ */
+
+import { authenticatedFetch } from "./api-client";
+
+// Type definitions
 export type TaskType =
 	| "interior"
 	| "exterior"
@@ -117,21 +124,6 @@ export interface ImageAnalysisResponse {
 	retry_count: number;
 }
 
-const API_URL =
-	process.env.NEXT_PUBLIC_API_URL ||
-	(() => {
-		throw new Error(
-			"API URL is not defined. Please set NEXT_PUBLIC_API_URL in your environment.",
-		);
-	})();
-const TEST_USER_ID =
-	process.env.NEXT_PUBLIC_TEST_USER_ID ||
-	(() => {
-		throw new Error(
-			"User ID is not defined. Please set NEXT_PUBLIC_TEST_USER_ID in your environment.",
-		);
-	})();
-
 export interface ImageMetadata {
 	id: string;
 	url: string;
@@ -143,85 +135,81 @@ export interface ImageMetadata {
 	analysis_status: string;
 }
 
+interface ApiRequestOptions extends Omit<RequestInit, "body"> {
+	body?: any;
+}
+
+/**
+ * Helper for JSON API requests
+ */
+async function apiRequest<T>(
+	url: string,
+	options: ApiRequestOptions = {},
+): Promise<T> {
+	const { body, ...fetchOptions } = options;
+
+	const requestOptions: RequestInit = {
+		...fetchOptions,
+		headers: {
+			"Content-Type": "application/json",
+			...(fetchOptions.headers as Record<string, string>),
+		},
+	};
+
+	if (body) {
+		requestOptions.body = JSON.stringify(body);
+	}
+
+	const response = await authenticatedFetch(url, requestOptions);
+
+	if (!response.ok) {
+		const error = await response.text();
+		throw new Error(error || `Request failed: ${response.statusText}`);
+	}
+
+	return response.json();
+}
+
 export const tasksAPI = {
 	async getTasks(): Promise<Task[]> {
-		const response = await fetch(`${API_URL}/api/tasks/`, {
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
-		});
-		if (!response.ok) throw new Error("Failed to fetch tasks");
-		return response.json();
+		return apiRequest<Task[]>("/api/tasks/");
 	},
 
 	async createTask(task: TaskCreate): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/`, {
+		return apiRequest<Task>("/api/tasks/", {
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-User-Id": TEST_USER_ID,
-			},
-			body: JSON.stringify(task),
+			body: task,
 		});
-		if (!response.ok) throw new Error("Failed to create task");
-		return response.json();
 	},
 
 	async updateTask(id: number, update: TaskUpdate): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}`, {
+		return apiRequest<Task>(`/api/tasks/${id}`, {
 			method: "PUT",
-			headers: {
-				"Content-Type": "application/json",
-				"X-User-Id": TEST_USER_ID,
-			},
-			body: JSON.stringify(update),
+			body: update,
 		});
-		if (!response.ok) throw new Error("Failed to update task");
-		return response.json();
 	},
 
 	async deleteTask(id: number): Promise<void> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}`, {
+		await authenticatedFetch(`/api/tasks/${id}`, {
 			method: "DELETE",
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
 		});
-		if (!response.ok) throw new Error("Failed to delete task");
 	},
 
 	async getTask(id: number): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}`, {
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
-		});
-		if (!response.ok) throw new Error("Failed to fetch task");
-		return response.json();
+		return apiRequest<Task>(`/api/tasks/${id}`);
 	},
 
 	async snoozeTask(id: number, snoozeOption: string): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}/snooze`, {
+		return apiRequest<Task>(`/api/tasks/${id}/snooze`, {
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-User-Id": TEST_USER_ID,
-			},
-			body: JSON.stringify({ snooze_option: snoozeOption }),
+			body: { snooze_option: snoozeOption },
 		});
-		if (!response.ok) throw new Error("Failed to snooze task");
-		return response.json();
 	},
 
 	async unsnoozeTask(id: number): Promise<Task> {
-		const response = await fetch(`${API_URL}/api/tasks/${id}/unsnooze`, {
+		return apiRequest<Task>(`/api/tasks/${id}/unsnooze`, {
 			method: "POST",
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
 		});
-		if (!response.ok) throw new Error("Failed to unsnooze task");
-		return response.json();
 	},
 
 	async analyzeImage(imageFile: File): Promise<ImageAnalysisResponse> {
@@ -229,12 +217,12 @@ export const tasksAPI = {
 		formData.append("image", imageFile);
 		formData.append("generate_tasks", "true");
 
-		const response = await fetch(`${API_URL}/api/images/analyze`, {
+		const response = await authenticatedFetch("/api/images/analyze", {
 			method: "POST",
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
 			body: formData,
+			headers: {
+				// Don't set Content-Type, let browser set it with boundary for multipart
+			},
 		});
 
 		if (!response.ok) {
@@ -246,12 +234,19 @@ export const tasksAPI = {
 	},
 
 	async getImage(imageId: string): Promise<ImageMetadata> {
-		const response = await fetch(`${API_URL}/api/images/${imageId}`, {
-			headers: {
-				"X-User-Id": TEST_USER_ID,
-			},
+		return apiRequest<ImageMetadata>(`/api/images/${imageId}`);
+	},
+};
+
+export const userAPI = {
+	async getSettings() {
+		return apiRequest("/api/user-settings/me");
+	},
+
+	async updateSettings(settings: any) {
+		return apiRequest("/api/user-settings/me", {
+			method: "PATCH",
+			body: settings,
 		});
-		if (!response.ok) throw new Error("Failed to fetch image");
-		return response.json();
 	},
 };
