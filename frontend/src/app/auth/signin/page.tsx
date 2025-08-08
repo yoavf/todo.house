@@ -44,7 +44,10 @@ export default function SignInPage() {
 				callbackUrl: "/",
 			});
 		} catch (error) {
-			console.error("Sign in error:", error);
+			// TODO: Send to error tracking service
+			if (process.env.NODE_ENV === 'development') {
+				console.error("Sign in error:", error);
+			}
 		} finally {
 			setIsLoading(false);
 		}
