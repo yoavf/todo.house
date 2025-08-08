@@ -28,14 +28,21 @@ if not AUTH_SECRET:
 AUTH_SECRET = AUTH_SECRET.strip('"').strip("'")
 logger.info(f"AUTH_SECRET configured (length: {len(AUTH_SECRET)}, first 10 chars: {AUTH_SECRET[:10]}...)")
 
-# Get AUTH_URL for NextAuth
-AUTH_URL = os.getenv("AUTH_URL", "http://localhost:3000")
-logger.info(f"AUTH_URL configured: {AUTH_URL}")
+# Get AUTH_URL for NextAuth - MUST be set in production!
+AUTH_URL = os.getenv("AUTH_URL")
+if not AUTH_URL:
+    # Try common alternatives
+    AUTH_URL = os.getenv("NEXTAUTH_URL") or os.getenv("NEXT_PUBLIC_URL") or "http://localhost:3000"
+    logger.warning(f"AUTH_URL not explicitly set, using: {AUTH_URL}")
+else:
+    logger.info(f"AUTH_URL configured: {AUTH_URL}")
+
+# Set the AUTH_URL environment variable for the library to use
+os.environ["AUTH_URL"] = AUTH_URL
+os.environ["NEXTAUTH_URL"] = AUTH_URL  # Also set NEXTAUTH_URL for compatibility
 
 # Initialize NextAuthJWTv4 for decrypting NextAuth v4 tokens
 # We disable CSRF since we're using it for API authentication
-# Set the AUTH_URL environment variable for the library
-os.environ["AUTH_URL"] = AUTH_URL
 nextauth = NextAuthJWTv4(secret=AUTH_SECRET, csrf_prevention_enabled=False)
 
 # HTTP Bearer for getting token from Authorization header
@@ -94,11 +101,14 @@ async def get_current_user(
     logger.debug(f"Token preview: {token[:50]}...")
 
     try:
-        # Use fastapi-nextauth-jwt to decrypt the token
         # Create a mock request with the token as a cookie
         mock_request = MockRequest(token)
-
+        
+        # Debug: Log what we're passing
+        logger.debug(f"Attempting decryption with cookies: {mock_request.cookies}")
+        
         # Now use the library to decrypt
+        # The library checks for the cookie in the request
         token_data = nextauth(mock_request)
         logger.info(f"Successfully decrypted NextAuth token for: {token_data.get('email')}")
 
@@ -106,6 +116,17 @@ async def get_current_user(
         logger.warning(f"NextAuth JWT decryption failed: {str(e)}")
         logger.debug(f"Exception type: {type(e).__name__}")
         logger.debug(f"Full exception: {repr(e)}")
+        
+        # Try alternative: Call the decode method directly
+        try:
+            # Import the decode function from the library
+            from fastapi_nextauth_jwt.backend import decode_v4  # type: ignore
+            
+            # Try to decode directly
+            token_data = decode_v4(token, AUTH_SECRET)
+            logger.info(f"Successfully decrypted using direct decode_v4: {token_data.get('email')}")
+        except Exception as decode_error:
+            logger.debug(f"Direct decode also failed: {decode_error}")
         # If that doesn't work, the token might be a test token (base64 JSON)
         try:
             import base64
