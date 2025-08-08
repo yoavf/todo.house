@@ -187,6 +187,9 @@
 			"OAuthAccountNotLinked": "Email already exists with different provider",
 			"EmailSignin": "Error sending the email",
 			"CredentialsSignin": "Sign in failed. Check your credentials",
+			"Verification": "The verification link is invalid or has expired",
+			"AccessDenied": "Access denied",
+			"Configuration": "Configuration error",
 			"SessionRequired": "Please sign in to continue",
 			"Default": "An error occurred during sign in"
 		}
