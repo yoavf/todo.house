@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy import text
@@ -7,7 +7,7 @@ from .tasks import router as tasks_router
 from .images import router as images_router
 from .locations import router as locations_router
 from .user_settings import router as user_settings_router
-from .logging_config import setup_logging
+from .logging_config import setup_logging, StructuredLogger
 import os
 from pathlib import Path
 
@@ -50,6 +50,26 @@ app.add_middleware(
     allow_headers=["*"],
     allow_origin_regex=r"https://.*\.up\.railway\.app",  # Regex for Railway PR previews
 )
+
+# Debug middleware to log headers (temporary for debugging auth issues)
+logger = StructuredLogger(__name__)
+
+@app.middleware("http")
+async def log_request_headers(request: Request, call_next):
+    """Log incoming request headers for debugging."""
+    if request.url.path.startswith("/api/"):
+        # Log the Authorization header specifically
+        auth_header = request.headers.get("authorization")
+        logger.debug(
+            f"Request to {request.url.path}",
+            method=request.method,
+            has_auth_header=bool(auth_header),
+            auth_header_preview=auth_header[:50] if auth_header else None,
+            all_headers=dict(request.headers) if os.getenv("LOG_LEVEL") == "DEBUG" else None
+        )
+    
+    response = await call_next(request)
+    return response
 
 # Include routers
 app.include_router(tasks_router)

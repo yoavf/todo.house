@@ -53,6 +53,7 @@ async def get_current_user(
 
     if not credentials or not credentials.credentials:
         logger.error("No credentials provided in request")
+        logger.debug(f"Credentials object: {credentials}")
         raise HTTPException(
             status_code=401,
             detail="Authentication required. Please provide a valid token.",
