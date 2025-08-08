@@ -60,7 +60,9 @@ export default function SignInPage() {
 				callbackUrl: "/",
 			});
 		} catch (error) {
-			console.error("Google sign in error:", error);
+			if (process.env.NODE_ENV === "development") {
+				console.error("Google sign in error:", error);
+			}
 		} finally {
 			setIsGoogleLoading(false);
 		}

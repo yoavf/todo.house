@@ -13,10 +13,16 @@ from .logging_config import StructuredLogger
 
 logger = StructuredLogger(__name__)
 
-# Get the secret for authentication
+# Get the secret for authentication - REQUIRED for security
 AUTH_SECRET = os.getenv("AUTH_SECRET") or os.getenv("NEXTAUTH_SECRET")
 if not AUTH_SECRET:
-    logger.warning("No AUTH_SECRET configured - authentication will fail")
+    # This is a critical security requirement - the application cannot function
+    # securely without a proper authentication secret
+    raise RuntimeError(
+        "CRITICAL: AUTH_SECRET environment variable is not set. "
+        "The application cannot start without a valid authentication secret. "
+        "Please set either AUTH_SECRET or NEXTAUTH_SECRET environment variable."
+    )
 
 # Initialize NextAuthJWT for decrypting tokens
 # We disable CSRF since we're using it for API authentication

@@ -330,10 +330,13 @@ export const userAPI = {
 		return apiRequest<UserSettings, never>("/api/user-settings/me");
 	},
 
-	async updateSettings(settings: UserSettings): Promise<UserSettings> {
-		return apiRequest<UserSettings, UserSettings>("/api/user-settings/me", {
-			method: "PATCH",
-			body: settings,
-		});
+	async updateSettings(settings: Partial<UserSettings>): Promise<UserSettings> {
+		return apiRequest<UserSettings, Partial<UserSettings>>(
+			"/api/user-settings/me",
+			{
+				method: "PATCH",
+				body: settings,
+			},
+		);
 	},
 };
