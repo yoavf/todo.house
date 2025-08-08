@@ -631,7 +631,6 @@ async def health_check():
 async def proxy_image(
     image_id: str,
     session: AsyncSession = Depends(get_session_dependency),
-    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
     width: Optional[int] = None,
     height: Optional[int] = None,
 ):
@@ -640,10 +639,12 @@ async def proxy_image(
 
     This endpoint serves images through the backend to avoid CORS issues
     and mixed content problems when accessing from different IPs.
+    
+    Note: This endpoint is public (no authentication required) to allow
+    browser image loading. Images are only accessible if you know the UUID.
 
     Args:
         image_id: The UUID of the image
-        x_user_id: User ID from header
         session: Database session
         width: Optional width for image resizing
         height: Optional height for image resizing
@@ -661,22 +662,9 @@ async def proxy_image(
                 detail="Invalid image ID format",
             )
 
-        # Build query - optionally filter by user if provided
-        if x_user_id:
-            try:
-                user_uuid = uuid.UUID(x_user_id)
-                query = select(ImageModel).where(
-                    and_(ImageModel.id == image_uuid, ImageModel.user_id == user_uuid)
-                )
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid user ID format",
-                )
-        else:
-            # No user ID provided - just get by image ID
-            # This is less secure but needed for browser image loading
-            query = select(ImageModel).where(ImageModel.id == image_uuid)
+        # Get image by ID - no user filtering since this is a public endpoint
+        # Security is through obscurity (UUID is hard to guess)
+        query = select(ImageModel).where(ImageModel.id == image_uuid)
 
         result = await session.execute(query)
         image_record = result.scalar_one_or_none()

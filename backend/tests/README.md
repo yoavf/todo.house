@@ -69,7 +69,7 @@ async def test_full_lifecycle(client: AsyncClient, setup_test_user):
     # Test with real database
     response = await client.post("/api/tasks/", 
                                 json=data,
-                                headers={"x-user-id": user_id})
+                                headers=auth_headers)
 ```
 
 ## Local vs Cloud Testing

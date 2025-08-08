@@ -152,4 +152,4 @@ backend/
 ### Health
 - `GET /api/health` - Health check with database status
 
-All endpoints require `x-user-id` header for user context.
+All endpoints (except health check and image proxy) require JWT authentication via `Authorization: Bearer <token>` header.
