@@ -45,7 +45,7 @@ export default function SignInPage() {
 			});
 		} catch (error) {
 			// TODO: Send to error tracking service
-			if (process.env.NODE_ENV === 'development') {
+			if (process.env.NODE_ENV === "development") {
 				console.error("Sign in error:", error);
 			}
 		} finally {

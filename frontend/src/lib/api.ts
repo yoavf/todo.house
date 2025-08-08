@@ -189,8 +189,27 @@ async function apiRequest<TResponse, TBody = unknown>(
 	const response = await authenticatedFetch(url, requestOptions);
 
 	if (!response.ok) {
-		const error = await response.text();
-		throw new Error(error || `Request failed: ${response.statusText}`);
+		// Handle error response based on content type
+		const contentType = response.headers.get("content-type");
+		let errorMessage: string;
+
+		if (contentType?.includes("application/json")) {
+			try {
+				const errorData = await response.json();
+				// FastAPI typically returns errors as { detail: "error message" }
+				errorMessage =
+					errorData.detail || errorData.message || JSON.stringify(errorData);
+			} catch {
+				errorMessage = `Request failed: ${response.statusText}`;
+			}
+		} else {
+			// Handle text or HTML error responses
+			errorMessage = await response
+				.text()
+				.catch(() => `Request failed: ${response.statusText}`);
+		}
+
+		throw new Error(errorMessage || `Request failed: ${response.statusText}`);
 	}
 
 	return response.json();
@@ -221,8 +240,25 @@ export const tasksAPI = {
 		});
 
 		if (!response.ok) {
-			const error = await response.text().catch(() => "Failed to delete task");
-			throw new Error(error || `Failed to delete task: ${response.statusText}`);
+			// Handle error response based on content type
+			const contentType = response.headers.get("content-type");
+			let errorMessage: string;
+
+			if (contentType?.includes("application/json")) {
+				try {
+					const errorData = await response.json();
+					errorMessage =
+						errorData.detail || errorData.message || "Failed to delete task";
+				} catch {
+					errorMessage = `Failed to delete task: ${response.statusText}`;
+				}
+			} else {
+				errorMessage = await response
+					.text()
+					.catch(() => `Failed to delete task: ${response.statusText}`);
+			}
+
+			throw new Error(errorMessage);
 		}
 	},
 
@@ -260,8 +296,25 @@ export const tasksAPI = {
 		});
 
 		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({}));
-			throw new Error(errorData.message || "Failed to analyze image");
+			// Handle error response based on content type
+			const contentType = response.headers.get("content-type");
+			let errorMessage: string;
+
+			if (contentType?.includes("application/json")) {
+				try {
+					const errorData = await response.json();
+					errorMessage =
+						errorData.detail || errorData.message || "Failed to analyze image";
+				} catch {
+					errorMessage = `Failed to analyze image: ${response.statusText}`;
+				}
+			} else {
+				errorMessage = await response
+					.text()
+					.catch(() => `Failed to analyze image: ${response.statusText}`);
+			}
+
+			throw new Error(errorMessage);
 		}
 
 		return response.json();
