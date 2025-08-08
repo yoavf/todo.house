@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 // Ensure Node.js runtime for compatibility with NextAuth auth() and cookies()
 export const runtime = "nodejs";
@@ -45,7 +45,7 @@ function parseCookieHeaderFor(
 	return null;
 }
 
-async function getAuthToken(request: Request): Promise<string | null> {
+async function getAuthToken(request: NextRequest): Promise<string | null> {
 	try {
 		const cookieStore = await cookies();
 		// Try standard NextAuth cookie names first
@@ -74,7 +74,7 @@ async function getAuthToken(request: Request): Promise<string | null> {
 }
 
 async function handleRequest(
-	request: Request,
+	request: NextRequest,
 	method: string,
 	params: { path: string[] },
 ) {
@@ -194,35 +194,35 @@ async function handleRequest(
 }
 
 // Handle all HTTP methods
-export async function GET(request: Request, context: any) {
+export async function GET(request: NextRequest, context: any) {
 	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "GET", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function POST(request: Request, context: any) {
+export async function POST(request: NextRequest, context: any) {
 	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "POST", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function PUT(request: Request, context: any) {
+export async function PUT(request: NextRequest, context: any) {
 	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "PUT", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function PATCH(request: Request, context: any) {
+export async function PATCH(request: NextRequest, context: any) {
 	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "PATCH", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function DELETE(request: Request, context: any) {
+export async function DELETE(request: NextRequest, context: any) {
 	const { params } = context as { params: { path: string[] } };
 	return handleRequest(request, "DELETE", {
 		path: await Promise.resolve(params.path),
