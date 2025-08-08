@@ -25,7 +25,9 @@ from .services.task_service import TaskService
 from .services.snooze_service import SnoozeService, SnoozeOption
 from .logging_config import StructuredLogger
 from .locale_detection import get_locale_string, detect_locale_and_metadata, LocaleData
-from .auth import get_current_user
+# Temporarily use simplified auth to test Railway deployment
+# from .auth import get_current_user
+from .auth_simple import get_current_user_simple as get_current_user
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 logger = StructuredLogger(__name__)

@@ -100,33 +100,20 @@ async def get_current_user(
     logger.info(f"Auth attempt with token length: {len(token)}")
     logger.debug(f"Token preview: {token[:50]}...")
 
+    # Decrypt the NextAuth v4 token using the library
     try:
         # Create a mock request with the token as a cookie
+        # The library expects the token in a specific cookie
         mock_request = MockRequest(token)
         
-        # Debug: Log what we're passing
-        logger.debug(f"Attempting decryption with cookies: {mock_request.cookies}")
-        
-        # Now use the library to decrypt
-        # The library checks for the cookie in the request
+        # Use the library to decrypt - it handles all the complexity
         token_data = nextauth(mock_request)
         logger.info(f"Successfully decrypted NextAuth token for: {token_data.get('email')}")
-
+        
     except Exception as e:
         logger.warning(f"NextAuth JWT decryption failed: {str(e)}")
         logger.debug(f"Exception type: {type(e).__name__}")
         logger.debug(f"Full exception: {repr(e)}")
-        
-        # Try alternative: Call the decode method directly
-        try:
-            # Import the decode function from the library
-            from fastapi_nextauth_jwt.backend import decode_v4  # type: ignore
-            
-            # Try to decode directly
-            token_data = decode_v4(token, AUTH_SECRET)
-            logger.info(f"Successfully decrypted using direct decode_v4: {token_data.get('email')}")
-        except Exception as decode_error:
-            logger.debug(f"Direct decode also failed: {decode_error}")
         # If that doesn't work, the token might be a test token (base64 JSON)
         try:
             import base64
