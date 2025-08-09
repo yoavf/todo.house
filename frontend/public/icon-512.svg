@@ -1,11 +1,39 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <!-- TodoHouse Icon -->
-  <rect width="512" height="512" rx="51.2" fill="#f97316"/>
-  <rect x="76.8" y="76.8" width="358.4" height="358.4" rx="25.6" fill="#ffffff"/>
-  <!-- House shape -->
-  <path d="M153.6 230.4 L256 153.6 L358.4 230.4 L358.4 332.8 L153.6 332.8 Z" fill="#f97316"/>
-  <!-- Door -->
-  <rect x="230.4" y="281.6" width="51.2" height="51.2" fill="#ffffff"/>
-  <!-- Checkmark -->
-  <path d="M204.8 384 L230.4 409.6 L307.2 358.4" stroke="#f97316" stroke-width="10.24" fill="none" stroke-linecap="round"/>
+  <!-- Background -->
+  <rect width="512" height="512" rx="40.96" fill="#f97316"/>
+  
+  <!-- House structure -->
+  <g transform="translate(76.8, 102.4)">
+    <!-- Main house body -->
+    <rect x="40.96" y="128" width="276.48" height="179.2" fill="#ffffff" rx="10.24"/>
+    
+    <!-- Roof triangle -->
+    <path d="M25.6 143.36 L179.2 40.96 L332.8 143.36 Z" fill="#f97316"/>
+    
+    <!-- Door -->
+    <rect x="143.36" y="215.04" width="71.68" height="92.16" fill="#f97316" rx="5.12"/>
+    
+    <!-- Door handle -->
+    <circle cx="194.56" cy="261.12" r="4.096" fill="#ffffff"/>
+    
+    <!-- Windows -->
+    <rect x="76.8" y="163.84" width="40.96" height="40.96" fill="#e0f2fe" rx="2.56"/>
+    <rect x="240.64" y="163.84" width="40.96" height="40.96" fill="#e0f2fe" rx="2.56"/>
+    
+    <!-- Window frames -->
+    <line x1="97.28" y1="163.84" x2="97.28" y2="204.8" stroke="#f97316" stroke-width="1.024"/>
+    <line x1="76.8" y1="184.32" x2="117.76" y2="184.32" stroke="#f97316" stroke-width="1.024"/>
+    <line x1="261.12" y1="163.84" x2="261.12" y2="204.8" stroke="#f97316" stroke-width="1.024"/>
+    <line x1="240.64" y1="184.32" x2="281.6" y2="184.32" stroke="#f97316" stroke-width="1.024"/>
+  </g>
+  
+  <!-- Task completion checkmark in a circle -->
+  <g transform="translate(281.6, 281.6)">
+    <!-- Check circle background -->
+    <circle cx="76.8" cy="76.8" r="61.44" fill="#22c55e"/>
+    
+    <!-- Checkmark -->
+    <path d="M40.96 76.8 L66.56 102.4 L112.64 51.2" 
+          stroke="#ffffff" stroke-width="7.68" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>

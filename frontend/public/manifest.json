@@ -32,7 +32,7 @@
 			"form_factor": "narrow"
 		}
 	],
-		"shortcuts": [
+	"shortcuts": [
 		{
 			"name": "Add Task",
 			"short_name": "Add",

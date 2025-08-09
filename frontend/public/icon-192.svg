@@ -1,11 +1,39 @@
 <svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
-  <!-- TodoHouse Icon -->
-  <rect width="192" height="192" rx="19.200000000000003" fill="#f97316"/>
-  <rect x="28.799999999999997" y="28.799999999999997" width="134.39999999999998" height="134.39999999999998" rx="9.600000000000001" fill="#ffffff"/>
-  <!-- House shape -->
-  <path d="M57.599999999999994 86.4 L96 57.599999999999994 L134.39999999999998 86.4 L134.39999999999998 124.80000000000001 L57.599999999999994 124.80000000000001 Z" fill="#f97316"/>
-  <!-- Door -->
-  <rect x="86.4" y="105.60000000000001" width="19.200000000000003" height="19.200000000000003" fill="#ffffff"/>
-  <!-- Checkmark -->
-  <path d="M76.80000000000001 144 L86.4 153.60000000000002 L115.19999999999999 134.39999999999998" stroke="#f97316" stroke-width="3.84" fill="none" stroke-linecap="round"/>
+  <!-- Background -->
+  <rect width="192" height="192" rx="15.36" fill="#f97316"/>
+  
+  <!-- House structure -->
+  <g transform="translate(28.799999999999997, 38.400000000000006)">
+    <!-- Main house body -->
+    <rect x="15.36" y="48" width="103.68" height="67.19999999999999" fill="#ffffff" rx="3.84"/>
+    
+    <!-- Roof triangle -->
+    <path d="M9.600000000000001 53.760000000000005 L67.19999999999999 15.36 L124.80000000000001 53.760000000000005 Z" fill="#f97316"/>
+    
+    <!-- Door -->
+    <rect x="53.760000000000005" y="80.64" width="26.880000000000003" height="34.56" fill="#f97316" rx="1.92"/>
+    
+    <!-- Door handle -->
+    <circle cx="72.96000000000001" cy="97.92" r="1.536" fill="#ffffff"/>
+    
+    <!-- Windows -->
+    <rect x="28.799999999999997" y="61.44" width="15.36" height="15.36" fill="#e0f2fe" rx="0.96"/>
+    <rect x="90.24" y="61.44" width="15.36" height="15.36" fill="#e0f2fe" rx="0.96"/>
+    
+    <!-- Window frames -->
+    <line x1="36.480000000000004" y1="61.44" x2="36.480000000000004" y2="76.80000000000001" stroke="#f97316" stroke-width="0.384"/>
+    <line x1="28.799999999999997" y1="69.12" x2="44.160000000000004" y2="69.12" stroke="#f97316" stroke-width="0.384"/>
+    <line x1="97.92" y1="61.44" x2="97.92" y2="76.80000000000001" stroke="#f97316" stroke-width="0.384"/>
+    <line x1="90.24" y1="69.12" x2="105.60000000000001" y2="69.12" stroke="#f97316" stroke-width="0.384"/>
+  </g>
+  
+  <!-- Task completion checkmark in a circle -->
+  <g transform="translate(105.60000000000001, 105.60000000000001)">
+    <!-- Check circle background -->
+    <circle cx="28.799999999999997" cy="28.799999999999997" r="23.04" fill="#22c55e"/>
+    
+    <!-- Checkmark -->
+    <path d="M15.36 28.799999999999997 L24.96 38.400000000000006 L42.24 19.200000000000003" 
+          stroke="#ffffff" stroke-width="2.88" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>
