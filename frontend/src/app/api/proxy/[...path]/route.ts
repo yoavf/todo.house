@@ -149,15 +149,28 @@ async function handleRequest(
 			response.status === 302
 		) {
 			const location = response.headers.get("location");
-			if (location && requestOptions.method === "GET") {
-				const redirectedUrl = location.startsWith("http")
-					? location
-					: `${API_URL}${location.startsWith("/") ? "" : "/"}${location}`;
-				if (process.env.NODE_ENV === "development") {
-					// eslint-disable-next-line no-console
-					console.log("[Proxy] Following redirect", { redirectedUrl });
+			if (location) {
+				// 307 and 308 must preserve method and body for all HTTP methods
+				// 301 and 302 traditionally only follow for GET (may change method to GET for others)
+				const shouldFollowRedirect =
+					response.status === 307 ||
+					response.status === 308 ||
+					requestOptions.method === "GET";
+
+				if (shouldFollowRedirect) {
+					const redirectedUrl = location.startsWith("http")
+						? location
+						: `${API_URL}${location.startsWith("/") ? "" : "/"}${location}`;
+					if (process.env.NODE_ENV === "development") {
+						// eslint-disable-next-line no-console
+						console.log("[Proxy] Following redirect", {
+							redirectedUrl,
+							status: response.status,
+							method: requestOptions.method,
+						});
+					}
+					response = await fetch(redirectedUrl, requestOptions);
 				}
-				response = await fetch(redirectedUrl, requestOptions);
 			}
 		}
 
