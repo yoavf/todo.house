@@ -73,7 +73,11 @@ class TestMockRequest:
         token = "test_token"
         request = MockRequest(token)
         
-        assert request.cookies == {"authjs.session-token": token}
+        assert request.cookies == {
+            "authjs.session-token": token,
+            "__Secure-authjs.session-token": token,
+            "__Host-authjs.session-token": token,
+        }
         assert request.headers == {}
         assert request.method == "GET"
 

@@ -15,10 +15,10 @@ from .logging_config import StructuredLogger
 logger = StructuredLogger(__name__)
 
 # Get the secret for authentication - REQUIRED for security
-AUTH_SECRET_ENV = "AUTH_SECRET" if os.getenv("AUTH_SECRET") else (
+AUTH_SECRET_ENV: Optional[str] = "AUTH_SECRET" if os.getenv("AUTH_SECRET") else (
     "NEXTAUTH_SECRET" if os.getenv("NEXTAUTH_SECRET") else None
 )
-AUTH_SECRET = (
+AUTH_SECRET: Optional[str] = (
     os.getenv("AUTH_SECRET") if os.getenv("AUTH_SECRET") else os.getenv("NEXTAUTH_SECRET")
 )
 if not AUTH_SECRET:
@@ -30,6 +30,10 @@ if not AUTH_SECRET:
         "Please set either AUTH_SECRET or NEXTAUTH_SECRET environment variable."
     )
 
+# After this check, AUTH_SECRET is guaranteed to be non-None
+# We can assert this for type checkers
+assert AUTH_SECRET is not None
+
 # Log which environment variable provided the secret and a short hash (not the secret itself)
 try:
     secret_hash = hashlib.sha256(AUTH_SECRET.encode("utf-8")).hexdigest()[:12]
@@ -40,9 +44,6 @@ try:
         sha256_prefix=secret_hash,
     )
 except Exception:
-    logger.info(
-        "Auth secret not configured {AUTH_SECRET_ENV} {AUTH_SECRET}"
-    )
     pass
 
 # Initialize NextAuthJWT for decrypting tokens
@@ -77,13 +78,14 @@ def log_secret_diagnostics() -> None:
     try:
         import hashlib
 
-        secret_hash = hashlib.sha256(AUTH_SECRET.encode("utf-8")).hexdigest()[:12]
-        logger.info(
-            "Auth secret configured (startup)",
-            source=AUTH_SECRET_ENV or "unknown",
-            length=len(AUTH_SECRET),
-            sha256_prefix=secret_hash,
-        )
+        if AUTH_SECRET:  # Type guard for mypy
+            secret_hash = hashlib.sha256(AUTH_SECRET.encode("utf-8")).hexdigest()[:12]
+            logger.info(
+                "Auth secret configured (startup)",
+                source=AUTH_SECRET_ENV or "unknown",
+                length=len(AUTH_SECRET),
+                sha256_prefix=secret_hash,
+            )
     except Exception:
         pass
 
@@ -107,12 +109,13 @@ async def get_current_user(
 
     # Log secret diagnostics at request time to verify runtime value
     try:
-        _prefix = hashlib.sha256(AUTH_SECRET.encode("utf-8")).hexdigest()[:12]
-        logger.info(
-            "Auth attempt secret check",
-            sha256_prefix=_prefix,
-            length=len(AUTH_SECRET),
-        )
+        if AUTH_SECRET:  # Type guard for mypy
+            _prefix = hashlib.sha256(AUTH_SECRET.encode("utf-8")).hexdigest()[:12]
+            logger.info(
+                "Auth attempt secret check",
+                sha256_prefix=_prefix,
+                length=len(AUTH_SECRET),
+            )
     except Exception:
         pass
 

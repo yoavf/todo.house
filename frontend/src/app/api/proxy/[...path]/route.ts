@@ -100,7 +100,10 @@ async function handleRequest(
 	const backendUrl = `${baseBackendPath}${
 		mustHaveTrailingSlash || originalHasTrailingSlash ? "/" : ""
 	}${originalUrl.search}`;
-	console.log("[Proxy] Backend request", { backendUrl });
+	if (process.env.NODE_ENV === "development") {
+		// eslint-disable-next-line no-console
+		console.log("[Proxy] Backend request", { backendUrl });
+	}
 
 	// Prepare headers
 	const headers: HeadersInit = { Authorization: `Bearer ${token}` };
@@ -134,7 +137,10 @@ async function handleRequest(
 	try {
 		// Make the request to the backend
 		let response = await fetch(backendUrl, requestOptions);
-		console.log("[Proxy] First response status", { status: response.status });
+		if (process.env.NODE_ENV === "development") {
+			// eslint-disable-next-line no-console
+			console.log("[Proxy] First response status", { status: response.status });
+		}
 
 		// Handle potential redirect from missing trailing slash on collection endpoints
 		if (
@@ -148,7 +154,10 @@ async function handleRequest(
 				const redirectedUrl = location.startsWith("http")
 					? location
 					: `${API_URL}${location.startsWith("/") ? "" : "/"}${location}`;
-				console.log("[Proxy] Following redirect", { redirectedUrl });
+				if (process.env.NODE_ENV === "development") {
+					// eslint-disable-next-line no-console
+					console.log("[Proxy] Following redirect", { redirectedUrl });
+				}
 				response = await fetch(redirectedUrl, requestOptions);
 			}
 		}
