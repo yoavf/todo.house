@@ -96,7 +96,7 @@ export const authConfig: NextAuthConfig = {
 			}
 			return session;
 		},
-		async signIn({ user, account, profile }) {
+		async signIn({ user: _user, account: _account, profile: _profile }) {
 			// Allow sign in
 			return true;
 		},
