@@ -1,5 +1,5 @@
-import { ImageIcon, XIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ImageIcon, XIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ImageAnalysisResponse } from "@/lib/api";
 import { tasksAPI } from "@/lib/api";
 import { ImageProcessing } from "./ImageProcessing";
@@ -25,9 +25,177 @@ export function CameraView({
 	const [isApiComplete, setIsApiComplete] = useState(false);
 	const [stream, setStream] = useState<MediaStream | null>(null);
 	const [cameraError, setCameraError] = useState<string | null>(null);
+	const [zoomLevel, setZoomLevel] = useState(1);
+	const [isZooming, setIsZooming] = useState(false);
+	const [zoomConstraints, setZoomConstraints] = useState<{
+		min: number;
+		max: number;
+		step: number;
+	} | null>(null);
+	const [supportsZoom, setSupportsZoom] = useState(false);
+	const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(
+		null,
+	);
+	const [visualZoom, setVisualZoom] = useState(1);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const zoomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	// Calculate distance between two touch points
+	const getTouchDistance = useCallback((touches: React.TouchList): number => {
+		if (touches.length < 2) return 0;
+		const touch1 = touches[0];
+		const touch2 = touches[1];
+		return Math.sqrt(
+			(touch2.clientX - touch1.clientX) ** 2 +
+				(touch2.clientY - touch1.clientY) ** 2,
+		);
+	}, []);
+
+	// Apply zoom to camera stream using MediaStream API
+	const applyCameraZoom = useCallback(
+		async (newZoomLevel: number) => {
+			if (!stream || !supportsZoom || !zoomConstraints) return false;
+
+			try {
+				const videoTrack = stream.getVideoTracks()[0];
+				if (!videoTrack) return false;
+
+				const clampedZoom = Math.max(
+					zoomConstraints.min,
+					Math.min(zoomConstraints.max, newZoomLevel),
+				);
+
+				await videoTrack.applyConstraints({
+					advanced: [{ zoom: clampedZoom } as any],
+				});
+
+				setZoomLevel(clampedZoom);
+				return true;
+			} catch (error) {
+				console.warn("Camera zoom not supported:", error);
+				return false;
+			}
+		},
+		[stream, supportsZoom, zoomConstraints],
+	);
+
+	// Handle zoom change with fallback to visual zoom
+	const handleZoomChange = useCallback(
+		async (newZoomLevel: number) => {
+			const cameraZoomApplied = await applyCameraZoom(newZoomLevel);
+
+			if (!cameraZoomApplied) {
+				// Fall back to visual zoom using CSS transforms
+				const clampedVisualZoom = Math.max(1, Math.min(3, newZoomLevel));
+				setVisualZoom(clampedVisualZoom);
+			}
+		},
+		[applyCameraZoom],
+	);
+
+	// Handle touch start for zoom gesture
+	const handleTouchStart = useCallback(
+		(e: React.TouchEvent) => {
+			if (e.touches.length === 2) {
+				e.preventDefault();
+				const distance = getTouchDistance(e.touches);
+				setLastTouchDistance(distance);
+				setIsZooming(true);
+			}
+		},
+		[getTouchDistance],
+	);
+
+	// Handle touch move for zoom gesture
+	const handleTouchMove = useCallback(
+		(e: React.TouchEvent) => {
+			if (e.touches.length === 2 && lastTouchDistance !== null && isZooming) {
+				e.preventDefault();
+				const currentDistance = getTouchDistance(e.touches);
+				const zoomFactor = currentDistance / lastTouchDistance;
+
+				const currentZoom = supportsZoom ? zoomLevel : visualZoom;
+				const newZoom = currentZoom * zoomFactor;
+
+				handleZoomChange(newZoom);
+				setLastTouchDistance(currentDistance);
+			}
+		},
+		[
+			lastTouchDistance,
+			isZooming,
+			getTouchDistance,
+			zoomLevel,
+			visualZoom,
+			supportsZoom,
+			handleZoomChange,
+		],
+	);
+
+	// Handle touch end for zoom gesture
+	const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+		if (e.touches.length < 2) {
+			setIsZooming(false);
+			setLastTouchDistance(null);
+		}
+	}, []);
+
+	// Manual zoom controls
+	const zoomIn = useCallback(() => {
+		const currentZoom = supportsZoom ? zoomLevel : visualZoom;
+		const step = zoomConstraints?.step || 0.1;
+		handleZoomChange(currentZoom + step);
+	}, [supportsZoom, zoomLevel, visualZoom, zoomConstraints, handleZoomChange]);
+
+	const zoomOut = useCallback(() => {
+		const currentZoom = supportsZoom ? zoomLevel : visualZoom;
+		const step = zoomConstraints?.step || 0.1;
+		handleZoomChange(currentZoom - step);
+	}, [supportsZoom, zoomLevel, visualZoom, zoomConstraints, handleZoomChange]);
+
+	// Reset zoom
+	const resetZoom = useCallback(() => {
+		handleZoomChange(1);
+	}, [handleZoomChange]);
+
+	// Check camera zoom capabilities
+	const checkZoomCapabilities = useCallback(
+		async (videoTrack: MediaStreamTrack) => {
+			try {
+				const capabilities = videoTrack.getCapabilities();
+				// TypeScript doesn't include zoom in MediaTrackCapabilities, but some browsers support it
+				const zoomCapability = (capabilities as any).zoom;
+				if (zoomCapability) {
+					setSupportsZoom(true);
+					setZoomConstraints({
+						min: zoomCapability.min || 1,
+						max: zoomCapability.max || 3,
+						step: zoomCapability.step || 0.1,
+					});
+				} else {
+					// Use visual zoom as fallback
+					setSupportsZoom(false);
+					setZoomConstraints({
+						min: 1,
+						max: 3,
+						step: 0.1,
+					});
+				}
+			} catch (error) {
+				console.warn("Could not get camera capabilities:", error);
+				// Use visual zoom as fallback
+				setSupportsZoom(false);
+				setZoomConstraints({
+					min: 1,
+					max: 3,
+					step: 0.1,
+				});
+			}
+		},
+		[],
+	);
 
 	// Reset state when closing
 	useEffect(() => {
@@ -41,6 +209,18 @@ export function CameraView({
 			setAnalysisResponse(null);
 			setIsApiComplete(false);
 			setCameraError(null);
+			// Reset zoom state
+			setZoomLevel(1);
+			setVisualZoom(1);
+			setIsZooming(false);
+			setLastTouchDistance(null);
+			setSupportsZoom(false);
+			setZoomConstraints(null);
+			// Clear zoom timeout
+			if (zoomTimeoutRef.current) {
+				clearTimeout(zoomTimeoutRef.current);
+				zoomTimeoutRef.current = null;
+			}
 			// Stop camera stream
 			if (stream) {
 				stream.getTracks().forEach((track) => track.stop());
@@ -76,6 +256,13 @@ export function CameraView({
 						audio: false,
 					});
 					setStream(mediaStream);
+
+					// Check zoom capabilities
+					const videoTrack = mediaStream.getVideoTracks()[0];
+					if (videoTrack) {
+						await checkZoomCapabilities(videoTrack);
+					}
+
 					if (videoRef.current) {
 						videoRef.current.srcObject = mediaStream;
 					}
@@ -94,7 +281,7 @@ export function CameraView({
 			};
 			start();
 		}
-	}, [isOpen, processingState]);
+	}, [isOpen, processingState, checkZoomCapabilities]);
 
 	const capturePhoto = async () => {
 		if (!videoRef.current || !canvasRef.current) return;
@@ -245,6 +432,37 @@ export function CameraView({
 		}
 	}, [processingState, analysisResponse, onTasksGenerated, onClose]);
 
+	// Keyboard shortcuts for zoom
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (!isOpen || processingState) return;
+
+			switch (e.key) {
+				case "+":
+				case "=":
+					e.preventDefault();
+					zoomIn();
+					break;
+				case "-":
+					e.preventDefault();
+					zoomOut();
+					break;
+				case "0":
+					e.preventDefault();
+					resetZoom();
+					break;
+			}
+		};
+
+		if (isOpen) {
+			document.addEventListener("keydown", handleKeyDown);
+		}
+
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isOpen, processingState, zoomIn, zoomOut, resetZoom]);
+
 	if (!isOpen) return null;
 
 	// Show processing screen if in processing state
@@ -281,13 +499,24 @@ export function CameraView({
 					</div>
 				) : (
 					<>
-						<video
-							ref={videoRef}
-							autoPlay
-							playsInline
-							muted
-							className="absolute inset-0 w-full h-full object-cover"
-						/>
+						<div
+							className="absolute inset-0 w-full h-full overflow-hidden"
+							onTouchStart={handleTouchStart}
+							onTouchMove={handleTouchMove}
+							onTouchEnd={handleTouchEnd}
+						>
+							<video
+								ref={videoRef}
+								autoPlay
+								playsInline
+								muted
+								className="absolute inset-0 w-full h-full object-cover transition-transform duration-200"
+								style={{
+									transform: !supportsZoom ? `scale(${visualZoom})` : undefined,
+									transformOrigin: "center",
+								}}
+							/>
+						</div>
 						<canvas ref={canvasRef} className="hidden" />
 					</>
 				)}
@@ -311,11 +540,56 @@ export function CameraView({
 				>
 					<XIcon size={28} />
 				</button>
+
+				{/* Zoom controls */}
+				{zoomConstraints && (
+					<div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col space-y-2">
+						<button
+							type="button"
+							className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+							onClick={zoomIn}
+							disabled={isZooming}
+							aria-label="Zoom in"
+						>
+							<ZoomInIcon size={20} />
+						</button>
+						<button
+							type="button"
+							className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+							onClick={zoomOut}
+							disabled={isZooming}
+							aria-label="Zoom out"
+						>
+							<ZoomOutIcon size={20} />
+						</button>
+						<button
+							type="button"
+							className="px-2 py-1 bg-black/50 text-white text-xs rounded-full hover:bg-black/70 transition-colors"
+							onClick={resetZoom}
+							disabled={isZooming}
+							aria-label="Reset zoom"
+						>
+							1x
+						</button>
+					</div>
+				)}
+
+				{/* Zoom level indicator */}
+				{zoomConstraints && (supportsZoom ? zoomLevel : visualZoom) > 1.1 && (
+					<div className="absolute top-20 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/70 text-white text-sm rounded-full">
+						{(supportsZoom ? zoomLevel : visualZoom).toFixed(1)}x
+					</div>
+				)}
 				{/* Capture hint text */}
 				<div className="absolute top-4 left-0 right-0 text-center">
 					<p className="text-white/70 text-base">
 						Take a photo of what needs attention
 					</p>
+					{zoomConstraints && (
+						<p className="text-white/50 text-xs mt-1">
+							Pinch to zoom • Use +/- keys • Tap zoom controls
+						</p>
+					)}
 				</div>
 			</div>
 			{/* Bottom controls */}
