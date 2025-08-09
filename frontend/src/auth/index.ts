@@ -1,3 +1,4 @@
+// Note: Cannot use "node:crypto" protocol - webpack doesn't support it in Next.js
 import { createHash } from "crypto";
 import type { NextAuthConfig } from "next-auth";
 import NextAuth from "next-auth";
