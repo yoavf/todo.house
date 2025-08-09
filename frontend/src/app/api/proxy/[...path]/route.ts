@@ -193,38 +193,43 @@ async function handleRequest(
 	}
 }
 
+// Type for Next.js route handler context with catch-all params
+type RouteContext = {
+	params: Promise<{ path: string[] }>;
+};
+
 // Handle all HTTP methods
-export async function GET(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function GET(request: Request, context: RouteContext) {
+	const params = await context.params;
 	return handleRequest(request, "GET", {
-		path: await Promise.resolve(params.path),
+		path: params.path,
 	});
 }
 
-export async function POST(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function POST(request: Request, context: RouteContext) {
+	const params = await context.params;
 	return handleRequest(request, "POST", {
-		path: await Promise.resolve(params.path),
+		path: params.path,
 	});
 }
 
-export async function PUT(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function PUT(request: Request, context: RouteContext) {
+	const params = await context.params;
 	return handleRequest(request, "PUT", {
-		path: await Promise.resolve(params.path),
+		path: params.path,
 	});
 }
 
-export async function PATCH(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function PATCH(request: Request, context: RouteContext) {
+	const params = await context.params;
 	return handleRequest(request, "PATCH", {
-		path: await Promise.resolve(params.path),
+		path: params.path,
 	});
 }
 
-export async function DELETE(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function DELETE(request: Request, context: RouteContext) {
+	const params = await context.params;
 	return handleRequest(request, "DELETE", {
-		path: await Promise.resolve(params.path),
+		path: params.path,
 	});
 }
