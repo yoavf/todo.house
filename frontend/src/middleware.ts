@@ -4,11 +4,6 @@ import { auth } from "@/auth";
 export default auth((req) => {
 	const isLoggedIn = !!req.auth;
 	const isAuthPage = req.nextUrl.pathname.startsWith("/auth");
-	const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
-
-	if (isApiAuth) {
-		return NextResponse.next();
-	}
 
 	if (!isLoggedIn && !isAuthPage) {
 		const signInUrl = new URL("/auth/signin", req.url);
