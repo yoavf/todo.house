@@ -216,7 +216,7 @@ async function apiRequest<TResponse, TBody = unknown>(
 	if (body) {
 		if (body instanceof FormData) {
 			// For FormData, don't set Content-Type (browser will set it with boundary)
-			requestOptions.body = body as any;
+			requestOptions.body = body;
 		} else {
 			// For JSON data
 			requestOptions.headers = {

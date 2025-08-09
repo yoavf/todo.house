@@ -33,7 +33,7 @@ describe("LanguageSelector", () => {
 	beforeEach(() => {
 		mockUseRouter.mockReturnValue({
 			refresh: mockRefresh,
-		} as any);
+		} as ReturnType<typeof useRouter>);
 
 		mockUseTranslations.mockReturnValue(mockT);
 		mockT.mockImplementation((key: string) => {
