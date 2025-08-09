@@ -89,7 +89,7 @@ export const authConfig: NextAuthConfig = {
 			}
 			return session;
 		},
-		async signIn({ user, account, profile }) {
+		async signIn() {
 			// Allow sign in
 			return true;
 		},

@@ -194,36 +194,51 @@ async function handleRequest(
 }
 
 // Handle all HTTP methods
-export async function GET(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function GET(
+	request: Request,
+	context: { params: { path: string[] } },
+) {
+	const { params } = context;
 	return handleRequest(request, "GET", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function POST(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function POST(
+	request: Request,
+	context: { params: { path: string[] } },
+) {
+	const { params } = context;
 	return handleRequest(request, "POST", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function PUT(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function PUT(
+	request: Request,
+	context: { params: { path: string[] } },
+) {
+	const { params } = context;
 	return handleRequest(request, "PUT", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function PATCH(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function PATCH(
+	request: Request,
+	context: { params: { path: string[] } },
+) {
+	const { params } = context;
 	return handleRequest(request, "PATCH", {
 		path: await Promise.resolve(params.path),
 	});
 }
 
-export async function DELETE(request: Request, context: any) {
-	const { params } = context as { params: { path: string[] } };
+export async function DELETE(
+	request: Request,
+	context: { params: { path: string[] } },
+) {
+	const { params } = context;
 	return handleRequest(request, "DELETE", {
 		path: await Promise.resolve(params.path),
 	});
