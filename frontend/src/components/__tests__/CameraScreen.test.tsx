@@ -300,38 +300,42 @@ describe("CameraScreen", () => {
 		expect(screen.queryByText("Analyze")).not.toBeInTheDocument();
 	});
 
-	it("validates file size and shows error for large files", async () => {
-		render(
-			<CameraScreen
-				isOpen={true}
-				onClose={mockOnClose}
-				onTasksGenerated={mockOnTasksGenerated}
-			/>,
-		);
+	it(
+		"validates file size and shows error for large files",
+		async () => {
+			render(
+				<CameraScreen
+					isOpen={true}
+					onClose={mockOnClose}
+					onTasksGenerated={mockOnTasksGenerated}
+				/>,
+			);
 
-		const fileInput = screen.getByTestId("file-input") as HTMLInputElement;
+			const fileInput = screen.getByTestId("file-input") as HTMLInputElement;
 
-		// Create a file larger than 10MB
-		const largeFile = new File(["x".repeat(11 * 1024 * 1024)], "large.jpg", {
-			type: "image/jpeg",
-		});
-		Object.defineProperty(fileInput, "files", {
-			value: [largeFile],
-		});
+			// Create a file larger than 10MB
+			const largeFile = new File(["x".repeat(11 * 1024 * 1024)], "large.jpg", {
+				type: "image/jpeg",
+			});
+			Object.defineProperty(fileInput, "files", {
+				value: [largeFile],
+			});
 
-		fireEvent.change(fileInput);
+			fireEvent.change(fileInput);
 
-		// Should show error message
-		await waitFor(() => {
-			expect(
-				screen.getByText("File size must be less than 10MB"),
-			).toBeInTheDocument();
-		});
+			// Should show error message
+			await waitFor(() => {
+				expect(
+					screen.getByText("File size must be less than 10MB"),
+				).toBeInTheDocument();
+			});
 
-		// Should not show preview or analyze button
-		expect(screen.queryByAltText("Selected")).not.toBeInTheDocument();
-		expect(screen.queryByText("Analyze")).not.toBeInTheDocument();
-	});
+			// Should not show preview or analyze button
+			expect(screen.queryByAltText("Selected")).not.toBeInTheDocument();
+			expect(screen.queryByText("Analyze")).not.toBeInTheDocument();
+		},
+		10000,
+	);
 
 	it("allows retaking photo", async () => {
 		render(

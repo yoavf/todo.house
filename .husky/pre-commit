@@ -1,4 +1,5 @@
 #!/bin/sh
+export PATH="/home/jules/.nvm/versions/node/v22.17.1/bin:$PATH"
 
 # Run lint-staged
 pnpm exec lint-staged
