@@ -19,7 +19,9 @@ export default auth((req) => {
 	return NextResponse.next();
 });
 
-// Protect all routes except auth, public paths, and ALL API routes
+// Protect all routes except auth, public paths, API routes, and PWA files
 export const config = {
-	matcher: ["/((?!api|auth|_next/static|_next/image|favicon.ico|public).*)"],
+	matcher: [
+		"/((?!api|auth|_next/static|_next/image|favicon\\.ico|favicon\\.svg|apple-touch-icon\\.png|manifest\\.json|manifest\\.webmanifest|sw\\.js|icon-.*\\.svg|icon-.*\\.png|robots\\.txt|public).*)",
+	],
 };
