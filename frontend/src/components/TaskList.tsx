@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTaskContext } from "@/contexts/TaskContext";
 import { useTasks } from "@/hooks/useTasks";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import type { Task, TaskType } from "@/lib/api";
 import {
 	categorizeSnoozedTasks,
@@ -84,6 +85,13 @@ export function TaskList() {
 	const { tasks, loading, error, refetch } = useTasks();
 	const { setRefetchHandler } = useTaskContext();
 	const [localTasks, setLocalTasks] = useState<typeof tasks>([]);
+
+	// Add scroll restoration for the window scroll (default behavior)
+	useScrollRestoration(undefined, {
+		key: `task-list-${activeTab}`,
+		saveOnRouteChange: true,
+		restoreOnMount: true,
+	});
 
 	useEffect(() => {
 		setRefetchHandler(refetch);
