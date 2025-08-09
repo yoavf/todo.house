@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- TodoHouse Icon -->
+  <rect width="512" height="512" rx="51.2" fill="#f97316"/>
+  <rect x="76.8" y="76.8" width="358.4" height="358.4" rx="25.6" fill="#ffffff"/>
+  <!-- House shape -->
+  <path d="M153.6 230.4 L256 153.6 L358.4 230.4 L358.4 332.8 L153.6 332.8 Z" fill="#f97316"/>
+  <!-- Door -->
+  <rect x="230.4" y="281.6" width="51.2" height="51.2" fill="#ffffff"/>
+  <!-- Checkmark -->
+  <path d="M204.8 384 L230.4 409.6 L307.2 358.4" stroke="#f97316" stroke-width="10.24" fill="none" stroke-linecap="round"/>
+</svg>
