@@ -1,5 +1,6 @@
 import { ImageIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { PointerEvent } from "react";
 import type { ImageAnalysisResponse } from "@/lib/api";
 import { tasksAPI } from "@/lib/api";
 import { ImageProcessing } from "./ImageProcessing";
@@ -8,6 +9,12 @@ interface CameraViewProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onTasksGenerated?: (response: ImageAnalysisResponse) => void;
+}
+
+interface ZoomCapabilities {
+	min: number;
+	max: number;
+	step: number;
 }
 
 export function CameraView({
@@ -25,9 +32,14 @@ export function CameraView({
 	const [isApiComplete, setIsApiComplete] = useState(false);
 	const [stream, setStream] = useState<MediaStream | null>(null);
 	const [cameraError, setCameraError] = useState<string | null>(null);
+	const [zoomCapabilities, setZoomCapabilities] =
+		useState<ZoomCapabilities | null>(null);
+	const [currentZoom, setCurrentZoom] = useState(1);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const evCache = useRef<PointerEvent<HTMLElement>[]>([]);
+	const prevDiff = useRef(-1);
 
 	// Reset state when closing
 	useEffect(() => {
@@ -78,6 +90,15 @@ export function CameraView({
 					setStream(mediaStream);
 					if (videoRef.current) {
 						videoRef.current.srcObject = mediaStream;
+					}
+					const [track] = mediaStream.getVideoTracks();
+					const capabilities = track.getCapabilities();
+					if (capabilities.zoom) {
+						setZoomCapabilities({
+							min: capabilities.zoom.min,
+							max: capabilities.zoom.max,
+							step: capabilities.zoom.step,
+						});
 					}
 				} catch (error) {
 					console.error("Camera access error:", error);
@@ -236,7 +257,7 @@ export function CameraView({
 		}
 	};
 
-	// Handle completion after results are ready
+	// Handle completion after results areready
 	useEffect(() => {
 		if (processingState === "results" && analysisResponse) {
 			// Pass the response to parent and close
@@ -244,6 +265,60 @@ export function CameraView({
 			onClose();
 		}
 	}, [processingState, analysisResponse, onTasksGenerated, onClose]);
+
+	const setZoom = async (zoomValue: number) => {
+		if (!stream || !zoomCapabilities) return;
+		const [track] = stream.getVideoTracks();
+		const { min, max } = zoomCapabilities;
+		const newZoom = Math.max(min, Math.min(max, zoomValue));
+		setCurrentZoom(newZoom);
+		await track.applyConstraints({ advanced: [{ zoom: newZoom }] });
+	};
+
+	const pointerdownHandler = (event: PointerEvent<HTMLElement>) => {
+		evCache.current.push(event);
+	};
+
+	const pointermoveHandler = (event: PointerEvent<HTMLElement>) => {
+		const index = evCache.current.findIndex(
+			(cachedEv) => cachedEv.pointerId === event.pointerId,
+		);
+		if (index !== -1) {
+			evCache.current[index] = event;
+		}
+
+		if (evCache.current.length !== 2 || !zoomCapabilities) return;
+
+		const curDiff = Math.abs(
+			evCache.current[0].clientX - evCache.current[1].clientX,
+		);
+
+		if (prevDiff.current > 0) {
+			const delta = curDiff - prevDiff.current;
+			const zoomAmount = delta / 100; // Adjust sensitivity
+			setZoom(currentZoom + zoomAmount);
+		}
+		prevDiff.current = curDiff;
+	};
+
+	const pointerupHandler = (event: PointerEvent<HTMLElement>) => {
+		const index = evCache.current.findIndex(
+			(cachedEv) => cachedEv.pointerId === event.pointerId,
+		);
+		if (index !== -1) {
+			evCache.current.splice(index, 1);
+		}
+
+		if (evCache.current.length < 2) {
+			prevDiff.current = -1;
+		}
+	};
+
+	const handleWheel = (event: React.WheelEvent<HTMLElement>) => {
+		if (!zoomCapabilities) return;
+		const zoomAmount = event.deltaY / 100; // Adjust sensitivity
+		setZoom(currentZoom - zoomAmount);
+	};
 
 	if (!isOpen) return null;
 
@@ -266,7 +341,17 @@ export function CameraView({
 	return (
 		<div className="fixed inset-0 bg-black z-50 flex flex-col">
 			{/* Camera viewfinder */}
-			<div className="relative flex-1 bg-gray-900 flex items-center justify-center overflow-hidden">
+			<div
+				className="relative flex-1 bg-gray-900 flex items-center justify-center overflow-hidden"
+				style={{ touchAction: "none" }}
+				onPointerDown={pointerdownHandler}
+				onPointerMove={pointermoveHandler}
+				onPointerUp={pointerupHandler}
+				onPointerCancel={pointerupHandler}
+				onPointerOut={pointerupHandler}
+				onPointerLeave={pointerupHandler}
+				onWheel={handleWheel}
+			>
 				{/* Live camera feed or error message */}
 				{cameraError ? (
 					<div className="text-white text-center p-4">
