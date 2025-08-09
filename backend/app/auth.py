@@ -44,7 +44,7 @@ try:
         sha256_prefix=secret_hash,
     )
 except Exception:
-    pass
+    logger.exception("Failed to log auth secret diagnostics")
 
 # Initialize NextAuthJWT for decrypting tokens
 # We disable CSRF since we're using it for API authentication
