@@ -14,6 +14,7 @@ from .logging_config import StructuredLogger
 
 logger = StructuredLogger(__name__)
 
+
 # Environment helpers
 def _is_development() -> bool:
     env = (os.getenv("ENV") or os.getenv("NODE_ENV") or "").lower()
@@ -23,8 +24,10 @@ def _is_development() -> bool:
 # Get the secret for authentication - REQUIRED for security
 AUTH_SECRET_ENV: Optional[str]
 _auth_secret_value = os.getenv("AUTH_SECRET") or os.getenv("NEXTAUTH_SECRET")
-AUTH_SECRET_ENV = "AUTH_SECRET" if os.getenv("AUTH_SECRET") else (
-    "NEXTAUTH_SECRET" if os.getenv("NEXTAUTH_SECRET") else None
+AUTH_SECRET_ENV = (
+    "AUTH_SECRET"
+    if os.getenv("AUTH_SECRET")
+    else ("NEXTAUTH_SECRET" if os.getenv("NEXTAUTH_SECRET") else None)
 )
 
 if not _auth_secret_value:
@@ -132,7 +135,9 @@ async def get_current_user(
 
         # Now use the library to decrypt
         token_data = nextauth(mock_request)
-        logger.info(f"Successfully decrypted NextAuth token for: {token_data.get('email')}")
+        logger.info(
+            f"Successfully decrypted NextAuth token for: {token_data.get('email')}"
+        )
 
     except Exception as e:
         logger.warning(f"NextAuth JWT decryption failed: {str(e)}")

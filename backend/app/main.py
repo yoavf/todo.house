@@ -58,6 +58,7 @@ app.include_router(images_router)
 app.include_router(locations_router)
 app.include_router(user_settings_router)
 
+
 # Log auth secret diagnostics at startup
 @app.on_event("startup")
 async def _log_auth_secret():
