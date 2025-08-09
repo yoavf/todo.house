@@ -13,7 +13,10 @@
 		"snooze": "Snooze",
 		"unsnooze": "Unsnooze",
 		"complete": "Complete",
-		"selectDate": "Select date"
+		"selectDate": "Select date",
+		"selectAll": "Select all",
+		"clearAll": "Clear all",
+		"creating": "Creating..."
 	},
 	"dialogs": {
 		"deleteConfirm": "Are you sure you want to delete \"{title}\"?",
@@ -75,7 +78,17 @@
 			"completeWithAI": "Complete with AI",
 			"continueManually": "Continue manually",
 			"generateGuide": "Generate Guide with AI",
-			"markAsDone": "Mark as Done"
+			"markAsDone": "Mark as Done",
+			"addManually": "Add Manually",
+			"createTasks": "Create {count, plural, one {1 Task} other {{count} Tasks}}"
+		},
+		"generation": {
+			"modalTitle": "AI Generated Tasks",
+			"noTasksFound": "No tasks were detected in the image.",
+			"tryManual": "You can try adding a task manually.",
+			"tasksFound": "Found {count, plural, one {1 task} other {{count} tasks}}",
+			"processedIn": "Processed in {time}s",
+			"selected": "{selected} of {total} selected"
 		},
 		"tabs": {
 			"guide": "Guide",

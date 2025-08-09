@@ -13,7 +13,10 @@
 		"snooze": "דחה",
 		"unsnooze": "בטל דחייה",
 		"complete": "השלם",
-		"selectDate": "בחר תאריך"
+		"selectDate": "בחר תאריך",
+		"selectAll": "בחר הכל",
+		"clearAll": "נקה הכל",
+		"creating": "יוצר..."
 	},
 	"dialogs": {
 		"deleteConfirm": "האם אתה בטוח שברצונך למחוק את \"{title}\"?",
@@ -75,7 +78,17 @@
 			"completeWithAI": "השלם עם בינה מלאכותית",
 			"continueManually": "המשך ידנית",
 			"generateGuide": "צור מדריך עם בינה מלאכותית",
-			"markAsDone": "סמן כהושלם"
+			"markAsDone": "סמן כהושלם",
+			"addManually": "הוסף ידנית",
+			"createTasks": "{count, plural, one {צור משימה אחת} other {צור {count} משימות}}"
+		},
+		"generation": {
+			"modalTitle": "משימות שנוצרו על ידי בינה מלאכותית",
+			"noTasksFound": "לא זוהו משימות בתמונה.",
+			"tryManual": "ניתן לנסות להוסיף משימה באופן ידני.",
+			"tasksFound": "נמצאו {count, plural, one {משימה אחת} other {{count} משימות}}",
+			"processedIn": "עובד ב-{time} שניות",
+			"selected": "{selected} מתוך {total} נבחרו"
 		},
 		"tabs": {
 			"guide": "מדריך",
