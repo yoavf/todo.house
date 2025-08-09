@@ -70,7 +70,11 @@ if (process.env.NODE_ENV === "development") {
 			length: AUTH_SECRET.length,
 			sha256_prefix: prefix,
 		});
-	} catch {}
+	} catch (err) {
+		// Log error during secret hash logging in development
+		// eslint-disable-next-line no-console
+		console.error("[Auth] Failed to log secret hash prefix:", err);
+	}
 }
 
 export const authConfig: NextAuthConfig = {
