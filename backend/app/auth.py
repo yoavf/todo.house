@@ -120,7 +120,7 @@ async def get_current_user(
         pass
 
     logger.info(f"Auth attempt with token length: {len(credentials.credentials)}")
-    logger.debug(f"Token preview: {credentials.credentials[:50]}...")
+    # Never log actual token content for security
 
     try:
         # Use fastapi-nextauth-jwt to decrypt the token
@@ -153,11 +153,11 @@ async def get_current_user(
         user_picture = token_data.get("picture") or token_data.get("image")
 
         if not user_email:
-            logger.error("No email in token", token_data=token_data)
+            logger.error("No email in token")
             raise HTTPException(status_code=401, detail="Invalid token: missing email")
 
         if not user_id:
-            logger.error("No user ID in token", token_data=token_data)
+            logger.error("No user ID in token")
             raise HTTPException(
                 status_code=401, detail="Invalid token: missing user ID"
             )

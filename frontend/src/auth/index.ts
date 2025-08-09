@@ -56,18 +56,22 @@ const AUTH_SECRET_SOURCE = process.env.AUTH_SECRET
 if (!AUTH_SECRET) {
 	throw new Error("Missing AUTH secret. Set AUTH_SECRET or NEXTAUTH_SECRET");
 }
-try {
-	const prefix = createHash("sha256")
-		.update(AUTH_SECRET)
-		.digest("hex")
-		.slice(0, 12);
-	// eslint-disable-next-line no-console
-	console.log("[Auth] Secret configured", {
-		source: AUTH_SECRET_SOURCE,
-		length: AUTH_SECRET.length,
-		sha256_prefix: prefix,
-	});
-} catch {}
+
+// Only log in development for debugging
+if (process.env.NODE_ENV === "development") {
+	try {
+		const prefix = createHash("sha256")
+			.update(AUTH_SECRET)
+			.digest("hex")
+			.slice(0, 12);
+		// eslint-disable-next-line no-console
+		console.log("[Auth] Secret configured", {
+			source: AUTH_SECRET_SOURCE,
+			length: AUTH_SECRET.length,
+			sha256_prefix: prefix,
+		});
+	} catch {}
+}
 
 export const authConfig: NextAuthConfig = {
 	providers,
