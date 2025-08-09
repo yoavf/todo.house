@@ -37,7 +37,10 @@ describe("PWA Service Worker Registration", () => {
 		// Wait for the effect to run
 		await new Promise((resolve) => setTimeout(resolve, 0));
 
-		expect(mockRegister).toHaveBeenCalledWith("/sw.js");
+		expect(mockRegister).toHaveBeenCalledWith(
+			new URL("/sw.js", window.location.origin).toString(),
+			{ updateViaCache: "none" },
+		);
 		expect(console.log).toHaveBeenCalledWith(
 			"SW: Service Worker registered successfully",
 			"http://localhost:3000/",
@@ -54,10 +57,35 @@ describe("PWA Service Worker Registration", () => {
 		// Wait for the effect to run
 		await new Promise((resolve) => setTimeout(resolve, 10));
 
-		expect(mockRegister).toHaveBeenCalledWith("/sw.js");
+		expect(mockRegister).toHaveBeenCalledWith(
+			new URL("/sw.js", window.location.origin).toString(),
+			{ updateViaCache: "none" },
+		);
 		expect(console.log).toHaveBeenCalledWith(
 			"SW: Service Worker registration failed",
 			expect.any(Error),
+		);
+	});
+
+	it("should attach an updatefound listener on successful registration", async () => {
+		const reg: any = {
+			scope: "http://localhost:3000/",
+			addEventListener: jest.fn(),
+		};
+		mockRegister.mockResolvedValueOnce(reg);
+
+		render(<ServiceWorkerRegistration />);
+
+		// Wait for the effect to run
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(mockRegister).toHaveBeenCalledWith(
+			new URL("/sw.js", window.location.origin).toString(),
+			{ updateViaCache: "none" },
+		);
+		expect(reg.addEventListener).toHaveBeenCalledWith(
+			"updatefound",
+			expect.any(Function),
 		);
 	});
 

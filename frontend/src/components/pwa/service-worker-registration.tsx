@@ -5,8 +5,9 @@ import { useEffect } from "react";
 export function ServiceWorkerRegistration() {
 	useEffect(() => {
 		if ("serviceWorker" in navigator) {
+			const swUrl = new URL("/sw.js", window.location.origin).toString();
 			navigator.serviceWorker
-				.register("/sw.js")
+				.register(swUrl, { updateViaCache: "none" })
 				.then((registration) => {
 					console.log(
 						"SW: Service Worker registered successfully",

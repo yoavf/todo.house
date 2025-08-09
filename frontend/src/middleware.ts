@@ -22,6 +22,6 @@ export default auth((req) => {
 // Protect all routes except auth, public paths, API routes, and PWA files
 export const config = {
 	matcher: [
-		"/((?!api|auth|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icon-.*\\.svg|robots.txt|public).*)",
+		"/((?!api|auth|_next/static|_next/image|favicon\\.ico|favicon\\.svg|apple-touch-icon\\.png|manifest\\.json|manifest\\.webmanifest|sw\\.js|icon-.*\\.svg|icon-.*\\.png|robots\\.txt|public).*)",
 	],
 };

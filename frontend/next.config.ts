@@ -45,15 +45,6 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
-	// Add PWA service worker support
-	async rewrites() {
-		return [
-			{
-				source: "/sw.js",
-				destination: "/sw.js",
-			},
-		];
-	},
 };
 
 export default withNextIntl(nextConfig);
