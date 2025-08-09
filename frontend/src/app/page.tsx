@@ -20,6 +20,9 @@ function HomePageContent() {
 	const [showMicrophone, setShowMicrophone] = useState(false);
 	const [showTyping, setShowTyping] = useState(false);
 	const [showCamera, setShowCamera] = useState(false);
+	const [manualCreationImageId, setManualCreationImageId] = useState<
+		string | null
+	>(null);
 	const { triggerRefetch } = useTaskContext();
 
 	const handleTasksGenerated = (response: ImageAnalysisResponse) => {
@@ -33,6 +36,12 @@ function HomePageContent() {
 		setAnalysisResponse(null);
 		triggerRefetch();
 	}, [triggerRefetch]);
+
+	const handleAddTaskManually = (imageId: string) => {
+		setManualCreationImageId(imageId);
+		setShowGeneratedTasks(false);
+		setShowTyping(true);
+	};
 
 	const handleKeyboardClick = () => {
 		setShowTyping(true);
@@ -97,8 +106,12 @@ function HomePageContent() {
 
 			<TypingView
 				isOpen={showTyping}
-				onClose={() => setShowTyping(false)}
+				onClose={() => {
+					setShowTyping(false);
+					setManualCreationImageId(null);
+				}}
 				onTaskCreated={handleManualTaskCreated}
+				sourceImageId={manualCreationImageId}
 			/>
 
 			<CameraView
@@ -112,6 +125,7 @@ function HomePageContent() {
 				onClose={() => setShowGeneratedTasks(false)}
 				analysisResponse={analysisResponse}
 				onTasksCreated={handleTasksCreated}
+				onAddManually={handleAddTaskManually}
 			/>
 		</div>
 	);

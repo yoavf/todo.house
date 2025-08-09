@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckIcon, SparklesIcon, XIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { type ImageAnalysisResponse, tasksAPI } from "@/lib/api";
 import { getTaskTypeColor } from "@/lib/utils";
@@ -10,6 +11,7 @@ interface GeneratedTasksModalProps {
 	onClose: () => void;
 	analysisResponse: ImageAnalysisResponse | null;
 	onTasksCreated: () => void;
+	onAddManually?: (imageId: string) => void;
 }
 
 export function GeneratedTasksModal({
@@ -17,9 +19,11 @@ export function GeneratedTasksModal({
 	onClose,
 	analysisResponse,
 	onTasksCreated,
+	onAddManually,
 }: GeneratedTasksModalProps) {
 	const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
 	const [isCreating, setIsCreating] = useState(false);
+	const t = useTranslations();
 
 	if (!isOpen || !analysisResponse) return null;
 
@@ -76,6 +80,64 @@ export function GeneratedTasksModal({
 		}
 	};
 
+	if (analysisResponse.tasks.length === 0) {
+		return (
+			<div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+				<div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+					{/* Header */}
+					<div className="flex items-center justify-between p-4 border-b">
+						<div className="flex items-center">
+							<SparklesIcon className="w-6 h-6 text-orange-500 mr-2" />
+							<h2 className="text-xl font-semibold">
+								{t("tasks.generation.modalTitle")}
+							</h2>
+						</div>
+						<button
+							type="button"
+							onClick={onClose}
+							className="p-2 hover:bg-gray-100 rounded-full"
+							aria-label="Close"
+						>
+							<XIcon size={20} />
+						</button>
+					</div>
+
+					{/* Content */}
+					<div className="p-8 text-center">
+						<p className="text-lg text-gray-700">
+							{t("tasks.generation.noTasksFound")}
+						</p>
+						<p className="text-sm text-gray-500 mt-2">
+							{t("tasks.generation.tryManual")}
+						</p>
+					</div>
+
+					{/* Footer */}
+					<div className="p-4 border-t flex gap-3">
+						<button
+							type="button"
+							onClick={onClose}
+							className="flex-1 px-4 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-50"
+						>
+							{t("common.ok")}
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								if (analysisResponse.image_id) {
+									onAddManually?.(analysisResponse.image_id);
+								}
+							}}
+							className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600"
+						>
+							{t("tasks.actions.addManually")}
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
 			<div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -83,7 +145,9 @@ export function GeneratedTasksModal({
 				<div className="flex items-center justify-between p-4 border-b">
 					<div className="flex items-center">
 						<SparklesIcon className="w-6 h-6 text-orange-500 mr-2" />
-						<h2 className="text-xl font-semibold">AI Generated Tasks</h2>
+						<h2 className="text-xl font-semibold">
+							{t("tasks.generation.modalTitle")}
+						</h2>
 					</div>
 					<button
 						type="button"
@@ -101,10 +165,16 @@ export function GeneratedTasksModal({
 						{analysisResponse.analysis_summary}
 					</p>
 					<div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-						<span>Found {analysisResponse.tasks.length} tasks</span>
+						<span>
+							{t("tasks.generation.tasksFound", {
+								count: analysisResponse.tasks.length,
+							})}
+						</span>
 						<span>•</span>
 						<span>
-							Processed in {analysisResponse.processing_time.toFixed(2)}s
+							{t("tasks.generation.processedIn", {
+								time: analysisResponse.processing_time.toFixed(2),
+							})}
 						</span>
 					</div>
 				</div>
@@ -112,7 +182,10 @@ export function GeneratedTasksModal({
 				{/* Selection controls */}
 				<div className="flex items-center justify-between p-4 border-b">
 					<div className="text-sm text-gray-600">
-						{selectedTasks.size} of {analysisResponse.tasks.length} selected
+						{t("tasks.generation.selected", {
+							selected: selectedTasks.size,
+							total: analysisResponse.tasks.length,
+						})}
 					</div>
 					<div className="flex gap-2">
 						<button
@@ -120,14 +193,14 @@ export function GeneratedTasksModal({
 							onClick={selectAll}
 							className="text-sm px-3 py-1 text-orange-600 hover:bg-orange-50 rounded"
 						>
-							Select all
+							{t("common.selectAll")}
 						</button>
 						<button
 							type="button"
 							onClick={deselectAll}
 							className="text-sm px-3 py-1 text-gray-600 hover:bg-gray-50 rounded"
 						>
-							Clear all
+							{t("common.clearAll")}
 						</button>
 					</div>
 				</div>
@@ -212,7 +285,7 @@ export function GeneratedTasksModal({
 						onClick={onClose}
 						className="flex-1 px-4 py-2 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-50"
 					>
-						Cancel
+						{t("common.cancel")}
 					</button>
 					<button
 						type="button"
@@ -223,10 +296,10 @@ export function GeneratedTasksModal({
 						{isCreating ? (
 							<>
 								<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-								Creating...
+								{t("common.creating")}
 							</>
 						) : (
-							`Create ${selectedTasks.size} Task${selectedTasks.size !== 1 ? "s" : ""}`
+							t("tasks.actions.createTasks", { count: selectedTasks.size })
 						)}
 					</button>
 				</div>
