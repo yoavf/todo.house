@@ -113,6 +113,12 @@ async function handleRequest(
 		headers["Content-Type"] = contentType;
 	}
 
+	// Forward Accept header for content negotiation
+	const acceptHeader = request.headers.get("accept");
+	if (acceptHeader) {
+		headers["Accept"] = acceptHeader;
+	}
+
 	// Prepare the request options
 	const requestOptions: RequestInit = {
 		method,
