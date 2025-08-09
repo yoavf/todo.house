@@ -2,24 +2,26 @@
  * @jest-environment jsdom
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { CameraView } from '../CameraView';
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { CameraView } from "../CameraView";
 
 // Mock the ImageProcessing component
-jest.mock('../ImageProcessing', () => {
+jest.mock("../ImageProcessing", () => {
 	return {
 		ImageProcessing: ({ onComplete }: { onComplete: () => void }) => (
 			<div data-testid="image-processing">
 				Processing...
-				<button onClick={onComplete}>Complete</button>
+				<button type="button" onClick={onComplete}>
+					Complete
+				</button>
 			</div>
 		),
 	};
 });
 
 // Mock the API
-jest.mock('@/lib/api', () => ({
+jest.mock("@/lib/api", () => ({
 	tasksAPI: {
 		analyzeImage: jest.fn(),
 	},
@@ -38,7 +40,7 @@ const mockStream = {
 	getVideoTracks: jest.fn(() => [mockVideoTrack]),
 };
 
-Object.defineProperty(global.navigator, 'mediaDevices', {
+Object.defineProperty(global.navigator, "mediaDevices", {
 	value: {
 		getUserMedia: mockGetUserMedia,
 	},
@@ -46,11 +48,11 @@ Object.defineProperty(global.navigator, 'mediaDevices', {
 });
 
 // Mock URL.createObjectURL and revokeObjectURL
-Object.defineProperty(global.URL, 'createObjectURL', {
-	value: jest.fn(() => 'mocked-url'),
+Object.defineProperty(global.URL, "createObjectURL", {
+	value: jest.fn(() => "mocked-url"),
 });
 
-Object.defineProperty(global.URL, 'revokeObjectURL', {
+Object.defineProperty(global.URL, "revokeObjectURL", {
 	value: jest.fn(),
 });
 
@@ -64,32 +66,32 @@ const mockVideoElement = {
 };
 
 // Mock canvas element and context
-const mockCanvas = document.createElement('canvas');
+const mockCanvas = document.createElement("canvas");
 const mockContext = {
 	drawImage: jest.fn(),
 	getImageData: jest.fn(),
 };
 
-Object.defineProperty(mockCanvas, 'getContext', {
+Object.defineProperty(mockCanvas, "getContext", {
 	value: jest.fn(() => mockContext),
 });
 
-Object.defineProperty(mockCanvas, 'toBlob', {
+Object.defineProperty(mockCanvas, "toBlob", {
 	value: jest.fn((callback) => {
-		const mockBlob = new Blob(['fake-image-data'], { type: 'image/jpeg' });
+		const mockBlob = new Blob(["fake-image-data"], { type: "image/jpeg" });
 		callback(mockBlob);
 	}),
 });
 
 // Mock React refs
-jest.mock('react', () => ({
-	...jest.requireActual('react'),
+jest.mock("react", () => ({
+	...jest.requireActual("react"),
 	useRef: () => ({
 		current: mockVideoElement,
 	}),
 }));
 
-describe('CameraView Zoom Functionality', () => {
+describe("CameraView Zoom Functionality", () => {
 	const mockOnClose = jest.fn();
 	const mockOnTasksGenerated = jest.fn();
 
@@ -107,63 +109,69 @@ describe('CameraView Zoom Functionality', () => {
 		mockVideoTrack.applyConstraints.mockResolvedValue(undefined);
 	});
 
-	it('does not render when closed', () => {
+	it("does not render when closed", () => {
 		render(
 			<CameraView
 				isOpen={false}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
-		expect(screen.queryByText('Take a photo of what needs attention')).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("Take a photo of what needs attention"),
+		).not.toBeInTheDocument();
 	});
 
-	it('renders camera interface when open', async () => {
+	it("renders camera interface when open", async () => {
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText('Take a photo of what needs attention')).toBeInTheDocument();
+			expect(
+				screen.getByText("Take a photo of what needs attention"),
+			).toBeInTheDocument();
 		});
 	});
 
-	it('shows zoom controls when camera supports zoom', async () => {
+	it("shows zoom controls when camera supports zoom", async () => {
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
-			expect(screen.getByLabelText('Zoom out')).toBeInTheDocument();
-			expect(screen.getByLabelText('Reset zoom')).toBeInTheDocument();
+			expect(screen.getByLabelText("Zoom in")).toBeInTheDocument();
+			expect(screen.getByLabelText("Zoom out")).toBeInTheDocument();
+			expect(screen.getByLabelText("Reset zoom")).toBeInTheDocument();
 		});
 	});
 
-	it('shows zoom instructions when zoom is available', async () => {
+	it("shows zoom instructions when zoom is available", async () => {
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText(/Pinch to zoom • Use \+\/- keys • Tap zoom controls/)).toBeInTheDocument();
+			expect(
+				screen.getByText(/Pinch to zoom • Use \+\/- keys • Tap zoom controls/),
+			).toBeInTheDocument();
 		});
 	});
 
-	it('uses visual zoom when camera does not support zoom', async () => {
+	it("uses visual zoom when camera does not support zoom", async () => {
 		mockVideoTrack.getCapabilities.mockReturnValue({}); // No zoom capability
 
 		render(
@@ -171,31 +179,31 @@ describe('CameraView Zoom Functionality', () => {
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
 			// Should still show zoom controls (for visual zoom)
-			expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
+			expect(screen.getByLabelText("Zoom in")).toBeInTheDocument();
 		});
 	});
 
-	it('handles zoom in button click', async () => {
+	it("handles zoom in button click", async () => {
 		const user = userEvent.setup();
-		
+
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
+			expect(screen.getByLabelText("Zoom in")).toBeInTheDocument();
 		});
 
-		await user.click(screen.getByLabelText('Zoom in'));
+		await user.click(screen.getByLabelText("Zoom in"));
 
 		// Should call applyConstraints with zoom level > 1
 		await waitFor(() => {
@@ -203,46 +211,46 @@ describe('CameraView Zoom Functionality', () => {
 		});
 	});
 
-	it('handles zoom out button click', async () => {
+	it("handles zoom out button click", async () => {
 		const user = userEvent.setup();
-		
+
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByLabelText('Zoom out')).toBeInTheDocument();
+			expect(screen.getByLabelText("Zoom out")).toBeInTheDocument();
 		});
 
 		// First zoom in, then zoom out
-		await user.click(screen.getByLabelText('Zoom in'));
-		await user.click(screen.getByLabelText('Zoom out'));
+		await user.click(screen.getByLabelText("Zoom in"));
+		await user.click(screen.getByLabelText("Zoom out"));
 
 		expect(mockVideoTrack.applyConstraints).toHaveBeenCalledTimes(2);
 	});
 
-	it('handles reset zoom button click', async () => {
+	it("handles reset zoom button click", async () => {
 		const user = userEvent.setup();
-		
+
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByLabelText('Reset zoom')).toBeInTheDocument();
+			expect(screen.getByLabelText("Reset zoom")).toBeInTheDocument();
 		});
 
 		// Zoom in then reset
-		await user.click(screen.getByLabelText('Zoom in'));
-		await user.click(screen.getByLabelText('Reset zoom'));
+		await user.click(screen.getByLabelText("Zoom in"));
+		await user.click(screen.getByLabelText("Reset zoom"));
 
 		// Should call applyConstraints to reset to 1x zoom
 		expect(mockVideoTrack.applyConstraints).toHaveBeenCalledWith({
@@ -250,69 +258,86 @@ describe('CameraView Zoom Functionality', () => {
 		});
 	});
 
-	it('handles keyboard shortcuts for zoom', async () => {
+	it("handles keyboard shortcuts for zoom", async () => {
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText('Take a photo of what needs attention')).toBeInTheDocument();
+			expect(
+				screen.getByText("Take a photo of what needs attention"),
+			).toBeInTheDocument();
 		});
 
 		// Wait a bit for the keyboard event listener to be set up
 		await waitFor(() => {
-			expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
+			expect(screen.getByLabelText("Zoom in")).toBeInTheDocument();
 		});
 
 		// Clear any previous calls
 		mockVideoTrack.applyConstraints.mockClear();
 
 		// Test zoom in with + key
-		fireEvent.keyDown(document, { key: '+', preventDefault: jest.fn() });
-		
-		await waitFor(() => {
-			expect(mockVideoTrack.applyConstraints).toHaveBeenCalled();
-		}, { timeout: 2000 });
+		fireEvent.keyDown(document, { key: "+", preventDefault: jest.fn() });
 
-		// Test zoom out with - key  
+		await waitFor(
+			() => {
+				expect(mockVideoTrack.applyConstraints).toHaveBeenCalled();
+			},
+			{ timeout: 2000 },
+		);
+
+		// Test zoom out with - key
 		mockVideoTrack.applyConstraints.mockClear();
-		fireEvent.keyDown(document, { key: '-', preventDefault: jest.fn() });
-		
-		await waitFor(() => {
-			expect(mockVideoTrack.applyConstraints).toHaveBeenCalled();
-		}, { timeout: 2000 });
+		fireEvent.keyDown(document, { key: "-", preventDefault: jest.fn() });
+
+		await waitFor(
+			() => {
+				expect(mockVideoTrack.applyConstraints).toHaveBeenCalled();
+			},
+			{ timeout: 2000 },
+		);
 
 		// Test reset with 0 key
 		mockVideoTrack.applyConstraints.mockClear();
-		fireEvent.keyDown(document, { key: '0', preventDefault: jest.fn() });
-		
-		await waitFor(() => {
-			expect(mockVideoTrack.applyConstraints).toHaveBeenCalledWith({
-				advanced: [{ zoom: 1 }],
-			});
-		}, { timeout: 2000 });
+		fireEvent.keyDown(document, { key: "0", preventDefault: jest.fn() });
+
+		await waitFor(
+			() => {
+				expect(mockVideoTrack.applyConstraints).toHaveBeenCalledWith({
+					advanced: [{ zoom: 1 }],
+				});
+			},
+			{ timeout: 2000 },
+		);
 	});
 
-	it('handles touch gestures for zoom', async () => {
+	it("handles touch gestures for zoom", async () => {
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText('Take a photo of what needs attention')).toBeInTheDocument();
+			expect(
+				screen.getByText("Take a photo of what needs attention"),
+			).toBeInTheDocument();
 		});
 
 		// Find the video container that handles touch events
-		const videoContainer = screen.getByText('Take a photo of what needs attention').closest('div')
-			?.querySelector('[class*="absolute inset-0 w-full h-full overflow-hidden"]');
+		const videoContainer = screen
+			.getByText("Take a photo of what needs attention")
+			.closest("div")
+			?.querySelector(
+				'[class*="absolute inset-0 w-full h-full overflow-hidden"]',
+			);
 
 		if (videoContainer) {
 			// Simulate pinch gesture
@@ -347,42 +372,42 @@ describe('CameraView Zoom Functionality', () => {
 		}
 	});
 
-	it('shows zoom level indicator when zoomed', async () => {
+	it("shows zoom level indicator when zoomed", async () => {
 		const user = userEvent.setup();
-		
+
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
+			expect(screen.getByLabelText("Zoom in")).toBeInTheDocument();
 		});
 
 		// Zoom in to trigger zoom level indicator
-		await user.click(screen.getByLabelText('Zoom in'));
+		await user.click(screen.getByLabelText("Zoom in"));
 
 		// Should show zoom level (this might take a moment to update)
 		await waitFor(() => {
 			// Look for zoom indicator text (e.g., "1.1x")
-			const zoomIndicator = screen.queryByText(/^\d+\.\d+x$/);
+			const _zoomIndicator = screen.queryByText(/^\d+\.\d+x$/);
 			// This test might be flaky due to timing, so we'll just check that zoom was attempted
 			expect(mockVideoTrack.applyConstraints).toHaveBeenCalled();
 		});
 	});
 
-	it('handles camera permission errors gracefully', async () => {
-		mockGetUserMedia.mockRejectedValue(new Error('Permission denied'));
+	it("handles camera permission errors gracefully", async () => {
+		mockGetUserMedia.mockRejectedValue(new Error("Permission denied"));
 
 		render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
@@ -390,20 +415,22 @@ describe('CameraView Zoom Functionality', () => {
 		});
 
 		// Should not show zoom controls when camera fails
-		expect(screen.queryByLabelText('Zoom in')).not.toBeInTheDocument();
+		expect(screen.queryByLabelText("Zoom in")).not.toBeInTheDocument();
 	});
 
-	it('cleans up zoom state when closed', async () => {
+	it("cleans up zoom state when closed", async () => {
 		const { rerender } = render(
 			<CameraView
 				isOpen={true}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText('Take a photo of what needs attention')).toBeInTheDocument();
+			expect(
+				screen.getByText("Take a photo of what needs attention"),
+			).toBeInTheDocument();
 		});
 
 		// Close the camera
@@ -412,7 +439,7 @@ describe('CameraView Zoom Functionality', () => {
 				isOpen={false}
 				onClose={mockOnClose}
 				onTasksGenerated={mockOnTasksGenerated}
-			/>
+			/>,
 		);
 
 		// Should stop camera tracks

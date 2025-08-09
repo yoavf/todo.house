@@ -10,11 +10,6 @@
 		"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* RTL text rendering optimizations */
-[dir="rtl"] * {
-	text-align: start;
-}
-
 /* RTL-specific animations and transitions */
 [dir="rtl"] .animate-slide-in-right {
 	animation: slide-in-left 0.3s ease-out;
@@ -363,6 +358,10 @@ select {
 @layer base {
 	* {
 		@apply border-border outline-ring/50;
+	}
+	/* RTL text rendering optimizations */
+	[dir="rtl"] * {
+		text-align: start;
 	}
 	body {
 		@apply bg-background text-foreground;

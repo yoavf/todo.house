@@ -4,6 +4,23 @@ import type { ImageAnalysisResponse } from "@/lib/api";
 import { tasksAPI } from "@/lib/api";
 import { ImageProcessing } from "./ImageProcessing";
 
+// Type extensions for experimental camera APIs
+interface ExtendedMediaTrackCapabilities extends MediaTrackCapabilities {
+	zoom?: {
+		min: number;
+		max: number;
+		step: number;
+	};
+}
+
+interface ZoomConstraint {
+	zoom: number;
+}
+
+interface ExtendedMediaTrackConstraints extends MediaTrackConstraints {
+	advanced?: ZoomConstraint[];
+}
+
 interface CameraViewProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -68,8 +85,8 @@ export function CameraView({
 				);
 
 				await videoTrack.applyConstraints({
-					advanced: [{ zoom: clampedZoom } as any],
-				});
+					advanced: [{ zoom: clampedZoom }],
+				} as ExtendedMediaTrackConstraints);
 
 				setZoomLevel(clampedZoom);
 				return true;
@@ -164,9 +181,10 @@ export function CameraView({
 	const checkZoomCapabilities = useCallback(
 		async (videoTrack: MediaStreamTrack) => {
 			try {
-				const capabilities = videoTrack.getCapabilities();
+				const capabilities =
+					videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
 				// TypeScript doesn't include zoom in MediaTrackCapabilities, but some browsers support it
-				const zoomCapability = (capabilities as any).zoom;
+				const zoomCapability = capabilities.zoom;
 				if (zoomCapability) {
 					setSupportsZoom(true);
 					setZoomConstraints({
