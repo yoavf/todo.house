@@ -86,8 +86,8 @@ def log_secret_diagnostics() -> None:
                 length=len(AUTH_SECRET),
                 sha256_prefix=secret_hash,
             )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception("Error logging auth secret diagnostics", exc_info=e)
 
 
 async def get_current_user(
