@@ -183,7 +183,9 @@ async function handleRequest(
 			"content-length",
 			"cache-control",
 			"content-disposition",
+			"location",
 		];
+
 		headersToForward.forEach((header) => {
 			const value = response.headers.get(header);
 			if (value) {
